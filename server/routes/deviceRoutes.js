@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 
 // express.Router():
-// lets define routes in a separate file instead of piling all into index.js (main)
+// lets us define routes in a separate file instead of piling all into index.js 
 // then plug it into app later with app.use().
 router.post("/", createDevice);
 router.get("/", getAllDevices);

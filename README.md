@@ -1,6 +1,6 @@
 # Device Fleet Manager
 
-A MERN stack app to manage a fleet of Android/embedded kiosk devices — push content/playlists, monitor online/offline status, and schedule content by location/time.
+A MERN stack application for managing a fleet of Android/embedded kiosk devices used for digital signage — push content and playlists to devices, monitor online/offline status, and schedule content by device and time window.
 
 Architecture is inspired by a real digital signage platform (console → engine → device delivery), adapted and simplified for a portfolio-scoped MERN project.
 
@@ -9,13 +9,66 @@ Architecture is inspired by a real digital signage platform (console → engine 
 - **Content Service** — CRUD for content items (playlists/apps), with JSON-schema validation on the config blob.
 - **Assignment/Playlist Service** — device ↔ content ↔ schedule associations (which devices, what time window).
 - **Manifest Composer** — builds one canonical JSON "device manifest" per device.
-- **Delivery Layer** — Socket.IO (or MQTT) push to devices, HTTP poll as fallback.
+- **Delivery Layer** — MQTT push to devices.
 - **Device Simulator** — a browser/headless client that authenticates, receives manifests, and reports heartbeat/status (stands in for real hardware).
-- **Fleet Dashboard** — React UI showing online/offline status, last-seen, current content per device.
+- **Fleet Dashboard** — React UI showing online/offline status, last-seen, and current content per device.
 
 ## Stack
 
-- Backend: Node.js, Express, MongoDB (Mongoose)
-- Frontend: React
-- Realtime: Socket.IO
-- Deployment: TBD (Render/Railway + Vercel + Atlas)
+- **Backend:** Node.js, Express, MongoDB (Mongoose)
+- **Frontend:** React
+- **Realtime/Delivery:** MQTT
+
+## Prerequisites
+
+- Node.js (v18+ recommended)
+- npm
+- A MongoDB connection string (e.g. MongoDB Atlas)
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone <repo-url>
+cd device-fleet-manager
+```
+
+### Server setup
+
+```bash
+cd server
+npm install
+```
+
+Create a `.env` file inside `server/` with:
+
+```
+PORT=5000
+MONGO_URI=<your-mongodb-connection-string>
+```
+
+Run the server in development mode:
+
+```bash
+npm run dev
+```
+
+### Client setup
+
+```bash
+cd client
+npm install
+npm start
+```
+
+## Dependencies
+
+**Server**
+- `express` — HTTP server and routing
+- `mongoose` — MongoDB object modeling
+- `dotenv` — environment variable loading
+- `nodemon` (dev) — auto-restart on file changes
+
+**Client**
+- React (see `client/package.json` once scaffolded)

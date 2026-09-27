@@ -4,10 +4,14 @@ import dotenv from "dotenv";
 // database configuration
 import connectDB from "./config/db.js";
 
+// wire MQTT into index
+import "./services/mqttService.js";
+
 // wiring the router
 import contentRoutes from "./routes/contentRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
+import manifestRoutes from "./routes/manifestRoutes.js"
 
 dotenv.config(); // loads .env into process.env before anything reads it
 
@@ -22,6 +26,7 @@ app.use(express.json());
 app.use("/content", contentRoutes);
 app.use("/devices", deviceRoutes);
 app.use("/assignments", assignmentRoutes);
+app.use("/manifest", manifestRoutes);
 
 // create /health - when somebody sends a GET req to /health - they receive { status: "ok" }
 // req from client and res sent from server
