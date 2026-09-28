@@ -4,14 +4,16 @@ import dotenv from "dotenv";
 // database configuration
 import connectDB from "./config/db.js";
 
-// wire MQTT into index
+// wire MQTT, check-device-active, update-device-offline into index
 import "./services/mqttService.js";
+import "./services/heartbeatListener.js";
+import startOfflineChecker from "./services/offlineChecker.js";
 
 // wiring the router
 import contentRoutes from "./routes/contentRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
-import manifestRoutes from "./routes/manifestRoutes.js"
+import manifestRoutes from "./routes/manifestRoutes.js";
 
 dotenv.config(); // loads .env into process.env before anything reads it
 
@@ -41,4 +43,6 @@ connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+
+  startOfflineChecker();
 });
