@@ -24,6 +24,7 @@ Architecture is inspired by a real digital signage platform (console → engine 
 - Node.js (v18+ recommended)
 - npm
 - A MongoDB connection string (e.g. MongoDB Atlas)
+- An MQTT broker running locally (e.g. [Mosquitto](https://mosquitto.org/), default port `1883`)
 
 ## Installation
 
@@ -54,6 +55,17 @@ Run the server in development mode:
 npm run dev
 ```
 
+### Running the Device Simulator
+
+With the server running and connected to your MQTT broker, simulate a device receiving content and reporting status:
+
+```bash
+cd server
+node services/deviceSimulator.js
+```
+
+This subscribes to a device's manifest topic, logs manifests as they're delivered, and publishes periodic heartbeats so the device's status/last-seen updates in real time.
+
 ### Client setup
 
 ```bash
@@ -68,6 +80,7 @@ npm start
 - `express` — HTTP server and routing
 - `mongoose` — MongoDB object modeling
 - `dotenv` — environment variable loading
+- `mqtt` — MQTT client for publishing device manifests to the broker
 - `nodemon` (dev) — auto-restart on file changes
 
 **Client**
