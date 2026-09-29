@@ -10,13 +10,13 @@ Architecture is inspired by a real digital signage platform (console → engine 
 - **Assignment/Playlist Service** — device ↔ content ↔ schedule associations (which devices, what time window).
 - **Manifest Composer** — builds one canonical JSON "device manifest" per device.
 - **Delivery Layer** — MQTT push to devices.
-- **Device Simulator** — a browser/headless client that authenticates, receives manifests, and reports heartbeat/status (stands in for real hardware).
+- **Device Simulator** — a script that authenticates, receives manifests, and reports heartbeat/status (stands in for real hardware).
 - **Fleet Dashboard** — React UI showing online/offline status, last-seen, and current content per device.
 
 ## Stack
 
 - **Backend:** Node.js, Express, MongoDB (Mongoose)
-- **Frontend:** React
+- **Frontend:** React (Vite), React Router
 - **Realtime/Delivery:** MQTT
 
 ## Prerequisites
@@ -61,17 +61,17 @@ With the server running and connected to your MQTT broker, simulate a device rec
 
 ```bash
 cd server
-node services/deviceSimulator.js
+node services/deviceSimulator.js <deviceId>
 ```
 
-This subscribes to a device's manifest topic, logs manifests as they're delivered, and publishes periodic heartbeats so the device's status/last-seen updates in real time.
+This subscribes to that device's manifest topic, logs manifests as they're delivered, and publishes periodic heartbeats so the device's status/last-seen updates in real time.
 
 ### Client setup
 
 ```bash
 cd client
 npm install
-npm start
+npm run dev
 ```
 
 ## Dependencies
@@ -81,7 +81,10 @@ npm start
 - `mongoose` — MongoDB object modeling
 - `dotenv` — environment variable loading
 - `mqtt` — MQTT client for publishing device manifests to the broker
+- `cors` — allows the client (different port) to call the API
 - `nodemon` (dev) — auto-restart on file changes
 
 **Client**
-- React (see `client/package.json` once scaffolded)
+- `react`, `react-dom` — UI framework
+- `react-router-dom` — client-side routing
+- `vite` (dev) — dev server and build tool
