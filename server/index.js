@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 
 // database configuration
 import connectDB from "./config/db.js";
@@ -24,6 +25,10 @@ const PORT = process.env.PORT || 3000;
 
 // adds middleware that runs on every incoming request
 app.use(express.json());
+
+// middleware: runs on every incoming req - adds special HTTP res headers (Access-Control-Allow-Origin)
+app.use(cors());
+
 // mounts your router at the /content path prefix.
 app.use("/content", contentRoutes);
 app.use("/devices", deviceRoutes);

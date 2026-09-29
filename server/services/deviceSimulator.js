@@ -1,14 +1,22 @@
 import mqtt from "mqtt";
 
 const client = mqtt.connect("mqtt://localhost:1883");
+const deviceId = process.argv[2];
+
+if (!deviceId) {
+  console.error(
+    "Please provide a deviceId, e.g. node services/deviceSimulator.js <deviceId>",
+  );
+  process.exit(1);
+}
 
 client.on("connect", () => {
   console.log("simulator connected");
-  client.subscribe("devices/6ab7fd9924f9b2dd79614601/manifest");
+  client.subscribe(`devices/${deviceId}/manifest`);
 
   setInterval(() => {
     client.publish(
-      "devices/6ab7fd9924f9b2dd79614601/heartbeat",
+      `devices/${deviceId}/heartbeat`,
       JSON.stringify({ status: "online", timestamp: new Date() }),
     );
   }, 10000);
