@@ -11,7 +11,9 @@ export const createAssignment = async (req, res) => {
 
 export const getAllAssignments = async (req, res) => {
   try {
-    const assignments = await Assignment.find();
+    const assignments = await Assignment.find()
+      .populate("deviceId")
+      .populate("contentIds");
     res.status(200).json(assignments);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -20,7 +22,9 @@ export const getAllAssignments = async (req, res) => {
 
 export const getAssignmentById = async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id);
+    const assignment = await Assignment.findById(req.params.id)
+      .populate("deviceId")
+      .populate("contentIds");
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }
