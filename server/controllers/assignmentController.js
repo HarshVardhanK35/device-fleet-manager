@@ -1,11 +1,27 @@
 import Assignment from "../models/Assignment.js";
+import Device from "../models/Device.js";
 
 export const createAssignment = async (req, res) => {
   try {
+    const device = await Device.findById(req.body.deviceId);
+    if (!device) {
+      return res.status(404).json({ message: "Device not found" });
+    }
+
+    const isOwner = device.userId && req.user.id === device.userId.toString();
+    const isAllowedAdmin =
+      req.user.role === "admin" && device.adminControl === true;
+
+    if (!isOwner && !isAllowedAdmin) {
+      return res.status(403).json({
+        message: "You don't have permission to publish to this device",
+      });
+    }
+
     const assignment = await Assignment.create(req.body);
     res.status(201).json(assignment);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 
