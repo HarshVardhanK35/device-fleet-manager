@@ -7,12 +7,11 @@ const assignmentSchema = new mongoose.Schema(
       ref: "Device",
       required: true,
     },
-    contentIds: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Content",
-      },
-    ],
+    playlistId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Playlist",
+      required: true,
+    },
     beginDT: {
       type: Date,
     },

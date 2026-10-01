@@ -4,7 +4,7 @@ import { publishManifestToDevice } from "../services/mqttService.js";
 export const getManifestForDevice = async (req, res) => {
   try {
     const manifest = await buildManifestForDevice(req.params.deviceId);
-    publishManifestToDevice(req.params.deviceId, manifest)
+    publishManifestToDevice(req.params.deviceId, manifest);
     res.status(200).json(manifest);
   } catch (err) {
     if (err.message === "Device not found!") {

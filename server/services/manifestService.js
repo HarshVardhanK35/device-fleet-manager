@@ -9,9 +9,10 @@ async function buildManifestForDevice(deviceId) {
     throw new Error("Device not found!");
   }
 
-  const assignments = await Assignment.find({ deviceId }).populate(
-    "contentIds",
-  );
+  const assignments = await Assignment.find({ deviceId }).populate({
+    path: "playlistId",
+    populate: { path: "contentItems" },
+  });
 
   return {
     deviceId: device._id,
@@ -21,7 +22,8 @@ async function buildManifestForDevice(deviceId) {
       assignmentId: assignment._id,
       beginDT: assignment.beginDT,
       endDT: assignment.endDT,
-      content: assignment.contentIds,
+      playlistName: assignment.playlistId.name,
+      content: assignment.playlistId.contentItems,
     })),
   };
 }

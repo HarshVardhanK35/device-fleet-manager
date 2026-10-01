@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 
 // database configuration
 import connectDB from "./config/db.js";
@@ -14,6 +15,7 @@ import contentRoutes from "./routes/contentRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
 import manifestRoutes from "./routes/manifestRoutes.js";
+import playlistRoutes from "./routes/playlistRoutes.js";
 
 dotenv.config(); // loads .env into process.env before anything reads it
 
@@ -24,11 +26,16 @@ const PORT = process.env.PORT || 3000;
 
 // adds middleware that runs on every incoming request
 app.use(express.json());
-// mounts your router at the /content path prefix.
+
+// middleware: runs on every incoming req - adds special HTTP res headers (Access-Control-Allow-Origin)
+app.use(cors());
+
+// mounts your router at the /<route> path prefix.
 app.use("/content", contentRoutes);
 app.use("/devices", deviceRoutes);
 app.use("/assignments", assignmentRoutes);
 app.use("/manifest", manifestRoutes);
+app.use("/playlists", playlistRoutes);
 
 // create /health - when somebody sends a GET req to /health - they receive { status: "ok" }
 // req from client and res sent from server
