@@ -7,16 +7,18 @@ import {
   deleteAssignment,
 } from "../controllers/assignmentController.js";
 
-// express.Router() creates a mini, self-contained instance of Express's routing system 
+import { protect } from "../middleware/auth.js";
+
+// express.Router() creates a mini, self-contained instance of Express's routing system
 const router = express.Router();
 
 // express.Router():
 // lets define routes in a separate file instead of piling all into index.js (main)
 // then plug it into app later with app.use().
-router.post("/", createAssignment);
-router.get("/", getAllAssignments);
-router.get("/:id", getAssignmentById);
-router.put("/:id", updateAssignments);
-router.delete("/:id", deleteAssignment);
+router.post("/", protect, createAssignment);
+router.get("/", protect, getAllAssignments);
+router.get("/:id", protect, getAssignmentById);
+router.put("/:id", protect, updateAssignments);
+router.delete("/:id", protect, deleteAssignment);
 
 export default router;

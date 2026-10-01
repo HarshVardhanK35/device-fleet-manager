@@ -10,7 +10,8 @@ import "./services/mqttService.js";
 import "./services/heartbeatListener.js";
 import startOfflineChecker from "./services/offlineChecker.js";
 
-// wiring the router
+// wiring routes
+import authRoutes from "./routes/authRoutes.js";
 import contentRoutes from "./routes/contentRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
@@ -31,6 +32,7 @@ app.use(express.json());
 app.use(cors());
 
 // mounts your router at the /<route> path prefix.
+app.use("/auth", authRoutes);
 app.use("/content", contentRoutes);
 app.use("/devices", deviceRoutes);
 app.use("/assignments", assignmentRoutes);

@@ -8,12 +8,14 @@ import {
   deletePlaylist,
 } from "../controllers/playlistController.js";
 
+import { protect } from "../middleware/auth.js";
+
 const router = express.Router();
 
-router.post("/", createPlaylist);
-router.get("/", getAllPlaylists);
-router.get("/:id", getPlaylistById);
-router.put("/:id", updatePlaylist);
-router.delete("/:id", deletePlaylist);
+router.post("/", protect, createPlaylist);
+router.get("/", protect, getAllPlaylists);
+router.get("/:id", protect, getPlaylistById);
+router.put("/:id", protect, updatePlaylist);
+router.delete("/:id", protect, deletePlaylist);
 
 export default router;
