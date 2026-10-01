@@ -13,7 +13,7 @@ export const getAllAssignments = async (req, res) => {
   try {
     const assignments = await Assignment.find()
       .populate("deviceId")
-      .populate("playlistId");
+      .populate({ path: "playlistId", populate: { path: "contentItems" } });
     res.status(200).json(assignments);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -24,7 +24,7 @@ export const getAssignmentById = async (req, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id)
       .populate("deviceId")
-      .populate("playlistId");
+      .populate({ path: "playlistId", populate: { path: "contentItems" } });
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }

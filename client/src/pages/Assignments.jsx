@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 
 import { getAssignments } from "../api/assignments";
 
+import { formatDate } from "../utils/formatDate.js";
+
 function Assignments() {
   const [assignments, setAssignments] = useState([]);
 
@@ -24,9 +26,8 @@ function Assignments() {
           {assignment.playlistId.contentItems
             .map((content) => content.name)
             .join(", ")}{" "}
-          —{" "}
-          {new Date(assignment.beginDT).toLocaleString()} to{" "}
-          {new Date(assignment.endDT).toLocaleString()}
+          — {formatDate(assignment.beginDT)} to{" "}
+          {formatDate(assignment.endDT)}
         </li>
       ))}
     </ul>
