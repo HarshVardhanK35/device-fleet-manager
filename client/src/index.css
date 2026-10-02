@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+body {
+  background-color: var(--color-bg-primary);
+}
+
+:root {
+  --color-bg-primary: #0d1117;
+  --color-bg-panel: #161b22;
+  --color-bg-hover: #21262d;
+  --color-accent-blue: #2f81f7;
+  --color-accent-red: #f0426a;
+  --color-text-primary: #e6edf3;
+  --color-text-muted: #8b949e;
+}
+
+@theme {
+  --color-bg-primary: var(--color-bg-primary);
+  --color-bg-panel: var(--color-bg-panel);
+  --color-bg-hover: var(--color-bg-hover);
+  --color-accent-blue: var(--color-accent-blue);
+  --color-accent-red: var(--color-accent-red);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-muted: var(--color-text-muted);
+}

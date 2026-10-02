@@ -24,3 +24,10 @@ export async function uploadFile(file) {
 
   return res.json();
 }
+
+export async function updateContent(id, data) {
+  return apiFetch(`http://localhost:5000/content/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
