@@ -2,6 +2,16 @@ import Content from "../models/Content.js";
 
 export const createContent = async (req, res) => {
   try {
+    const { type, durationInMillis } = req.body;
+
+    if (type === "app" && !durationInMillis) {
+      return res
+        .status(400)
+        .json({ message: "durationInMillis is required for type 'app'" });
+    }
+    if (type === "image" && !durationInMillis) {
+      req.body.durationInMillis = 30000;
+    }
     const content = await Content.create(req.body);
     res.status(201).json(content);
   } catch (error) {

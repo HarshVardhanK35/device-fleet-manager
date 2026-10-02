@@ -28,11 +28,33 @@ function Player() {
     // whenever there is a change in "deviceId" - useEffect runs
   }, [deviceId]);
 
+  console.log(manifest);
   if (!manifest) return <p>Waiting for manifest...</p>;
 
   const firstContent = manifest.playlists?.[0]?.content?.[0];
 
-  return <h1>{firstContent ? firstContent.name : "No Content"}</h1>;
+  if (!firstContent) return <h1>No content</h1>;
+  return (
+    <>
+      {firstContent.type === "image" && (
+        <img
+          src={firstContent.mediaUrl}
+          alt={firstContent.name}
+          style={{ maxWidth: "100%", maxHeight: "100vh" }}
+        />
+      )}
+      {firstContent.type === "video" && (
+        <video
+          src={firstContent.mediaUrl}
+          autoPlay
+          loop
+          muted
+          style={{ maxWidth: "100%", maxHeight: "100vh" }}
+        />
+      )}
+      {firstContent.type === "app" && <h1>{firstContent.name}</h1>}
+    </>
+  );
 }
 
 export default Player;
