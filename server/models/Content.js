@@ -23,6 +23,9 @@ const contentSchema = new mongoose.Schema(
     tags: {
       type: [String],
     },
+    mediaUrl: {
+      type: String, // image and video types
+    },
   },
   { timestamps: true },
 );

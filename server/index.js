@@ -1,5 +1,14 @@
 import express from "express";
-import dotenv from "dotenv";
+
+/**
+ * replaced these...
+ * import dotenv from "dotenv";
+ * dotenv.config();
+ *
+ * loads and runs dotenv/config - dotenv automatically calls config()
+ * variables from .env still available through process.env
+ */
+import "dotenv/config";
 import cors from "cors";
 
 // database configuration
@@ -18,7 +27,8 @@ import deviceRoutes from "./routes/deviceRoutes.js";
 import manifestRoutes from "./routes/manifestRoutes.js";
 import playlistRoutes from "./routes/playlistRoutes.js";
 
-dotenv.config(); // loads .env into process.env before anything reads it
+// file upload
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 const app = express(); // creates express application
 
@@ -38,6 +48,7 @@ app.use("/devices", deviceRoutes);
 app.use("/assignments", assignmentRoutes);
 app.use("/manifest", manifestRoutes);
 app.use("/playlists", playlistRoutes);
+app.use("/upload", uploadRoutes);
 
 // create /health - when somebody sends a GET req to /health - they receive { status: "ok" }
 // req from client and res sent from server
