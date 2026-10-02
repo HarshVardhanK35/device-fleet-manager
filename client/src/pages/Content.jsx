@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 
-import { getContent, createContent } from "../api/content";
+import { getContent, createContent, uploadFile } from "../api/content";
 
 function Content() {
   const [content, setContent] = useState([]);
   const [name, setName] = useState("");
   const [type, setType] = useState("image");
+
+  // file uploads
+  const [file, setFile] = useState(null);
+
   const [durationInMillis, setDurationInMillis] = useState("");
   const [tags, setTags] = useState("");
 
@@ -22,9 +26,18 @@ function Content() {
   async function handleSubmit(e) {
     e.preventDefault();
 
+    // file upload
+    let mediaUrl;
+    if (file) {
+      const uploadResult = await uploadFile(file);
+      // returns - cloudinary secure.url as a response after file-upload (req.body.file)
+      mediaUrl = uploadResult.url;
+    }
+
     const newItem = await createContent({
       name: name,
       type: type,
+      mediaUrl: mediaUrl,
       durationInMillis: Number(durationInMillis),
       tags: tags.split(",").map((tag) => tag.trim()),
     });
@@ -34,6 +47,7 @@ function Content() {
     setType("image");
     setDurationInMillis("");
     setTags("");
+    setFile(null);
   }
 
   return (
@@ -61,6 +75,9 @@ function Content() {
           onChange={(e) => setTags(e.target.value)}
           placeholder="Enter tags (comma-separated)"
         />
+        {/* upload a file */}
+        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+
         <button type="submit">Create</button>
       </form>
 
@@ -69,6 +86,13 @@ function Content() {
           return (
             <li key={item._id}>
               {item.name} — {item.type} — {item.durationInMillis}
+              {item.mediaUrl && (
+                <img
+                  src={item.mediaUrl}
+                  alt={item.name}
+                  style={{ height: "60px" }}
+                />
+              )}
             </li>
           );
         })}

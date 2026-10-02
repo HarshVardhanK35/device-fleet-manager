@@ -1,14 +1,25 @@
+import { apiFetch } from "./apiClient";
+
 export async function getContent() {
-  const res = await fetch("http://localhost:5000/content");
-  const data = await res.json();
-  return data;
+  return apiFetch("http://localhost:5000/content");
 }
 
 export async function createContent(data) {
-  const res = await fetch("http://localhost:5000/content", {
+  return apiFetch("http://localhost:5000/content", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
+  });
+}
+
+export async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const token = localStorage.getItem("token");
+  const res = await fetch("http://localhost:5000/upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
   });
 
   return res.json();

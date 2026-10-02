@@ -21,11 +21,11 @@ function Assignments() {
     <ul>
       {assignments.map((assignment) => (
         <li key={assignment._id}>
-          Device: {assignment.deviceId.name} — Playlist:{" "}
-          {assignment.playlistId.name} — Content:{" "}
-          {assignment.playlistId.contentItems
-            .map((content) => content.name)
-            .join(", ")}{" "}
+          Device: {assignment.deviceId?.name ?? "Unknown device"} — Playlist:{" "}
+          {assignment.playlistId?.name ?? "Unknown playlist"} — Content:{" "}
+          {assignment.playlistId?.contentItems
+            ?.map((content) => content.name)
+            .join(", ") || "—"}{" "}
           — {formatDate(assignment.beginDT)} to{" "}
           {formatDate(assignment.endDT)}
         </li>
