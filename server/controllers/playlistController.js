@@ -11,7 +11,7 @@ export const createPlaylist = async (req, res) => {
 
 export const getAllPlaylists = async (req, res) => {
   try {
-    const playlists = await Playlist.find();
+    const playlists = await Playlist.find().populate("contentItems");
     res.status(200).json(playlists);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -37,7 +37,7 @@ export const updatePlaylist = async (req, res) => {
     const playlist = await Playlist.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
-    });
+    }).populate("contentItems");
     if (!playlist) {
       return res.status(404).json({ message: "Playlist not found" });
     }

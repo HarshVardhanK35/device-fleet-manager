@@ -10,3 +10,16 @@ export async function createPlaylist(data) {
     body: JSON.stringify(data),
   });
 }
+
+export async function updatePlaylist(id, data) {
+  return apiFetch(`http://localhost:5000/playlists/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deletePlaylist(id) {
+  return apiFetch(`http://localhost:5000/playlists/${id}`, {
+    method: "DELETE",
+  });
+}
