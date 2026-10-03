@@ -31,3 +31,9 @@ export async function updateContent(id, data) {
     body: JSON.stringify(data),
   });
 }
+
+export async function deleteContent(id) {
+  return apiFetch(`http://localhost:5000/content/${id}`, {
+    method: "DELETE",
+  });
+}

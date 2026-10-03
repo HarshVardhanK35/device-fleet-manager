@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
+import ScrollBox from "./ScrollBox.jsx";
+
 import {
   Home,
   Image,
@@ -24,7 +26,7 @@ function Layout({ children }) {
   const navigate = useNavigate();
 
   const [isHovered, setIsHovered] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
+  const [isPinned, setIsPinned] = useState(true);
   const isExpanded = isHovered || isPinned;
 
   function handleLogout() {
@@ -33,7 +35,7 @@ function Layout({ children }) {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -56,21 +58,23 @@ function Layout({ children }) {
           </button>
         </div>
 
-        {navItems.map((item) => {
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-2 ${isExpanded ? "" : "justify-center"} ${isActive ? "bg-bg-hover text-accent-blue" : "text-text-muted"}`
-              }
-            >
-              <item.icon size={18} />
-              {isExpanded && <span>{item.label}</span>}
-            </NavLink>
-          );
-        })}
+        <ScrollBox>
+          {navItems.map((item) => {
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 ${isExpanded ? "" : "justify-center"} ${isActive ? "bg-bg-hover text-accent-blue" : "text-text-muted"}`
+                }
+              >
+                <item.icon size={18} />
+                {isExpanded && <span>{item.label}</span>}
+              </NavLink>
+            );
+          })}
+        </ScrollBox>
       </aside>
 
       <div className={`flex-1 flex flex-col ${isPinned ? "ml-56" : ""}`}>
@@ -89,9 +93,11 @@ function Layout({ children }) {
           </button>
         </header>
 
-        <main className="bg-bg-primary flex-1 p-4 text-text-primary">
-          {children}
-        </main>
+        <ScrollBox className="p-4">
+          <div className="bg-bg-primary text-text-primary min-h-full">
+            {children}
+          </div>
+        </ScrollBox>
       </div>
     </div>
   );
