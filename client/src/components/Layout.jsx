@@ -104,3 +104,11 @@ function Layout({ children }) {
 }
 
 export default Layout;
+
+// App shell wrapping every authenticated page: collapsible sidebar
+// (icon-only by default, expands on hover as an overlay or stays pinned
+// open and reflows content) + top bar (search placeholder + Logout).
+// Page content scrolls via ScrollBox, not the native browser scrollbar.
+// Used by: App.jsx, wrapping Dashboard, Content, Assignments, Playlists,
+// and Publish. NOT used on Login/Register or the device-facing Player page
+// (those have no sidebar/console chrome).

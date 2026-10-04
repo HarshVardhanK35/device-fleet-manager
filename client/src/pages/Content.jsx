@@ -24,6 +24,7 @@ import {
 
 import ContentTile from "../components/ContentTile.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
+import Button from "../components/Button.jsx";
 
 function Content() {
   const [content, setContent] = useState([]);
@@ -235,12 +236,7 @@ function Content() {
                     >
                       Cancel
                     </Dialog.Close>
-                    <button
-                      type="submit"
-                      className="bg-accent-blue text-white px-3 py-1 rounded"
-                    >
-                      Add File
-                    </button>
+                    <Button type="submit">Add File</Button>
                   </div>
                 </form>
               </Dialog.Content>
@@ -278,12 +274,7 @@ function Content() {
                     <Dialog.Close className="text-text-muted px-3 py-1">
                       Cancel
                     </Dialog.Close>
-                    <button
-                      type="submit"
-                      className="bg-accent-blue text-white px-3 py-1 rounded"
-                    >
-                      Add App
-                    </button>
+                    <Button type="submit">Add App</Button>
                   </div>
                 </form>
               </Dialog.Content>
@@ -457,12 +448,7 @@ function Content() {
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={handleSettingsSave}
-                  className="bg-accent-blue text-white px-3 py-1 rounded"
-                >
-                  Save
-                </button>
+                <Button onClick={handleSettingsSave}>Save</Button>
               </div>
             </div>
           </div>

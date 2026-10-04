@@ -66,3 +66,11 @@ function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm }) {
 }
 
 export default ConfirmDeleteModal;
+
+// Reusable destructive-action confirmation dialog (Radix Dialog). Takes
+// `items`: an array of { id, name }. One item renders a plain "Are you sure
+// you want to delete <name>?" message; two or more render a scrollable
+// name list (via ScrollBox) so the user can verify the full scope of a bulk
+// delete before confirming.
+// Used by: pages/Assignments.jsx (delete assignment), pages/Content.jsx
+// (bulk delete), pages/Playlists.jsx (delete playlist, bulk-remove content).

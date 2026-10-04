@@ -10,6 +10,10 @@ body {
   --color-bg-hover: #21262d;
   --color-accent-blue: #2f81f7;
   --color-accent-red: #f0426a;
+  --color-accent-green: #3fb950;
+  --color-accent-amber: #e3b341;
+  --color-border-muted: #30363d;
+  --color-border-hover: #484f58;
   --color-text-primary: #e6edf3;
   --color-text-muted: #8b949e;
 }
@@ -20,6 +24,43 @@ body {
   --color-bg-hover: var(--color-bg-hover);
   --color-accent-blue: var(--color-accent-blue);
   --color-accent-red: var(--color-accent-red);
+  --color-accent-green: var(--color-accent-green);
+  --color-accent-amber: var(--color-accent-amber);
+  --color-border-muted: var(--color-border-muted);
+  --color-border-hover: var(--color-border-hover);
   --color-text-primary: var(--color-text-primary);
   --color-text-muted: var(--color-text-muted);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-hover) 25%,
+    var(--color-bg-panel) 50%,
+    var(--color-bg-hover) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 4px;
+}
+
+textarea.dark-scrollbar::-webkit-scrollbar {
+  width: 7px;
+}
+textarea.dark-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-bg-hover);
+  cursor: default;
+}
+textarea.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 999px;
+  cursor: default;
 }

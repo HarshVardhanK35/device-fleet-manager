@@ -1,6 +1,6 @@
 import Device from "../models/Device.js";
 
-const THRESHOLD_MS = 30000;
+const THRESHOLD_MS = 20000;
 
 export default function startOfflineChecker() {
   setInterval(async () => {

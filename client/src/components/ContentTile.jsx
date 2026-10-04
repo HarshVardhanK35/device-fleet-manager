@@ -54,3 +54,12 @@ function ContentTile({
 }
 
 export default ContentTile;
+
+// The reusable content-item tile: thumbnail/app placeholder, duration
+// badge, name, and type badge. `size` is "lg" (218px, default), "sm"
+// (140px), or "fluid" (fills parent width — used in grids/modals).
+// `slotIndex` (optional) renders a "#N name" line, for playlist-slot
+// context. `children` is an overlay slot for select circles, remove
+// buttons, etc. (rendered on top of the preview area).
+// Used by: pages/Content.jsx, pages/Playlists.jsx (directly, and via
+// components/ContentPickerModal.jsx).
