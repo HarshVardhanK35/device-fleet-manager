@@ -6,6 +6,10 @@ const playlistSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    description: {
+      type: String,
+      default: "",
+    },
     contentItems: [{ type: mongoose.Schema.Types.ObjectId, ref: "Content" }],
   },
   { timestamps: true },

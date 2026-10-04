@@ -4,6 +4,7 @@ import { X, Check } from "lucide-react";
 
 import ContentTile from "./ContentTile.jsx";
 import ScrollBox from "./ScrollBox.jsx";
+import Button from "./Button.jsx";
 
 function ContentPickerModal({
   open,
@@ -17,11 +18,13 @@ function ContentPickerModal({
   onSubmit,
 }) {
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedIds, setSelectedIds] = useState(new Set(initialSelectedIds));
 
   useEffect(() => {
     if (open) {
       setName("");
+      setDescription("");
       setSelectedIds(new Set(initialSelectedIds));
     }
   }, [open]);
@@ -38,7 +41,7 @@ function ContentPickerModal({
 
   function handleSubmit(e) {
     e.preventDefault();
-    onSubmit(name, Array.from(selectedIds));
+    onSubmit(name, description, Array.from(selectedIds));
   }
 
   return (
@@ -46,7 +49,7 @@ function ContentPickerModal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel p-6 rounded-lg w-[min(90vw,1000px)] max-h-[85vh] flex flex-col z-40">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-bg-hover">
             <Dialog.Title className="text-text-primary font-bold">
               {title}
             </Dialog.Title>
@@ -72,7 +75,18 @@ function ContentPickerModal({
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Enter playlist name"
                         required
-                        className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full"
+                        className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full mb-5"
+                      />
+
+                      <label className="block text-text-muted text-xs font-semibold mb-1.5">
+                        Enter description
+                      </label>
+                      <textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Enter description (optional)"
+                        rows={3}
+                        className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full resize-y min-h-[4.5rem] max-h-[300px] dark-scrollbar"
                       />
                     </>
                   )}
@@ -165,16 +179,11 @@ function ContentPickerModal({
               </>
             )}
 
-            <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-bg-hover">
+            <div className="inline-flex items-center justify-end gap-2 mt-1 pt-3 border-t border-bg-hover">
               <Dialog.Close type="button" className="text-text-muted px-3 py-1">
                 Cancel
               </Dialog.Close>
-              <button
-                type="submit"
-                className="bg-accent-blue text-white px-3 py-1 rounded"
-              >
-                {submitLabel}
-              </button>
+              <Button type="submit">{submitLabel}</Button>
             </div>
           </form>
         </Dialog.Content>
@@ -184,3 +193,11 @@ function ContentPickerModal({
 }
 
 export default ContentPickerModal;
+
+// Shared modal for picking content from the library (Radix Dialog +
+// ContentTile grid + ScrollBox). Two layouts: "split" (name field left,
+// tile grid right — used for Create Playlist) and "single" (name field
+// optional, just a tile grid — used for Add Content, no name needed).
+// `showNameField` toggles the name input; `initialSelectedIds` pre-checks
+// existing selections when editing rather than creating fresh.
+// Used by: pages/Playlists.jsx (Create Playlist + Add Content modals).

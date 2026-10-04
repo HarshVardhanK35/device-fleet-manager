@@ -19,3 +19,11 @@ function ScrollBox({ className = "", children }) {
 }
 
 export default ScrollBox;
+
+// Themed scrollbar (wraps Radix ScrollArea) used app-wide in place of the
+// native browser scrollbar. Root must stay `flex flex-col` for sizing to
+// work, and the Viewport's `[&>div]:!block` override is required — Radix
+// injects its own `display:table` wrapper that otherwise collapses grid
+// content to near-zero width (a real bug hit and fixed during this build).
+// Used by: pages/Playlists.jsx, components/ContentPickerModal.jsx,
+// components/ConfirmDeleteModal.jsx, components/Layout.jsx (page scroll).

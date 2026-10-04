@@ -15,6 +15,7 @@ import ContentTile from "../components/ContentTile.jsx";
 import ContentPickerModal from "../components/ContentPickerModal.jsx";
 import ScrollBox from "../components/ScrollBox.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
+import Button from "../components/Button.jsx";
 
 function Playlists() {
   const [playlists, setPlaylists] = useState([]);
@@ -29,6 +30,7 @@ function Playlists() {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editPlaylistId, setEditPlaylistId] = useState(null);
   const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [editContentItems, setEditContentItems] = useState([]);
 
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -90,9 +92,10 @@ function Playlists() {
     if (playlistData.length) setSelectedPlaylistId(playlistData[0]._id);
   }
 
-  async function handleCreatePlaylist(name, contentItemIds) {
+  async function handleCreatePlaylist(name, description, contentItemIds) {
     const newPlaylist = await createPlaylist({
       name,
+      description,
       contentItems: contentItemIds,
     });
 
@@ -130,6 +133,7 @@ function Playlists() {
     setMenuOpenId(null);
     setEditPlaylistId(playlist._id);
     setEditName(playlist.name);
+    setEditDescription(playlist.description || "");
     setEditContentItems(playlist.contentItems);
   }
 
@@ -146,7 +150,10 @@ function Playlists() {
   }
 
   async function handleSaveEditName() {
-    const updated = await updatePlaylist(editPlaylistId, { name: editName });
+    const updated = await updatePlaylist(editPlaylistId, {
+      name: editName,
+      description: editDescription,
+    });
     setPlaylists((prev) =>
       prev.map((p) => (p._id === updated._id ? updated : p)),
     );
@@ -239,16 +246,16 @@ function Playlists() {
         {selectedPlaylist && (
           <>
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-bg-hover">
-              <h2 className="text-text-primary font-bold">
-                {selectedPlaylist.name}
-              </h2>
+              <div>
+                <h2 className="text-text-primary font-bold">
+                  {selectedPlaylist.name}
+                </h2>
+                <p className="text-text-muted text-sm">
+                  {selectedPlaylist.description}
+                </p>
+              </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={openAddContent}
-                  className="bg-accent-blue text-white px-3 py-1.5 rounded text-sm"
-                >
-                  Add content
-                </button>
+                <Button onClick={openAddContent}>Add content</Button>
                 <button
                   onClick={() => setSlotDeleteConfirmOpen(true)}
                   disabled={checkedSlotIds.size === 0}
@@ -310,7 +317,7 @@ function Playlists() {
         title="Add Content"
         submitLabel="Add"
         showNameField={false}
-        onSubmit={(_, ids) => handleAddContentSave(ids)}
+        onSubmit={(_, __, ids) => handleAddContentSave(ids)}
       />
 
       {/* edit playlist */}
@@ -321,7 +328,7 @@ function Playlists() {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
           <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel p-6 rounded-lg w-[min(90vw,1000px)] max-h-[85vh] flex flex-col z-40">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-bg-hover">
               <Dialog.Title className="text-text-primary font-bold">
                 Edit Playlist
               </Dialog.Title>
@@ -339,6 +346,15 @@ function Playlists() {
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full"
+                />
+                <label className="block text-text-muted text-xs font-semibold mb-1.5 mt-3">
+                  Description
+                </label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={3}
+                  className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full resize-y min-h-[4.5rem] max-h-[300px] dark-scrollbar"
                 />
               </div>
 
@@ -365,16 +381,11 @@ function Playlists() {
               </ScrollBox>
             </div>
 
-            <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-bg-hover">
+            <div className="inline-flex items-center justify-end gap-2 mt-1 pt-3 border-t border-bg-hover">
               <Dialog.Close className="text-text-muted px-3 py-1">
                 Close
               </Dialog.Close>
-              <button
-                onClick={handleSaveEditName}
-                className="bg-accent-blue text-white px-3 py-1 rounded"
-              >
-                Save
-              </button>
+              <Button onClick={handleSaveEditName}>Save</Button>
             </div>
           </Dialog.Content>
         </Dialog.Portal>
