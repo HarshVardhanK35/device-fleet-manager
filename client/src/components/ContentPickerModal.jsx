@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Check } from "lucide-react";
 
 import ContentTile from "./ContentTile.jsx";
 import ScrollBox from "./ScrollBox.jsx";
 import Button from "./Button.jsx";
+import CancelButton from "./CancelButton.jsx";
+import SelectCheckbox from "./SelectCheckbox.jsx";
 
 function ContentPickerModal({
   open,
@@ -53,9 +54,7 @@ function ContentPickerModal({
             <Dialog.Title className="text-text-primary font-bold">
               {title}
             </Dialog.Title>
-            <Dialog.Close className="text-text-muted hover:text-accent-red transition-colors">
-              <X size={18} />
-            </Dialog.Close>
+            <CancelButton as={Dialog.Close} />
           </div>
 
           <form
@@ -108,23 +107,12 @@ function ContentPickerModal({
                             : ""
                         }
                       >
-                        <button
-                          type="button"
+                        <SelectCheckbox
+                          shape="circle"
+                          checked={selectedIds.has(item._id)}
                           onClick={(e) => toggleSelect(item._id, e)}
-                          className={`absolute left-1.5 top-1.5 z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center border-[1.5px] border-accent-blue shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-opacity ${
-                            selectedIds.has(item._id)
-                              ? "bg-accent-blue opacity-100"
-                              : "bg-white/95 opacity-0 group-hover:opacity-100"
-                          }`}
-                        >
-                          {selectedIds.has(item._id) && (
-                            <Check
-                              size={10}
-                              className="text-white"
-                              strokeWidth={3}
-                            />
-                          )}
-                        </button>
+                          className="absolute left-1.5 top-1.5 z-10"
+                        />
                       </ContentTile>
                     ))}
                   </div>
@@ -155,23 +143,12 @@ function ContentPickerModal({
                             : ""
                         }
                       >
-                        <button
-                          type="button"
+                        <SelectCheckbox
+                          shape="circle"
+                          checked={selectedIds.has(item._id)}
                           onClick={(e) => toggleSelect(item._id, e)}
-                          className={`absolute left-1.5 top-1.5 z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center border-[1.5px] border-accent-blue shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-opacity ${
-                            selectedIds.has(item._id)
-                              ? "bg-accent-blue opacity-100"
-                              : "bg-white/95 opacity-0 group-hover:opacity-100"
-                          }`}
-                        >
-                          {selectedIds.has(item._id) && (
-                            <Check
-                              size={10}
-                              className="text-white"
-                              strokeWidth={3}
-                            />
-                          )}
-                        </button>
+                          className="absolute left-1.5 top-1.5 z-10"
+                        />
                       </ContentTile>
                     ))}
                   </div>
@@ -180,7 +157,10 @@ function ContentPickerModal({
             )}
 
             <div className="inline-flex items-center justify-end gap-2 mt-1 pt-3 border-t border-bg-hover">
-              <Dialog.Close type="button" className="text-text-muted px-3 py-1">
+              <Dialog.Close
+                type="button"
+                className="text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-3 py-1 text-sm transition-colors"
+              >
                 Cancel
               </Dialog.Close>
               <Button type="submit">{submitLabel}</Button>

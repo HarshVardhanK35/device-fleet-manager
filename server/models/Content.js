@@ -11,7 +11,10 @@ const contentSchema = new mongoose.Schema(
       type: String,
       enum: ["image", "video", "app"],
     },
-
+    folder: {
+      type: String,
+      default: "",
+    },
     configBlob: {
       // special type: "anything goes" - no fixed structure, no validation on shape.
       // It can hold any JSON-like value: an object, array, string, number, whatever.
@@ -25,6 +28,9 @@ const contentSchema = new mongoose.Schema(
     },
     mediaUrl: {
       type: String, // image and video types
+    },
+    thumbnailUrl: {
+      type: String,
     },
   },
   { timestamps: true },
