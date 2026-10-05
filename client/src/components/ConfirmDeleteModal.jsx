@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
 import ScrollBox from "./ScrollBox.jsx";
+import CancelButton from "./CancelButton.jsx";
 
 function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm }) {
   return (
@@ -12,12 +12,7 @@ function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm }) {
             <Dialog.Title className="text-text-primary font-bold">
               {title}
             </Dialog.Title>
-            <Dialog.Close
-              type="button"
-              className="text-text-muted hover:text-accent-red"
-            >
-              <X size={18} />
-            </Dialog.Close>
+            <CancelButton as={Dialog.Close} title="Cancel delete" />
           </div>
 
           {items.length === 1 ? (
@@ -49,7 +44,10 @@ function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm }) {
           )}
 
           <div className="flex justify-end gap-2">
-            <Dialog.Close type="button" className="text-text-muted px-3 py-1">
+            <Dialog.Close
+              type="button"
+              className="text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-3 py-1 text-sm transition-colors"
+            >
               Cancel
             </Dialog.Close>
             <button

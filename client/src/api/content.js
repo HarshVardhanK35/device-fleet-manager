@@ -11,18 +11,44 @@ export async function createContent(data) {
   });
 }
 
-export async function uploadFile(file) {
-  const formData = new FormData();
-  formData.append("file", file);
+// fetch() has no upload-progress event, so this uses XMLHttpRequest instead
+// — needed for the Uploading... modal's progress bar and cancel button.
+export function uploadFile(file, { onProgress, signal } = {}) {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append("file", file);
 
-  const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:5000/upload", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData,
+    const token = localStorage.getItem("token");
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "http://localhost:5000/upload");
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        reject(new Error("Upload failed"));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Upload failed"));
+    xhr.onabort = () => reject(new DOMException("Upload cancelled", "AbortError"));
+
+    if (signal) {
+      if (signal.aborted) {
+        xhr.abort();
+      } else {
+        signal.addEventListener("abort", () => xhr.abort());
+      }
+    }
+
+    xhr.send(formData);
   });
-
-  return res.json();
 }
 
 export async function updateContent(id, data) {

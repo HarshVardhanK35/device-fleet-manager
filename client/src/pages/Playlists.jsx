@@ -16,6 +16,7 @@ import ContentPickerModal from "../components/ContentPickerModal.jsx";
 import ScrollBox from "../components/ScrollBox.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
 import Button from "../components/Button.jsx";
+import CancelButton from "../components/CancelButton.jsx";
 
 function Playlists() {
   const [playlists, setPlaylists] = useState([]);
@@ -332,9 +333,7 @@ function Playlists() {
               <Dialog.Title className="text-text-primary font-bold">
                 Edit Playlist
               </Dialog.Title>
-              <Dialog.Close className="text-text-muted hover:text-accent-red transition-colors">
-                <X size={18} />
-              </Dialog.Close>
+              <CancelButton as={Dialog.Close} />
             </div>
 
             <div className="flex gap-6 flex-1 min-h-0">

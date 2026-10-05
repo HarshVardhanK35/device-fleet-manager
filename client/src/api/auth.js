@@ -15,3 +15,11 @@ export async function login(data) {
   });
   return res.json();
 }
+
+export async function getMe() {
+  const token = localStorage.getItem("token");
+  const res = await fetch("http://localhost:5000/auth/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.json();
+}

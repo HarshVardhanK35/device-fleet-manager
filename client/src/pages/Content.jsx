@@ -1,18 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-
-import * as Dialog from "@radix-ui/react-dialog";
-
-import {
-  X,
-  Sliders,
-  ArrowDownUp,
-  Trash2,
-  Plus,
-  ChevronDown,
-  Upload,
-  LayoutGrid,
-  Check,
-} from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 
 import {
   getContent,
@@ -22,30 +8,40 @@ import {
   deleteContent,
 } from "../api/content";
 
-import ContentTile from "../components/ContentTile.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
-import Button from "../components/Button.jsx";
+import ContentFilterSortBar from "../components/ContentFilterSortBar.jsx";
+import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
+import UploadProgressModal from "../components/UploadProgressModal.jsx";
+import ContentSearchInput from "../components/ContentSearchInput.jsx";
+import SelectAllBar from "../components/SelectAllBar.jsx";
+import UploadSplitButton from "../components/UploadSplitButton.jsx";
+import ContentEmptyState from "../components/ContentEmptyState.jsx";
+import SelectableContentTile from "../components/SelectableContentTile.jsx";
+import ScrollBox from "../components/ScrollBox.jsx";
+import { getVideoDurationMs } from "../utils/getVideoDuration.js";
 
 function Content() {
   const [content, setContent] = useState([]);
-  // for selecting content
+
+  // bulk selection (checkbox-tick, for multi-item actions)
   const [checkedIds, setCheckedIds] = useState(new Set());
-  const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
-  const [activeForm, setActiveForm] = useState(null); // "media" | "app" | null
 
-  const [mediaName, setMediaName] = useState("");
-  const [mediaFile, setMediaFile] = useState(null);
-  const [appName, setAppName] = useState("");
+  // single-item inspector (click the card body to open)
+  const [inspectedId, setInspectedId] = useState(null);
 
-  // a single id - tracks which tile's settings panel is currently open!
-  const [selectedId, setSelectedId] = useState(null);
-  const [settingsName, setSettingsName] = useState("");
-  const [settingsDurationSec, setSettingsDurationSec] = useState("");
+  // filter/sort/search
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [sortBy, setSortBy] = useState("recent");
 
-  // delete modal
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-
+  // upload
+  const [uploadState, setUploadState] = useState(null); // { fileName, isVideo, progress, done } | null
   const fileInputRef = useRef(null);
+  const abortControllerRef = useRef(null);
+
+  // delete confirmations
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // bulk
+  const [singleDeleteTarget, setSingleDeleteTarget] = useState(null); // from inspector
 
   useEffect(() => {
     fetchContent();
@@ -54,67 +50,98 @@ function Content() {
   async function fetchContent() {
     const data = await getContent();
     setContent(data);
+
+    const validIds = new Set(data.map((item) => item._id));
+    setCheckedIds((prev) => {
+      const next = new Set([...prev].filter((id) => validIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
   }
 
-  async function handleMediaSubmit(e) {
-    e.preventDefault();
+  async function handleFileSelected(e) {
+    const selectedFiles = Array.from(e.target.files);
+    e.target.value = ""; // reset so re-selecting the same file(s) re-fires onChange
+    if (selectedFiles.length === 0) return;
 
-    if (
-      !mediaFile.type.startsWith("image/") &&
-      !mediaFile.type.startsWith("video/")
-    ) {
+    const validFiles = selectedFiles.filter(
+      (f) => f.type.startsWith("image/") || f.type.startsWith("video/"),
+    );
+    if (validFiles.length === 0) {
       alert("Only image or video files are allowed.");
       return;
     }
 
-    const uploadResult = await uploadFile(mediaFile);
-    const type = mediaFile.type.startsWith("video") ? "video" : "image";
+    for (let i = 0; i < validFiles.length; i++) {
+      const selectedFile = validFiles[i];
+      const isVideo = selectedFile.type.startsWith("video");
 
-    await createContent({
-      name: mediaName,
-      type: type,
-      mediaUrl: uploadResult.url,
-    });
+      setUploadState({
+        fileName: selectedFile.name,
+        isVideo,
+        progress: 0,
+        done: false,
+        queueIndex: i + 1,
+        queueTotal: validFiles.length,
+      });
 
-    setMediaName("");
-    setMediaFile("");
-    setActiveForm(null);
-    fetchContent();
-  }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
-  async function handleAppSubmit(e) {
-    e.preventDefault();
+      try {
+        const uploadResult = await uploadFile(selectedFile, {
+          onProgress: (progress) =>
+            setUploadState((s) => (s ? { ...s, progress } : s)),
+          signal: controller.signal,
+        });
 
-    const newItem = await createContent({
-      name: appName,
-      type: "app",
-    });
+        const name = selectedFile.name.replace(/\.[^/.]+$/, "");
+        const durationInMillis = isVideo
+          ? await getVideoDurationMs(selectedFile).catch(() => undefined)
+          : undefined;
 
-    setAppName("");
-    setActiveForm(null);
-    fetchContent();
+        await createContent({
+          name,
+          type: isVideo ? "video" : "image",
+          mediaUrl: uploadResult.url,
+          thumbnailUrl: uploadResult.thumbnailUrl,
+          ...(durationInMillis && { durationInMillis }),
+        });
 
-    if (newItem && newItem._id) {
-      openSettings(newItem);
+        fetchContent();
+
+        const isLast = i === validFiles.length - 1;
+        if (isLast) {
+          setUploadState((s) => (s ? { ...s, progress: 100, done: true } : s));
+        }
+      } catch (err) {
+        if (err.name === "AbortError") {
+          setUploadState(null);
+        } else {
+          alert(`Upload failed for "${selectedFile.name}". Please try again.`);
+          setUploadState(null);
+        }
+        return;
+      }
     }
   }
 
-  function openSettings(item) {
-    setSelectedId(item._id);
-    setSettingsName(item.name);
-    setSettingsDurationSec(
-      item.durationInMillis ? item.durationInMillis / 1000 : "",
-    );
+  function handleCancelUpload() {
+    abortControllerRef.current?.abort();
   }
 
-  async function handleSettingsSave() {
-    await updateContent(selectedId, {
-      name: settingsName,
-      durationInMillis: Number(settingsDurationSec) * 1000,
-    });
-
-    setSelectedId(null);
+  async function handleSaveItem(id, data) {
+    await updateContent(id, data);
+    setInspectedId(null);
     fetchContent();
+  }
+
+  async function handleConfirmSingleDelete() {
+    await deleteContent(singleDeleteTarget._id);
+    setContent((prev) =>
+      prev.filter((item) => item._id !== singleDeleteTarget._id),
+    );
+    setSingleDeleteTarget(null);
+    setInspectedId(null);
   }
 
   async function handleBulkDeleteContent() {
@@ -125,10 +152,10 @@ function Content() {
   }
 
   function toggleSelectAll() {
-    if (checkedIds.size === content.length) {
+    if (checkedIds.size === visibleContent.length) {
       setCheckedIds(new Set());
     } else {
-      setCheckedIds(new Set(content.map((item) => item._id)));
+      setCheckedIds(new Set(visibleContent.map((item) => item._id)));
     }
   }
 
@@ -142,330 +169,177 @@ function Content() {
     });
   }
 
-  const selectedItem = content.find((item) => item._id === selectedId);
+  function openFilePicker() {
+    fileInputRef.current.click();
+  }
+
+  const counts = useMemo(
+    () => ({
+      all: content.length,
+      image: content.filter((c) => c.type === "image").length,
+      video: content.filter((c) => c.type === "video").length,
+      app: content.filter((c) => c.type === "app").length,
+    }),
+    [content],
+  );
+
+  const visibleContent = useMemo(() => {
+    let list = content;
+    if (filterType !== "all") {
+      list = list.filter((item) => item.type === filterType);
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((item) => item.name.toLowerCase().includes(q));
+    }
+    list = [...list];
+    if (sortBy === "name") {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      list.sort(
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+      );
+    }
+    return list;
+  }, [content, filterType, search, sortBy]);
+
+  const inspectedItem = content.find((item) => item._id === inspectedId);
 
   return (
-    <>
-      <div className="flex">
-        <div className="flex-1">
-          <Dialog.Root
-            open={activeForm === "media"}
-            onOpenChange={(open) => !open && setActiveForm(null)}
-          >
-            <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
-              <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel p-6 rounded-lg w-96 z-40">
-                <div className="flex items-center justify-between mb-4">
-                  <Dialog.Title className="text-text-primary font-bold">
-                    Upload Image/Video
-                  </Dialog.Title>
-                  <Dialog.Close className="text-text-muted hover:text-accent-red transition-colors">
-                    <X size={18} />
-                  </Dialog.Close>
-                </div>
+    // 88px = Layout's header (h-14 = 56px) + ScrollBox page padding (p-4 =
+    // 32px). A definite height (not h-full) is required here because Radix's
+    // ScrollArea viewport doesn't stretch its content to 100% height, so a
+    // percentage height on this root wouldn't resolve — needed so the nested
+    // ScrollBox below can scroll just the grid, not the whole page.
+    <div className="max-w-7xl mx-auto h-[calc(100vh-88px)] flex flex-col">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        onChange={handleFileSelected}
+        className="hidden"
+      />
 
-                <form
-                  onSubmit={handleMediaSubmit}
-                  className="flex flex-col gap-3"
-                >
-                  <input
-                    value={mediaName}
-                    onChange={(e) => setMediaName(e.target.value)}
-                    placeholder="Enter file name"
-                    required
-                    className="bg-bg-hover text-text-primary px-2 py-1 rounded"
-                  />
-                  <div className="flex items-center gap-3">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,video/*"
-                      onChange={(e) => {
-                        const selectedFile = e.target.files[0];
-                        setMediaFile(selectedFile);
-                        if (selectedFile) {
-                          const nameWithoutExtension =
-                            selectedFile.name.replace(/\.[^/.]+$/, "");
-                          setMediaName(nameWithoutExtension);
-                        }
-                      }}
-                      required
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current.click()}
-                      className="flex items-center gap-2 bg-accent-blue hover:opacity-90 text-white font-semibold text-sm px-4 py-2 rounded-full shrink-0"
-                    >
-                      <Upload size={16} />
-                      Upload
-                    </button>
-                    {mediaFile && (
-                      <span className="flex items-center gap-1.5 min-w-0">
-                        <span
-                          title={mediaFile.name}
-                          className="text-text-muted text-xs overflow-hidden text-ellipsis whitespace-nowrap"
-                          style={{ minWidth: "10ch" }}
-                        >
-                          {mediaFile.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMediaFile(null);
-                            setMediaName("");
-                            fileInputRef.current.value = "";
-                          }}
-                          className="text-text-muted hover:text-accent-red shrink-0"
-                          title="Remove file"
-                        >
-                          <X size={14} />
-                        </button>
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end gap-2 mt-2">
-                    <Dialog.Close
-                      className="text-text-muted px-3 py-1"
-                      onClick={() => {
-                        setMediaFile(null);
-                        setMediaName("");
-                        fileInputRef.current.value = "";
-                      }}
-                    >
-                      Cancel
-                    </Dialog.Close>
-                    <Button type="submit">Add File</Button>
-                  </div>
-                </form>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
-
-          <Dialog.Root
-            open={activeForm === "app"}
-            onOpenChange={(open) => !open && setActiveForm(null)}
-          >
-            <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
-              <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel p-6 rounded-lg w-96 z-40">
-                <div className="flex items-center justify-between mb-4">
-                  <Dialog.Title className="text-text-primary font-bold">
-                    Add an App
-                  </Dialog.Title>
-                  <Dialog.Close className="text-text-muted hover:text-accent-red transition-colors">
-                    <X size={18} />
-                  </Dialog.Close>
-                </div>
-
-                <form
-                  onSubmit={handleAppSubmit}
-                  className="flex flex-col gap-3"
-                >
-                  <input
-                    value={appName}
-                    onChange={(e) => setAppName(e.target.value)}
-                    placeholder="App"
-                    required
-                    className="bg-bg-hover text-text-primary px-2 py-1 rounded"
-                  />
-                  <div className="flex justify-end gap-2 mt-2">
-                    <Dialog.Close className="text-text-muted px-3 py-1">
-                      Cancel
-                    </Dialog.Close>
-                    <Button type="submit">Add App</Button>
-                  </div>
-                </form>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
-
-          {/* upload bar */}
-          <div className="flex items-center justify-between py-2 pb-4 mb-2 border-b border-bg-hover">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={
-                  checkedIds.size > 0 && checkedIds.size === content.length
-                }
-                onChange={toggleSelectAll}
-                className="w-4 h-4 accent-accent-blue"
-                title="Select all"
-              />
-              {checkedIds.size === 0 && (
-                <span className="text-text-muted text-sm">Select all</span>
-              )}
-              {checkedIds.size > 0 && (
-                <span className="text-text-muted text-sm">
-                  Selected {checkedIds.size} of {content.length} media files
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="relative flex">
-                <button
-                  onClick={() => {
-                    setActiveForm("media");
-                    setUploadMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 bg-[#50cd89] hover:bg-[#45b87a] text-white font-semibold text-sm px-4 py-2 rounded-l-md"
-                >
-                  <Plus size={16} />
-                  Upload
-                </button>
-                <button
-                  onClick={() => setUploadMenuOpen(!uploadMenuOpen)}
-                  className="flex items-center justify-center bg-[#50cd89] hover:bg-[#45b87a] text-white px-2 rounded-r-md border-l border-black/10"
-                >
-                  <ChevronDown size={14} />
-                </button>
-
-                {uploadMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-bg-panel rounded-lg shadow-lg py-2 z-20">
-                    <button
-                      onClick={() => {
-                        setActiveForm("media");
-                        setUploadMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-muted hover:bg-bg-hover hover:text-text-primary"
-                    >
-                      <Upload size={16} /> Image/Video
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveForm("app");
-                        setUploadMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-muted hover:bg-bg-hover hover:text-text-primary"
-                    >
-                      <LayoutGrid size={16} /> Add an App
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <button
-                className="text-text-muted hover:text-text-primary p-2"
-                title="Sort"
-              >
-                <ArrowDownUp size={16} />
-              </button>
-              <button
-                onClick={() => setDeleteConfirmOpen(true)}
-                disabled={checkedIds.size === 0}
-                className="text-text-muted hover:text-accent-red disabled:opacity-40 disabled:hover:text-text-muted p-2"
-                title="Delete"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
+      {/* fixed header: stays put, only the grid below scrolls (nested ScrollBox) */}
+      <div className="flex-shrink-0">
+        {/* row 1: title + count, search */}
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <div className="flex items-baseline gap-2 min-w-0 flex-shrink-0">
+            <h1 className="text-text-primary text-xl font-bold whitespace-nowrap">
+              All content
+            </h1>
+            <span className="text-text-muted text-sm whitespace-nowrap">
+              {visibleContent.length} items
+            </span>
           </div>
 
-          {/* content mapping */}
-          <div className="flex flex-wrap gap-4 mt-4">
-            {content.map((item) => {
-              return (
-                <ContentTile
-                  key={item._id}
-                  item={item}
-                  className={
-                    checkedIds.has(item._id)
-                      ? "border-2 border-accent-blue -translate-y-0.5"
-                      : ""
-                  }
-                >
-                  <button
-                    onClick={(e) => toggleSelect(item._id, e)}
-                    className={`absolute left-2 top-2 z-10 w-[21px] h-[21px] rounded-full flex items-center justify-center border-[1.5px] border-accent-blue shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-opacity ${
-                      checkedIds.has(item._id)
-                        ? "bg-accent-blue opacity-100"
-                        : "bg-white/95 opacity-0 group-hover:opacity-100"
-                    }`}
-                  >
-                    {checkedIds.has(item._id) && (
-                      <Check size={12} className="text-white" strokeWidth={3} />
-                    )}
-                  </button>
-
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => openSettings(item)}
-                      className="bg-white text-black rounded-full p-2"
-                      title="Manage"
-                    >
-                      <Sliders size={18} />
-                    </button>
-                  </div>
-                </ContentTile>
-              );
-            })}
-          </div>
+          <ContentSearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
 
-        {selectedItem && (
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-30"
-            onClick={() => setSelectedId(null)}
-          >
-            <div
-              className="bg-bg-panel p-6 rounded-lg w-96"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-text-primary font-bold">
-                  Settings — {selectedItem.type}
-                </h2>
-                <button
-                  onClick={() => setSelectedId(null)}
-                  className="text-text-muted"
-                >
-                  <X size={18} />
-                </button>
-              </div>
+        {/* row 2: select all / delete (left), upload / filter / sort (right) */}
+        <div className="flex items-center justify-between py-2 pb-4 mb-2 border-b border-bg-hover">
+          <SelectAllBar
+            checkedCount={checkedIds.size}
+            totalCount={visibleContent.length}
+            onToggleAll={toggleSelectAll}
+            onDelete={() => setDeleteConfirmOpen(true)}
+          />
 
-              <input
-                value={settingsName}
-                onChange={(e) => setSettingsName(e.target.value)}
-                className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full mb-3"
-              />
+          <div className="flex items-center gap-2">
+            <ContentFilterSortBar
+              counts={counts}
+              filterValue={filterType}
+              onFilterChange={setFilterType}
+              sortValue={sortBy}
+              onSortChange={setSortBy}
+            />
 
-              {selectedItem.type !== "video" && (
-                <input
-                  type="number"
-                  value={settingsDurationSec}
-                  onChange={(e) => setSettingsDurationSec(e.target.value)}
-                  placeholder="duration (seconds)"
-                  className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full mb-4"
-                />
-              )}
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setSelectedId(null)}
-                  className="text-text-muted px-3 py-1"
-                >
-                  Cancel
-                </button>
-                <Button onClick={handleSettingsSave}>Save</Button>
-              </div>
-            </div>
+            <UploadSplitButton
+              onUploadClick={openFilePicker}
+              onAddAppClick={() => {}} // no route yet
+            />
           </div>
-        )}
-
-        {/* confirm delete modal */}
-        <ConfirmDeleteModal
-          open={deleteConfirmOpen}
-          onOpenChange={setDeleteConfirmOpen}
-          title="Delete Content"
-          items={content
-            .filter((item) => checkedIds.has(item._id))
-            .map((item) => ({ id: item._id, name: item.name }))}
-          onConfirm={handleBulkDeleteContent}
-        />
+        </div>
       </div>
-    </>
+
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* content grid */}
+        <ScrollBox className="flex-1 pr-4 pt-2">
+          {content.length === 0 ? (
+            <ContentEmptyState
+              onUploadClick={openFilePicker}
+              onAddAppClick={() => {}} // no route yet
+            />
+          ) : visibleContent.length === 0 ? (
+            <p className="text-text-muted text-sm pt-8 text-center">
+              No content matches your search or filter.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {visibleContent.map((item) => (
+                <SelectableContentTile
+                  key={item._id}
+                  item={item}
+                  checked={checkedIds.has(item._id)}
+                  inspected={inspectedId === item._id}
+                  onToggleSelect={toggleSelect}
+                  onClick={() => setInspectedId(item._id)}
+                />
+              ))}
+            </div>
+          )}
+        </ScrollBox>
+
+        {/* inspector panel */}
+        {inspectedItem && (
+          <ContentDetailsPanel
+            key={inspectedItem._id}
+            item={inspectedItem}
+            onClose={() => setInspectedId(null)}
+            onSave={handleSaveItem}
+            onDelete={(item) => setSingleDeleteTarget(item)}
+          />
+        )}
+      </div>
+
+      <ConfirmDeleteModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Content"
+        items={content
+          .filter((item) => checkedIds.has(item._id))
+          .map((item) => ({ id: item._id, name: item.name }))}
+        onConfirm={handleBulkDeleteContent}
+      />
+
+      <ConfirmDeleteModal
+        open={!!singleDeleteTarget}
+        onOpenChange={(open) => !open && setSingleDeleteTarget(null)}
+        title="Delete Content"
+        items={
+          singleDeleteTarget
+            ? [{ id: singleDeleteTarget._id, name: singleDeleteTarget.name }]
+            : []
+        }
+        onConfirm={handleConfirmSingleDelete}
+      />
+
+      <UploadProgressModal
+        open={!!uploadState}
+        fileName={uploadState?.fileName}
+        isVideo={uploadState?.isVideo}
+        progress={uploadState?.progress ?? 0}
+        done={uploadState?.done ?? false}
+        queueIndex={uploadState?.queueIndex}
+        queueTotal={uploadState?.queueTotal}
+        onCancel={handleCancelUpload}
+        onClose={() => setUploadState(null)}
+      />
+    </div>
   );
 }
 
