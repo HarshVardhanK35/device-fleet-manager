@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Plus, Check, Trash2, MoreVertical, Pencil } from "lucide-react";
+import { Plus, ChevronLeft, Repeat, CircleMinus } from "lucide-react";
 
 import {
   getPlaylists,
@@ -11,24 +11,32 @@ import {
 } from "../api/playlists.js";
 import { getContent } from "../api/content.js";
 
-import ContentTile from "../components/ContentTile.jsx";
 import ContentPickerModal from "../components/ContentPickerModal.jsx";
 import ScrollBox from "../components/ScrollBox.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
+import RemoveContentModal from "../components/RemoveContentModal.jsx";
 import Button from "../components/Button.jsx";
 import CancelButton from "../components/CancelButton.jsx";
+import SelectAllBar from "../components/SelectAllBar.jsx";
+import ContentToolbar from "../components/ContentToolbar.jsx";
+import PlaylistSlotTile from "../components/PlaylistSlotTile.jsx";
+import PlaylistRow from "../components/PlaylistRow.jsx";
+import RemovableContentTile from "../components/RemovableContentTile.jsx";
+import SkeletonPlaylistList from "../components/SkeletonPlaylistList.jsx";
+import SkeletonGrid from "../components/SkeletonGrid.jsx";
 
 function Playlists() {
   const [playlists, setPlaylists] = useState([]);
   const [content, setContent] = useState([]);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
+  const [mobileView, setMobileView] = useState("list"); // "list" | "detail"
+  const [loading, setLoading] = useState(true);
 
   const [createOpen, setCreateOpen] = useState(false);
 
   const [addContentOpen, setAddContentOpen] = useState(false);
   const [checkedSlotIds, setCheckedSlotIds] = useState(new Set());
 
-  const [menuOpenId, setMenuOpenId] = useState(null);
   const [editPlaylistId, setEditPlaylistId] = useState(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -37,24 +45,57 @@ function Playlists() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [slotDeleteConfirmOpen, setSlotDeleteConfirmOpen] = useState(false);
 
+  const [checkedPlaylistIds, setCheckedPlaylistIds] = useState(new Set());
+  const [bulkDeletePlaylistsOpen, setBulkDeletePlaylistsOpen] = useState(false);
+
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  const [slotFilterType, setSlotFilterType] = useState("all");
+
   const selectedPlaylist = playlists.find((p) => p._id === selectedPlaylistId);
 
-  useEffect(() => {
-    getPlaylist();
-  }, []);
+  const slotFilterCounts = selectedPlaylist
+    ? {
+        all: selectedPlaylist.contentItems.length,
+        image: selectedPlaylist.contentItems.filter((c) => c.type === "image")
+          .length,
+        video: selectedPlaylist.contentItems.filter((c) => c.type === "video")
+          .length,
+        app: selectedPlaylist.contentItems.filter((c) => c.type === "app")
+          .length,
+      }
+    : { all: 0, image: 0, video: 0, app: 0 };
+
+  const visibleSlots = selectedPlaylist
+    ? selectedPlaylist.contentItems
+        .map((item, index) => ({ item, index }))
+        .filter(
+          ({ item }) => slotFilterType === "all" || item.type === slotFilterType,
+        )
+    : [];
 
   useEffect(() => {
+    (async () => {
+      const [playlistData, contentData] = await Promise.all([
+        getPlaylists(),
+        getContent(),
+      ]);
+
+      setPlaylists(playlistData);
+      setContent(contentData);
+
+      if (playlistData.length) setSelectedPlaylistId(playlistData[0]._id);
+      setLoading(false);
+    })();
+  }, []);
+
+  function selectPlaylist(id) {
     setCheckedSlotIds(new Set());
-  }, [selectedPlaylistId]);
-
-  useEffect(() => {
-    function handleClickOutside() {
-      setMenuOpenId(null);
-    }
-
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+    setSlotFilterType("all");
+    setSelectedPlaylistId(id);
+    setMobileView("detail");
+  }
 
   async function handleDeleteSlots() {
     const remaining = selectedPlaylist.contentItems
@@ -77,20 +118,44 @@ function Playlists() {
     setPlaylists(remaining);
 
     if (selectedPlaylistId === idToDelete) {
+      setCheckedSlotIds(new Set());
       setSelectedPlaylistId(remaining.length ? remaining[0]._id : null);
     }
 
     setDeleteConfirmId(null);
   }
 
-  async function getPlaylist() {
-    const playlistData = await getPlaylists();
-    const contentData = await getContent();
+  function toggleCheckPlaylist(id) {
+    setCheckedPlaylistIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
-    setPlaylists(playlistData);
-    setContent(contentData);
+  function toggleAllPlaylists() {
+    if (checkedPlaylistIds.size === playlists.length) {
+      setCheckedPlaylistIds(new Set());
+    } else {
+      setCheckedPlaylistIds(new Set(playlists.map((p) => p._id)));
+    }
+  }
 
-    if (playlistData.length) setSelectedPlaylistId(playlistData[0]._id);
+  async function handleBulkDeletePlaylists() {
+    await Promise.all(
+      Array.from(checkedPlaylistIds).map((id) => deletePlaylist(id)),
+    );
+    const remaining = playlists.filter((p) => !checkedPlaylistIds.has(p._id));
+    setPlaylists(remaining);
+
+    if (checkedPlaylistIds.has(selectedPlaylistId)) {
+      setCheckedSlotIds(new Set());
+      setSelectedPlaylistId(remaining.length ? remaining[0]._id : null);
+    }
+
+    setCheckedPlaylistIds(new Set());
+    setBulkDeletePlaylistsOpen(false);
   }
 
   async function handleCreatePlaylist(name, description, contentItemIds) {
@@ -101,12 +166,11 @@ function Playlists() {
     });
 
     setPlaylists([...playlists, newPlaylist]);
-    setSelectedPlaylistId(newPlaylist._id);
+    selectPlaylist(newPlaylist._id);
     setCreateOpen(false);
   }
 
-  function toggleSlotSelect(id, e) {
-    e.stopPropagation();
+  function toggleSlotSelect(id) {
     setCheckedSlotIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -115,8 +179,14 @@ function Playlists() {
     });
   }
 
-  function openAddContent() {
-    setAddContentOpen(true);
+  function toggleAllSlots() {
+    if (checkedSlotIds.size === visibleSlots.length) {
+      setCheckedSlotIds(new Set());
+    } else {
+      setCheckedSlotIds(
+        new Set(visibleSlots.map(({ item, index }) => `${item._id}-${index}`)),
+      );
+    }
   }
 
   async function handleAddContentSave(ids) {
@@ -129,9 +199,7 @@ function Playlists() {
     setAddContentOpen(false);
   }
 
-  function openEditPlaylist(playlist, e) {
-    e.stopPropagation();
-    setMenuOpenId(null);
+  function openEditPlaylist(playlist) {
     setEditPlaylistId(playlist._id);
     setEditName(playlist.name);
     setEditDescription(playlist.description || "");
@@ -161,141 +229,206 @@ function Playlists() {
     setEditPlaylistId(null);
   }
 
+  async function handleReorder(fromIndex, toIndex) {
+    const reordered = [...selectedPlaylist.contentItems];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    // optimistic: update local state immediately, persist in the background
+    setPlaylists((prev) =>
+      prev.map((p) =>
+        p._id === selectedPlaylistId ? { ...p, contentItems: reordered } : p,
+      ),
+    );
+    await updatePlaylist(selectedPlaylistId, {
+      contentItems: reordered.map((item) => item._id),
+    });
+  }
+
+  function handleDrop(toIndex) {
+    if (dragIndex !== null && dragIndex !== toIndex) {
+      handleReorder(dragIndex, toIndex);
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }
+
   return (
-    <div className="flex gap-4">
+    <div className="max-w-7xl mx-auto h-[calc(100vh-88px)] flex gap-4 ">
       {/* left pane */}
-      <div className="w-80 flex-shrink-0 pr-4 border-r border-bg-hover">
-        <div className="flex items-center justify-between mb-3 pb-3 border-b border-bg-hover">
-          <h2 className="text-text-primary font-bold">Playlists</h2>
+      <div
+        className={`w-full lg:w-72 lg:flex-shrink-0 lg:mr-4 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
+          mobileView === "detail" ? "hidden lg:flex" : "flex"
+        }`}
+      >
+        <div className="flex items-center gap-2 pb-3 flex-shrink-0">
+          <h2 className="flex-1 text-text-primary font-bold text-base m-0">
+            Playlists
+          </h2>
+          <span className="text-text-muted text-sm tabular-nums">
+            {playlists.length}
+          </span>
           <button
             onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center justify-center gap-2 bg-[#50cd89] hover:bg-[#45b87a] text-white font-semibold text-sm leading-none px-4 py-2 rounded-md"
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-accent-blue/40 text-accent-blue text-sm font-medium hover:bg-accent-blue/10 transition-colors"
           >
-            <Plus size={16} className="shrink-0" />
-            Add a playlist
+            <Plus size={16} />
+            <span>Create</span>
           </button>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {playlists.map((playlist) => (
-            <div
-              key={playlist._id}
-              onClick={() => setSelectedPlaylistId(playlist._id)}
-              className={`relative bg-bg-panel rounded-lg p-3 cursor-pointer ${
-                playlist._id === selectedPlaylistId
-                  ? "border border-accent-blue"
-                  : ""
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-text-primary font-semibold">
-                    {playlist.name}
-                  </p>
-                  <span className="text-text-muted text-sm">
-                    {playlist.contentItems.length} items
-                  </span>
-                </div>
+        {playlists.length > 0 && (
+          <SelectAllBar
+            checkedCount={checkedPlaylistIds.size}
+            totalCount={playlists.length}
+            onToggleAll={toggleAllPlaylists}
+            onAction={() => setBulkDeletePlaylistsOpen(true)}
+            className="pb-3 flex-shrink-0"
+          />
+        )}
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpenId(
-                      menuOpenId === playlist._id ? null : playlist._id,
-                    );
-                  }}
-                  className="text-text-muted hover:text-text-primary p-1"
-                >
-                  <MoreVertical size={16} />
-                </button>
-              </div>
-
-              {menuOpenId === playlist._id && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  className="absolute right-2 top-10 w-40 bg-bg-panel rounded-lg shadow-lg py-2 z-20 border border-bg-hover"
-                >
-                  <button
-                    onClick={(e) => {
-                      openEditPlaylist(playlist, e);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-muted hover:bg-bg-hover hover:text-text-primary"
-                  >
-                    <Pencil size={14} /> Edit
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpenId(null);
-                      setDeleteConfirmId(playlist._id);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-muted hover:bg-bg-hover hover:text-accent-red"
-                  >
-                    <Trash2 size={14} /> Delete
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <ScrollBox className="pr-3 pt-1">
+          {loading ? (
+            <SkeletonPlaylistList count={4} />
+          ) : (
+          <div className="flex flex-col gap-2 pb-2">
+            {playlists.map((playlist) => (
+              <PlaylistRow
+                key={playlist._id}
+                playlist={playlist}
+                active={playlist._id === selectedPlaylistId}
+                checked={checkedPlaylistIds.has(playlist._id)}
+                onSelect={() => selectPlaylist(playlist._id)}
+                onToggleCheck={() => toggleCheckPlaylist(playlist._id)}
+                onEdit={() => openEditPlaylist(playlist)}
+                onDelete={() => setDeleteConfirmId(playlist._id)}
+              />
+            ))}
+          </div>
+          )}
+        </ScrollBox>
       </div>
 
       {/* right pane */}
-      <div className="flex-1">
-        {selectedPlaylist && (
+      <div
+        className={`flex-1 min-h-0 flex flex-col ${
+          mobileView === "list" ? "hidden lg:flex" : "flex"
+        }`}
+      >
+        {loading ? (
+          <SkeletonGrid count={6} />
+        ) : (
+          selectedPlaylist && (
           <>
-            <div className="flex items-center justify-between mb-3 pb-3 border-b border-bg-hover">
+            <div className="flex-shrink-0 flex flex-col gap-4 pb-4">
+              <button
+                onClick={() => setMobileView("list")}
+                className="lg:hidden self-start inline-flex items-center gap-1.5 bg-bg-panel border border-border-muted hover:border-border-hover hover:bg-bg-hover text-text-muted hover:text-text-primary text-sm rounded-lg px-3 py-1.5 transition-colors"
+              >
+                <ChevronLeft size={16} />
+                Playlists
+              </button>
+
               <div>
-                <h2 className="text-text-primary font-bold">
-                  {selectedPlaylist.name}
-                </h2>
-                <p className="text-text-muted text-sm">
-                  {selectedPlaylist.description}
-                </p>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-text-primary text-xl font-bold m-0">
+                    {selectedPlaylist.name}
+                  </h1>
+                  <span className="inline-flex items-center gap-1 h-6 px-2 rounded-full border border-border-muted text-text-muted text-xs font-semibold">
+                    loop
+                    <Repeat size={12} />
+                  </span>
+                </div>
+                {selectedPlaylist.description && (
+                  <p className="text-text-muted text-sm mt-1">
+                    {selectedPlaylist.description}
+                  </p>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Button onClick={openAddContent}>Add content</Button>
-                <button
-                  onClick={() => setSlotDeleteConfirmOpen(true)}
-                  disabled={checkedSlotIds.size === 0}
-                  className="text-text-muted hover:text-accent-red disabled:opacity-40 disabled:hover:text-text-muted p-2"
-                  title="Delete selected content"
+
+              {selectedPlaylist.contentItems.length > 0 && (
+                <ContentToolbar
+                  checkedCount={checkedSlotIds.size}
+                  totalCount={visibleSlots.length}
+                  onToggleAll={toggleAllSlots}
+                  actionLabel="Remove"
+                  actionIcon={CircleMinus}
+                  onAction={() => setSlotDeleteConfirmOpen(true)}
+                  filterCounts={slotFilterCounts}
+                  filterValue={slotFilterType}
+                  onFilterChange={setSlotFilterType}
+                  showSort={false}
                 >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+                  <Button
+                    icon={Plus}
+                    onClick={() => setAddContentOpen(true)}
+                    className="!min-h-9"
+                  >
+                    Add from library
+                  </Button>
+                </ContentToolbar>
+              )}
+
+              {selectedPlaylist.contentItems.length > 0 &&
+                slotFilterType === "all" && (
+                  <p className="text-xs text-text-muted -mt-2">
+                    Tip: Drag tiles to reorder
+                  </p>
+                )}
             </div>
 
-            <div className="flex flex-wrap gap-4">
-              {selectedPlaylist.contentItems.map((item, index) => (
-                <ContentTile
-                  key={`${item._id}-${index}`}
-                  item={item}
-                  slotIndex={index}
-                  className={
-                    checkedSlotIds.has(`${item._id}-${index}`)
-                      ? "border-2 border-accent-blue -translate-y-0.5"
-                      : ""
-                  }
-                >
-                  <button
-                    onClick={(e) => toggleSlotSelect(`${item._id}-${index}`, e)}
-                    className={`absolute left-2 top-2 z-10 w-[21px] h-[21px] rounded-full flex items-center justify-center border-[1.5px] border-accent-blue shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-opacity ${
-                      checkedSlotIds.has(`${item._id}-${index}`)
-                        ? "bg-accent-blue opacity-100"
-                        : "bg-white/95 opacity-0 group-hover:opacity-100"
-                    }`}
-                  >
-                    {checkedSlotIds.has(`${item._id}-${index}`) && (
-                      <Check size={12} className="text-white" strokeWidth={3} />
-                    )}
-                  </button>
-                </ContentTile>
-              ))}
-            </div>
+            <ScrollBox className="flex-1 pr-1 pt-2">
+              {selectedPlaylist.contentItems.length === 0 ? (
+                <div className="min-h-[300px] border border-dashed border-border-muted rounded-xl flex flex-col items-start justify-center gap-3 px-8 py-10">
+                  <h3 className="text-text-primary font-semibold text-base m-0">
+                    This playlist has no content yet
+                  </h3>
+                  <p className="text-text-muted text-sm max-w-md">
+                    Add items from your library. They play in the order you
+                    add them, and you can drag them into a new order later.
+                  </p>
+                  <Button icon={Plus} onClick={() => setAddContentOpen(true)}>
+                    Add content
+                  </Button>
+                </div>
+              ) : visibleSlots.length === 0 ? (
+                <p className="text-text-muted text-sm pt-8 text-center">
+                  No content matches this filter.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pl-2">
+                  {visibleSlots.map(({ item, index }) => {
+                    const slotId = `${item._id}-${index}`;
+                    const canDrag = slotFilterType === "all";
+                    return (
+                      <PlaylistSlotTile
+                        key={slotId}
+                        item={item}
+                        index={index}
+                        checked={checkedSlotIds.has(slotId)}
+                        onToggleSelect={() => toggleSlotSelect(slotId)}
+                        draggable={canDrag}
+                        isDragging={canDrag && dragIndex === index}
+                        isDragOver={canDrag && dragOverIndex === index}
+                        onDragStart={() => canDrag && setDragIndex(index)}
+                        onDragOver={(e) => {
+                          if (!canDrag) return;
+                          e.preventDefault();
+                          setDragOverIndex(index);
+                        }}
+                        onDrop={() => canDrag && handleDrop(index)}
+                        onDragEnd={() => {
+                          setDragIndex(null);
+                          setDragOverIndex(null);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollBox>
           </>
+          )
         )}
       </div>
 
@@ -305,8 +438,7 @@ function Playlists() {
         onOpenChange={setCreateOpen}
         content={content}
         title="Create Playlist"
-        submitLabel="Create"
-        layout="split"
+        submitLabel="Create playlist"
         onSubmit={handleCreatePlaylist}
       />
 
@@ -316,6 +448,7 @@ function Playlists() {
         onOpenChange={setAddContentOpen}
         content={content}
         title="Add Content"
+        subtitle={selectedPlaylist?.name}
         submitLabel="Add"
         showNameField={false}
         onSubmit={(_, __, ids) => handleAddContentSave(ids)}
@@ -328,60 +461,69 @@ function Playlists() {
       >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel p-6 rounded-lg w-[min(90vw,1000px)] max-h-[85vh] flex flex-col z-40">
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-bg-hover">
-              <Dialog.Title className="text-text-primary font-bold">
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[760px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4">
+              <Dialog.Title className="text-text-primary font-bold text-lg m-0">
                 Edit Playlist
               </Dialog.Title>
               <CancelButton as={Dialog.Close} />
             </div>
 
-            <div className="flex gap-6 flex-1 min-h-0">
-              <div className="w-64 flex-shrink-0">
-                <label className="block text-text-muted text-xs font-semibold mb-1.5">
-                  Playlist Name
+            <ScrollBox className="px-6 pb-5">
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-text-muted text-xs font-semibold">
+                    Name
+                  </span>
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="bg-bg-primary border border-border-muted rounded-lg px-3 h-10 text-text-primary text-sm outline-none focus-visible:border-accent-blue"
+                  />
                 </label>
-                <input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full"
-                />
-                <label className="block text-text-muted text-xs font-semibold mb-1.5 mt-3">
-                  Description
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-text-muted text-xs font-semibold">
+                    Description <span className="font-normal">· optional</span>
+                  </span>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={1}
+                    className="dark-scrollbar bg-bg-primary border border-border-muted rounded-lg px-3 py-2 text-text-primary text-sm outline-none focus-visible:border-accent-blue resize-y min-h-10 max-h-28"
+                  />
                 </label>
-                <textarea
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  rows={3}
-                  className="bg-bg-hover text-text-primary px-2 py-1 rounded w-full resize-y min-h-[4.5rem] max-h-[300px] dark-scrollbar"
-                />
               </div>
 
-              <ScrollBox className="pl-6 pr-4 border-l border-bg-hover">
-                <label className="block text-text-muted text-xs font-semibold mb-2">
+              <div className="flex flex-col gap-3">
+                <span className="text-text-muted text-xs font-semibold">
                   Content in this playlist
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {editContentItems.map((item) => (
-                    <ContentTile key={item._id} item={item} size="fluid">
-                      <button
-                        onClick={() => handleRemoveEditItem(item._id)}
-                        className="absolute right-1.5 top-1.5 z-10 w-[18px] h-[18px] rounded-full bg-accent-red hover:bg-red-600 shadow-[0_1px_3px_rgba(0,0,0,0.3)]"
-                      >
-                        <X
-                          size={11}
-                          className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                          strokeWidth={3}
-                        />
-                      </button>
-                    </ContentTile>
-                  ))}
-                </div>
-              </ScrollBox>
+                </span>
+                {editContentItems.length === 0 ? (
+                  <p className="text-text-muted text-sm text-center py-8 border border-dashed border-border-muted rounded-lg">
+                    All content removed. Save to leave this playlist empty.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {editContentItems.map((item, index) => (
+                      <RemovableContentTile
+                        key={item._id}
+                        item={item}
+                        slotIndex={index}
+                        onRemove={() => handleRemoveEditItem(item._id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
+            </ScrollBox>
 
-            <div className="inline-flex items-center justify-end gap-2 mt-1 pt-3 border-t border-bg-hover">
-              <Dialog.Close className="text-text-muted px-3 py-1">
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
+              <Dialog.Close
+                type="button"
+                className="text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-3 py-1.5 text-sm transition-colors"
+              >
                 Close
               </Dialog.Close>
               <Button onClick={handleSaveEditName}>Save</Button>
@@ -408,18 +550,33 @@ function Playlists() {
         onConfirm={handleConfirmDeletePlaylist}
       />
 
-      {/* confirm delete slots modal */}
+      {/* confirm bulk delete playlists modal */}
       <ConfirmDeleteModal
+        open={bulkDeletePlaylistsOpen}
+        onOpenChange={setBulkDeletePlaylistsOpen}
+        title="Delete Playlists"
+        items={playlists
+          .filter((p) => checkedPlaylistIds.has(p._id))
+          .map((p) => ({ id: p._id, name: p.name }))}
+        onConfirm={handleBulkDeletePlaylists}
+      />
+
+      {/* confirm remove slots modal */}
+      <RemoveContentModal
         open={slotDeleteConfirmOpen}
         onOpenChange={setSlotDeleteConfirmOpen}
-        title="Remove Content"
+        playlistName={selectedPlaylist?.name}
         items={
           selectedPlaylist
             ? selectedPlaylist.contentItems
                 .filter((item, index) =>
                   checkedSlotIds.has(`${item._id}-${index}`),
                 )
-                .map((item) => ({ id: item._id, name: item.name }))
+                .map((item) => ({
+                  id: item._id,
+                  name: item.name,
+                  type: item.type,
+                }))
             : []
         }
         onConfirm={() => {

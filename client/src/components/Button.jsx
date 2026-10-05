@@ -6,7 +6,7 @@ function Button({
   ...props
 }) {
   const base =
-    "inline-flex items-center justify-center gap-2 min-h-[40px] px-4 py-0 rounded-lg text-sm font-semibold transition-colors";
+    "inline-flex items-center justify-center gap-2 min-h-[40px] px-4 py-0 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1f6feb]";
 
   const variantClasses = {
     primary:

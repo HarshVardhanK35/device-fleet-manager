@@ -6,6 +6,7 @@ function SelectCheckbox({
   onClick,
   shape = "square",
   alwaysVisible = false,
+  order,
   className = "",
 }) {
   const shapeClass = shape === "circle" ? "rounded-full" : "rounded";
@@ -15,13 +16,20 @@ function SelectCheckbox({
       <button
         type="button"
         onClick={onClick}
-        className={`w-[18px] h-[18px] ${shapeClass} flex items-center justify-center border-[1.5px] border-accent-blue shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-opacity ${
+        className={`${order !== undefined ? "min-w-[18px] px-1" : "w-[18px]"} h-[18px] ${shapeClass} flex items-center justify-center border-[1.5px] border-accent-blue shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-opacity ${
           checked
             ? "bg-accent-blue opacity-100"
             : "bg-white/95 opacity-0 group-hover:opacity-100"
         } ${className}`}
       >
-        {checked && <Check size={10} className="text-white" strokeWidth={3} />}
+        {checked &&
+          (order !== undefined ? (
+            <span className="text-white text-[11px] font-bold tabular-nums">
+              {order}
+            </span>
+          ) : (
+            <Check size={10} className="text-white" strokeWidth={3} />
+          ))}
       </button>
     );
   }
@@ -54,4 +62,6 @@ export default SelectCheckbox;
 // semantics differ). `alwaysVisible` skips the opacity-0/group-hover reveal
 // (e.g. for a standalone "select all" checkbox, not inside a `group` tile).
 // `indeterminate` renders a dash instead of a check for partial selection.
+// `order` (circle shape only) shows a pick-order number instead of a
+// checkmark when checked — for pickers where selection order matters.
 // Used by: pages/Content.jsx, components/ContentPickerModal.jsx.
