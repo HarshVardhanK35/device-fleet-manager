@@ -32,6 +32,28 @@ body {
   --color-text-muted: var(--color-text-muted);
 }
 
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
@@ -63,7 +85,7 @@ input[type="number"] {
 }
 
 textarea.dark-scrollbar::-webkit-scrollbar {
-  width: 7px;
+  width: 9px;
 }
 textarea.dark-scrollbar::-webkit-scrollbar-track {
   background: var(--color-bg-hover);

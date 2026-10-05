@@ -18,6 +18,7 @@ export default SkeletonList;
 
 // Shimmer loading placeholder for a vertical list of small cards (dot +
 // two text lines each), e.g. a device/item list while data is loading.
-// `count` controls how many placeholder rows render (default 3).
-// Used by: pages/Assignments.jsx. Not yet used in pages/Playlists.jsx,
-// which currently has no loading skeleton at all — a good next reuse.
+// `count` controls how many placeholder rows render (default 3). For the
+// Playlists page's left pane, see SkeletonPlaylistList.jsx instead — it
+// matches PlaylistRow's actual shape (checkbox + icon square + menu).
+// Used by: pages/Assignments.jsx.

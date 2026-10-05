@@ -9,19 +9,20 @@ import {
 } from "../api/content";
 
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
-import ContentFilterSortBar from "../components/ContentFilterSortBar.jsx";
+import ContentToolbar from "../components/ContentToolbar.jsx";
 import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/UploadProgressModal.jsx";
 import ContentSearchInput from "../components/ContentSearchInput.jsx";
-import SelectAllBar from "../components/SelectAllBar.jsx";
 import UploadSplitButton from "../components/UploadSplitButton.jsx";
 import ContentEmptyState from "../components/ContentEmptyState.jsx";
 import SelectableContentTile from "../components/SelectableContentTile.jsx";
+import SkeletonGrid from "../components/SkeletonGrid.jsx";
 import ScrollBox from "../components/ScrollBox.jsx";
 import { getVideoDurationMs } from "../utils/getVideoDuration.js";
 
 function Content() {
   const [content, setContent] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // bulk selection (checkbox-tick, for multi-item actions)
   const [checkedIds, setCheckedIds] = useState(new Set());
@@ -50,6 +51,7 @@ function Content() {
   async function fetchContent() {
     const data = await getContent();
     setContent(data);
+    setLoading(false);
 
     const validIds = new Set(data.map((item) => item._id));
     setCheckedIds((prev) => {
@@ -241,35 +243,30 @@ function Content() {
         </div>
 
         {/* row 2: select all / delete (left), upload / filter / sort (right) */}
-        <div className="flex items-center justify-between py-2 pb-4 mb-2 border-b border-bg-hover">
-          <SelectAllBar
-            checkedCount={checkedIds.size}
-            totalCount={visibleContent.length}
-            onToggleAll={toggleSelectAll}
-            onDelete={() => setDeleteConfirmOpen(true)}
+        <ContentToolbar
+          checkedCount={checkedIds.size}
+          totalCount={visibleContent.length}
+          onToggleAll={toggleSelectAll}
+          onAction={() => setDeleteConfirmOpen(true)}
+          filterCounts={counts}
+          filterValue={filterType}
+          onFilterChange={setFilterType}
+          sortValue={sortBy}
+          onSortChange={setSortBy}
+        >
+          <UploadSplitButton
+            onUploadClick={openFilePicker}
+            onAddAppClick={() => {}} // no route yet
           />
-
-          <div className="flex items-center gap-2">
-            <ContentFilterSortBar
-              counts={counts}
-              filterValue={filterType}
-              onFilterChange={setFilterType}
-              sortValue={sortBy}
-              onSortChange={setSortBy}
-            />
-
-            <UploadSplitButton
-              onUploadClick={openFilePicker}
-              onAddAppClick={() => {}} // no route yet
-            />
-          </div>
-        </div>
+        </ContentToolbar>
       </div>
 
       <div className="flex gap-4 flex-1 min-h-0">
         {/* content grid */}
         <ScrollBox className="flex-1 pr-4 pt-2">
-          {content.length === 0 ? (
+          {loading ? (
+            <SkeletonGrid />
+          ) : content.length === 0 ? (
             <ContentEmptyState
               onUploadClick={openFilePicker}
               onAddAppClick={() => {}} // no route yet

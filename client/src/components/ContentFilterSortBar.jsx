@@ -71,6 +71,7 @@ function ContentFilterSortBar({
   onFilterChange,
   sortValue,
   onSortChange,
+  showSort = true,
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -82,13 +83,15 @@ function ContentFilterSortBar({
         icon={Filter}
         label="Filter content"
       />
-      <StyledSelect
-        value={sortValue}
-        onChange={onSortChange}
-        options={SORTS}
-        icon={ArrowUpDown}
-        label="Sort content"
-      />
+      {showSort && (
+        <StyledSelect
+          value={sortValue}
+          onChange={onSortChange}
+          options={SORTS}
+          icon={ArrowUpDown}
+          label="Sort content"
+        />
+      )}
     </div>
   );
 }
@@ -102,5 +105,9 @@ export default ContentFilterSortBar;
 // scale to small screens — see daily discussion 2026-10-05.
 // `counts` is { all, image, video, app }. Below `md`, each trigger collapses
 // to an icon-only 36px square (Filter / ArrowUpDown) — the dropdown content
-// itself is unaffected, still showing full option labels.
-// Used by: pages/Content.jsx.
+// itself is unaffected, still showing full option labels. `showSort=false`
+// hides the Sort control entirely — used for the Playlist content grid,
+// where real play order matters and a "sort" would conflict with
+// drag-reorder; only Filter (which doesn't touch order) applies there.
+// Used by: pages/Content.jsx, components/ContentPickerModal.jsx,
+// components/ContentToolbar.jsx (pages/Playlists.jsx, showSort={false}).

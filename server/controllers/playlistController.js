@@ -3,6 +3,7 @@ import Playlist from "../models/Playlist.js";
 export const createPlaylist = async (req, res) => {
   try {
     const playlist = await Playlist.create(req.body);
+    await playlist.populate("contentItems");
     res.status(201).json(playlist);
   } catch (error) {
     res.status(400).json({ message: error.message });

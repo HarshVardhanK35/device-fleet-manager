@@ -6,6 +6,7 @@ function ContentTile({
   className = "",
   children,
   slotIndex,
+  slotIndexActive = false,
   size = "lg",
   durationPosition = "bottom-right",
   coloredType = false,
@@ -31,6 +32,18 @@ function ContentTile({
             alt={item.name}
             className="absolute inset-0 w-full h-full object-contain"
           />
+        )}
+
+        {slotIndex !== undefined && (
+          <span
+            className={`absolute left-1.5 top-1.5 h-[22px] min-w-[26px] px-1.5 rounded-md border flex items-center justify-center text-[12px] font-bold tabular-nums transition-colors ${
+              slotIndexActive
+                ? "bg-accent-blue border-accent-blue text-white"
+                : "bg-black/78 border-border-muted text-text-primary"
+            }`}
+          >
+            #{slotIndex + 1}
+          </span>
         )}
 
         {item.durationInMillis && (
@@ -62,12 +75,6 @@ function ContentTile({
         >
           {item.type.toUpperCase()}
         </span>
-
-        {slotIndex !== undefined && (
-          <p className="font-bold text-[0.7rem] text-text-primary">
-            #{slotIndex + 1} {item.name}
-          </p>
-        )}
       </div>
     </div>
   );
@@ -78,11 +85,14 @@ export default ContentTile;
 // The reusable content-item tile: thumbnail/app placeholder, duration
 // badge, name, and type badge. `size` is "lg" (218px, default), "sm"
 // (140px), or "fluid" (fills parent width — used in grids/modals).
-// `slotIndex` (optional) renders a "#N name" line, for playlist-slot
-// context. `children` is an overlay slot for select circles, remove
-// buttons, etc. (rendered on top of the preview area). `footerActions`
-// (optional) renders a node (e.g. an ActionMenu) pinned top-right of the
-// name/type-badge footer, for per-item actions. `onClick` (optional) fires
-// for a click anywhere on the tile (thumbnail or footer).
-// Used by: pages/Content.jsx, pages/Playlists.jsx (directly, and via
-// components/ContentPickerModal.jsx).
+// `slotIndex` (optional) renders a position-number badge top-left on the
+// thumbnail (e.g. "3"), for playlist-slot context — pair with a
+// top-right-positioned `children` overlay (checkbox/remove button) so they
+// don't collide. `slotIndexActive` turns that badge blue (e.g. while the
+// tile is checked for bulk selection). `footerActions` (optional) renders a node (e.g. an
+// ActionMenu) pinned top-right of the name/type-badge footer, for
+// per-item actions. `onClick` (optional) fires for a click anywhere on
+// the tile (thumbnail or footer).
+// Used by: pages/Content.jsx (via SelectableContentTile), and
+// pages/Playlists.jsx indirectly via components/ContentPickerModal.jsx,
+// PlaylistSlotTile.jsx, and RemovableContentTile.jsx.

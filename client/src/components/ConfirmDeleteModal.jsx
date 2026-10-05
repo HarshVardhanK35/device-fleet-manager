@@ -71,4 +71,6 @@ export default ConfirmDeleteModal;
 // name list (via ScrollBox) so the user can verify the full scope of a bulk
 // delete before confirming.
 // Used by: pages/Assignments.jsx (delete assignment), pages/Content.jsx
-// (bulk delete), pages/Playlists.jsx (delete playlist, bulk-remove content).
+// (bulk delete), pages/Playlists.jsx (delete playlist). For removing
+// content from a playlist specifically, see RemoveContentModal.jsx — a
+// richer variant with item thumbnails/type badges and reassurance copy.
