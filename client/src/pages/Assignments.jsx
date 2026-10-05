@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Calendar, ChevronLeft } from "lucide-react";
 
 import { getDevices } from "../api/devices.js";
 import { getAssignments, deleteAssignment } from "../api/assignments.js";
@@ -74,7 +74,7 @@ function Assignments() {
       <div className="flex gap-4">
         {/* left pane */}
         <div
-          className={`w-80 flex-shrink-0 pr-4 ${
+          className={`w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:pr-4 ${
             mobileView === "detail" ? "hidden lg:block" : ""
           }`}
         >
@@ -148,12 +148,13 @@ function Assignments() {
               <>
                 <button
                   onClick={() => setMobileView("list")}
-                  className="lg:hidden text-text-muted text-sm mb-3"
+                  className="lg:hidden inline-flex items-center gap-1.5 bg-bg-panel border border-border-muted hover:border-border-hover hover:bg-bg-hover text-text-muted hover:text-text-primary text-sm rounded-lg px-3 py-1.5 mb-3 transition-colors"
                 >
-                  ← Back to devices
+                  <ChevronLeft size={16} />
+                  All devices
                 </button>
 
-                <div className="bg-bg-panel border border-border-muted rounded-xl p-6 flex flex-col gap-6 max-w-3xl">
+                <div className="bg-bg-panel border border-border-muted rounded-xl p-6 flex flex-col gap-6 max-w-3xl mx-auto lg:mx-0">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <h2 className="text-text-primary text-lg font-bold">
