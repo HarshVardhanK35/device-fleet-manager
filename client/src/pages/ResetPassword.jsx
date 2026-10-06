@@ -1,25 +1,19 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, Check, Circle, X, CircleAlert } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Lock, LockKeyhole, Eye, EyeOff, Check, Circle, X, Clock } from "lucide-react";
 
-import { register } from "../api/auth.js";
+import { resetPassword } from "../api/auth.js";
 import AuthLayout from "../components/AuthLayout.jsx";
-import AuthField from "../components/AuthField.jsx";
-import AuthEmailSentModal from "../components/AuthEmailSentModal.jsx";
 import Button from "../components/Button.jsx";
-import LoadingOverlay from "../components/LoadingOverlay.jsx";
 
-function Register() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+function ResetPassword() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [error, setError] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const rules = [
@@ -41,75 +35,54 @@ function Register() {
       return;
     }
 
-    setLoading(true);
-    const response = await register({ firstName, lastName, email, password });
-    setLoading(false);
+    const response = await resetPassword({ token, newPassword: password });
 
-    if (response.message) {
+    if (response.message && response.message !== "Password reset successfully") {
       setError(response.message);
       return;
     }
 
-    setModalOpen(true);
+    navigate("/login");
   }
 
   return (
     <AuthLayout>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <span className="w-11 h-11 rounded-xl bg-accent-blue/10 border border-accent-blue/25 text-accent-blue flex items-center justify-center">
+          <LockKeyhole size={22} />
+        </span>
         <div className="flex flex-col gap-1.5">
           <h1 className="text-2xl md:text-[26px] font-medium tracking-tight text-text-primary m-0">
-            Create your account
+            Set a new password
           </h1>
-          <p className="text-text-muted m-0">
-            Start managing your screens in a few minutes.
+          <p className="text-text-muted m-0 text-pretty">
+            Choose a strong password you haven't used before.
           </p>
         </div>
 
         {error && (
-          <div className="flex gap-2.5 items-start px-3 py-2.5 rounded-lg bg-accent-red/10 border border-accent-red/35 text-[13px] text-accent-red">
-            <CircleAlert size={17} className="flex-none mt-0.5" />
-            <span>{error}</span>
+          <div className="flex gap-2.5 items-start px-3 py-2.5 rounded-lg bg-accent-amber/10 border border-accent-amber/35 text-[13px] text-accent-amber">
+            <Clock size={17} className="flex-none mt-0.5" />
+            <span>
+              {error}{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                className="font-medium underline"
+              >
+                Request a new one
+              </button>
+            </span>
           </div>
         )}
 
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <AuthField
-              id="rg-fn"
-              label="First name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Alex"
-              autoComplete="given-name"
-            />
-            <AuthField
-              id="rg-ln"
-              label="Last name (optional)"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Morgan"
-              autoComplete="family-name"
-              required={false}
-            />
-          </div>
-
-          <AuthField
-            id="rg-email"
-            label="Email"
-            icon={Mail}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            autoComplete="email"
-          />
-
           <div className="flex flex-col gap-1.5">
             <label
-              htmlFor="rg-pw"
+              htmlFor="rs-pw"
               className="text-[13px] font-medium text-text-primary/80"
             >
-              Password
+              New password
             </label>
             <div className="relative flex items-center">
               <Lock
@@ -117,11 +90,11 @@ function Register() {
                 className="absolute left-3 text-text-muted pointer-events-none"
               />
               <input
-                id="rg-pw"
+                id="rs-pw"
                 type={showPw ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
+                placeholder="Enter a new password"
                 autoComplete="new-password"
                 required
                 className="w-full h-10 pl-10 pr-11 bg-bg-panel border border-border-muted rounded-lg text-text-primary text-sm outline-none transition-colors focus-visible:border-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue/20"
@@ -135,27 +108,14 @@ function Register() {
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <div className="flex flex-wrap gap-x-3.5 gap-y-1 mt-0.5">
-              {rules.map((r) => (
-                <span
-                  key={r.text}
-                  className={`flex items-center gap-1 text-xs ${
-                    r.ok ? "text-accent-green" : "text-text-muted"
-                  }`}
-                >
-                  {r.ok ? <Check size={14} /> : <Circle size={14} />}
-                  {r.text}
-                </span>
-              ))}
-            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label
-              htmlFor="rg-pw2"
+              htmlFor="rs-pw2"
               className="text-[13px] font-medium text-text-primary/80"
             >
-              Confirm password
+              Confirm new password
             </label>
             <div className="relative flex items-center">
               <Lock
@@ -163,11 +123,11 @@ function Register() {
                 className="absolute left-3 text-text-muted pointer-events-none"
               />
               <input
-                id="rg-pw2"
+                id="rs-pw2"
                 type={showConfirmPw ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter your password"
+                placeholder="Re-enter new password"
                 autoComplete="new-password"
                 required
                 className={`w-full h-10 pl-10 pr-11 bg-bg-panel border rounded-lg text-text-primary text-sm outline-none transition-colors focus-visible:border-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue/20 ${
@@ -198,33 +158,31 @@ function Register() {
               </span>
             )}
           </div>
+
+          <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-bg-panel border border-border-muted">
+            <span className="text-xs font-medium text-text-muted">
+              Your password must have
+            </span>
+            {rules.map((r) => (
+              <span
+                key={r.text}
+                className={`flex items-center gap-2 text-[13px] ${
+                  r.ok ? "text-accent-green" : "text-text-muted"
+                }`}
+              >
+                {r.ok ? <Check size={15} /> : <Circle size={15} />}
+                {r.text}
+              </span>
+            ))}
+          </div>
         </div>
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          Create account
+        <Button type="submit" className="w-full">
+          Update password
         </Button>
-
-        <p className="text-center text-text-muted text-[13px] m-0">
-          Already have an account?{" "}
-          <button
-            type="button"
-            onClick={() => navigate("/login")}
-            className="font-medium text-accent-blue hover:underline"
-          >
-            Login
-          </button>
-        </p>
       </form>
-
-      <AuthEmailSentModal
-        open={modalOpen}
-        email={email}
-        variant="verify"
-        onClose={() => navigate("/login")}
-      />
-      <LoadingOverlay show={loading} />
     </AuthLayout>
   );
 }
 
-export default Register;
+export default ResetPassword;

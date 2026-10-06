@@ -3,9 +3,13 @@ import bcrypt from "bcrypt";
 
 const UserSchema = new mongoose.Schema(
   {
-    name: {
+    firstName: {
       type: String,
       required: true,
+    },
+    lastName: {
+      type: String,
+      required: false,
     },
     email: {
       type: String,
@@ -21,6 +25,27 @@ const UserSchema = new mongoose.Schema(
       type: String,
       enum: ["admin", "user"],
       default: "user",
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+      select: false,
+    },
+    verificationTokenExpiry: {
+      type: Date,
+      select: false,
+      expires: 0,
+    },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpiry: {
+      type: Date,
+      select: false,
     },
   },
   { timestamps: true },
