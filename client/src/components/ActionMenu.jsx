@@ -7,9 +7,16 @@ const VARIANT_CLASSES = {
   danger: "text-accent-red hover:bg-accent-red/10",
 };
 
-function ActionMenu({ label = "Actions", items, align = "end", trigger }) {
+function ActionMenu({
+  label = "Actions",
+  items,
+  align = "end",
+  trigger,
+  open,
+  onOpenChange,
+}) {
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root open={open} onOpenChange={onOpenChange}>
       <DropdownMenu.Trigger asChild>
         {trigger ?? (
           <button
@@ -26,7 +33,7 @@ function ActionMenu({ label = "Actions", items, align = "end", trigger }) {
         <DropdownMenu.Content
           align={align}
           sideOffset={6}
-          className="w-[180px] sm:w-[216px] p-1 bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] z-50"
+          className="w-[160px] p-1 bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] z-50"
         >
           {items.map((item, index) =>
             item.type === "separator" ? (
@@ -64,6 +71,15 @@ export default ActionMenu;
 // "default" | "warning" | "danger" for color-coded actions (e.g. Delete).
 // Defaults to a "⋯" icon-button trigger; pass a custom `trigger` element
 // (e.g. a user avatar) to use something else — it gets Radix's asChild
-// click/keyboard wiring either way.
-// Used by: components/AssignmentCard.jsx (default trigger),
-// components/Layout.jsx (custom avatar trigger, for the Logout menu).
+// click/keyboard wiring either way. `open`/`onOpenChange` (optional) make
+// it a controlled menu — pass these when the page needs to force-close
+// this specific menu itself (e.g. PlaylistRow: closing it explicitly when
+// a different playlist is selected, rather than relying solely on Radix's
+// own outside-click dismissal, which was unreliable in a list where
+// clicking elsewhere can also trigger a layout change). Omit both to stay
+// uncontrolled (Radix manages open state internally) — the default for
+// every other usage.
+// Dropdown content is a fixed 160px wide, regardless of screen size.
+// Used by: components/AssignmentCard.jsx, components/PlaylistRow.jsx
+// (default trigger), components/Layout.jsx (custom avatar trigger, for the
+// Logout menu), components/UploadSplitButton.jsx.

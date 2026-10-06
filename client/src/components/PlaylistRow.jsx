@@ -19,6 +19,8 @@ function PlaylistRow({
   onToggleCheck,
   onEdit,
   onDelete,
+  menuOpen,
+  onMenuOpenChange,
 }) {
   return (
     <div
@@ -63,6 +65,8 @@ function PlaylistRow({
         <ActionMenu
           label={`Actions for ${playlist.name}`}
           align="end"
+          open={menuOpen}
+          onOpenChange={onMenuOpenChange}
           items={[
             {
               label: "Edit",
@@ -91,7 +95,12 @@ export default PlaylistRow;
 // all), rather than cluttering every row with an empty box by default.
 // Also: icon, name, item-count/runtime/loop meta line, blue left-edge
 // accent strip + border while this is the active (selected) playlist, and
-// a "⋮" ActionMenu (Edit / Delete) for single-item actions. Extracted out
-// of Playlists.jsx's render loop for the same reason SelectableContentTile
-// was extracted from Content.jsx.
+// a "⋮" ActionMenu (Edit / Delete) for single-item actions. The ActionMenu
+// is controlled via `menuOpen`/`onMenuOpenChange` (parent tracks which
+// row's menu, if any, is open) rather than left uncontrolled — needed so
+// the parent can force it closed when a different row is selected; Radix's
+// own outside-click dismissal alone wasn't reliable here since selecting a
+// different row can also trigger a layout change (master-detail nav) in
+// the same click. Extracted out of Playlists.jsx's render loop for the
+// same reason SelectableContentTile was extracted from Content.jsx.
 // Used by: pages/Playlists.jsx.

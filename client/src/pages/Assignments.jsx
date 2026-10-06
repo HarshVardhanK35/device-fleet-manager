@@ -65,7 +65,9 @@ function Assignments() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div
+      className={`mx-auto lg:max-w-6xl ${mobileView === "detail" ? "max-w-3xl" : "max-w-xl"}`}
+    >
       <h1 className="text-text-primary text-xl font-bold">Assignments</h1>
       <p className="text-accent-blue text-sm mb-4">
         Choose which playlist each screen plays, and when.
@@ -74,7 +76,7 @@ function Assignments() {
       <div className="flex gap-4">
         {/* left pane */}
         <div
-          className={`w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:pr-4 ${
+          className={`w-full lg:w-80 lg:flex-shrink-0 lg:pr-4 ${
             mobileView === "detail" ? "hidden lg:block" : ""
           }`}
         >
@@ -154,7 +156,7 @@ function Assignments() {
                   All devices
                 </button>
 
-                <div className="bg-bg-panel border border-border-muted rounded-xl p-6 flex flex-col gap-6 max-w-3xl mx-auto lg:mx-0">
+                <div className="bg-bg-panel border border-border-muted rounded-xl p-6 flex flex-col gap-6 max-w-3xl">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <h2 className="text-text-primary text-lg font-bold">

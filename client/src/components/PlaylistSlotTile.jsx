@@ -32,6 +32,8 @@ function PlaylistSlotTile({
         coloredType
         slotIndex={index}
         slotIndexActive={checked}
+        // we will comment - when preview modal is implemented
+        onClick={onToggleSelect}
         className={
           checked ? "!border-2 !border-accent-blue -translate-y-0.5" : ""
         }
@@ -53,8 +55,10 @@ export default PlaylistSlotTile;
 
 // A draggable, selectable ContentTile for the playlist detail grid:
 // position-number badge (top-left, via ContentTile's slotIndex), a
-// hover-reveal square select checkbox (top-right, for bulk Remove), blue
-// border while checked, and a blue insertion-line indicator on the left
+// hover-reveal square select checkbox (top-right, for bulk Remove) —
+// clicking anywhere on the tile toggles selection too, same as the
+// content-picker grids, not just the checkbox itself — blue border while
+// checked, and a blue insertion-line indicator on the left
 // edge while another dragged tile is hovering over it as a drop target
 // (shows exactly where the dropped tile will land). Drag handlers are
 // passed straight through from the parent, which owns the actual reorder
