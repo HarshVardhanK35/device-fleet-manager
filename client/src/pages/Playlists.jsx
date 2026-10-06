@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 
-import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, ChevronLeft, Repeat, CircleMinus } from "lucide-react";
 
 import {
@@ -15,13 +14,12 @@ import ContentPickerModal from "../components/ContentPickerModal.jsx";
 import ScrollBox from "../components/ScrollBox.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
 import RemoveContentModal from "../components/RemoveContentModal.jsx";
+import EditPlaylistModal from "../components/EditPlaylistModal.jsx";
 import Button from "../components/Button.jsx";
-import CancelButton from "../components/CancelButton.jsx";
 import SelectAllBar from "../components/SelectAllBar.jsx";
 import ContentToolbar from "../components/ContentToolbar.jsx";
 import PlaylistSlotTile from "../components/PlaylistSlotTile.jsx";
 import PlaylistRow from "../components/PlaylistRow.jsx";
-import RemovableContentTile from "../components/RemovableContentTile.jsx";
 import SkeletonPlaylistList from "../components/SkeletonPlaylistList.jsx";
 import SkeletonGrid from "../components/SkeletonGrid.jsx";
 
@@ -38,9 +36,7 @@ function Playlists() {
   const [checkedSlotIds, setCheckedSlotIds] = useState(new Set());
 
   const [editPlaylistId, setEditPlaylistId] = useState(null);
-  const [editName, setEditName] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editContentItems, setEditContentItems] = useState([]);
+  const [openMenuPlaylistId, setOpenMenuPlaylistId] = useState(null);
 
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [slotDeleteConfirmOpen, setSlotDeleteConfirmOpen] = useState(false);
@@ -95,6 +91,7 @@ function Playlists() {
     setSlotFilterType("all");
     setSelectedPlaylistId(id);
     setMobileView("detail");
+    setOpenMenuPlaylistId(null);
   }
 
   async function handleDeleteSlots() {
@@ -199,30 +196,20 @@ function Playlists() {
     setAddContentOpen(false);
   }
 
-  function openEditPlaylist(playlist) {
-    setEditPlaylistId(playlist._id);
-    setEditName(playlist.name);
-    setEditDescription(playlist.description || "");
-    setEditContentItems(playlist.contentItems);
-  }
-
-  async function handleRemoveEditItem(itemId) {
-    const remaining = editContentItems.filter((item) => item._id !== itemId);
+  async function handleRemoveEditItem(itemId, currentItems) {
+    const remaining = currentItems.filter((item) => item._id !== itemId);
     const updated = await updatePlaylist(editPlaylistId, {
       contentItems: remaining.map((item) => item._id),
     });
 
-    setEditContentItems(updated.contentItems);
     setPlaylists((prev) =>
       prev.map((p) => (p._id === updated._id ? updated : p)),
     );
+    return updated.contentItems;
   }
 
-  async function handleSaveEditName() {
-    const updated = await updatePlaylist(editPlaylistId, {
-      name: editName,
-      description: editDescription,
-    });
+  async function handleSaveEditPlaylist(name, description) {
+    const updated = await updatePlaylist(editPlaylistId, { name, description });
     setPlaylists((prev) =>
       prev.map((p) => (p._id === updated._id ? updated : p)),
     );
@@ -257,17 +244,18 @@ function Playlists() {
     <div className="max-w-7xl mx-auto h-[calc(100vh-88px)] flex gap-4 ">
       {/* left pane */}
       <div
-        className={`w-full lg:w-72 lg:flex-shrink-0 lg:mr-4 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
+        className={`w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
           mobileView === "detail" ? "hidden lg:flex" : "flex"
         }`}
       >
         <div className="flex items-center gap-2 pb-3 flex-shrink-0">
-          <h2 className="flex-1 text-text-primary font-bold text-base m-0">
+          <h2 className="text-text-primary font-bold text-base m-0">
             Playlists
           </h2>
           <span className="text-text-muted text-sm tabular-nums">
-            {playlists.length}
+            {playlists.length} items
           </span>
+          <div className="flex-1" />
           <button
             onClick={() => setCreateOpen(true)}
             className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-accent-blue/40 text-accent-blue text-sm font-medium hover:bg-accent-blue/10 transition-colors"
@@ -300,8 +288,12 @@ function Playlists() {
                 checked={checkedPlaylistIds.has(playlist._id)}
                 onSelect={() => selectPlaylist(playlist._id)}
                 onToggleCheck={() => toggleCheckPlaylist(playlist._id)}
-                onEdit={() => openEditPlaylist(playlist)}
+                onEdit={() => setEditPlaylistId(playlist._id)}
                 onDelete={() => setDeleteConfirmId(playlist._id)}
+                menuOpen={openMenuPlaylistId === playlist._id}
+                onMenuOpenChange={(open) =>
+                  setOpenMenuPlaylistId(open ? playlist._id : null)
+                }
               />
             ))}
           </div>
@@ -455,82 +447,13 @@ function Playlists() {
       />
 
       {/* edit playlist */}
-      <Dialog.Root
+      <EditPlaylistModal
         open={!!editPlaylistId}
         onOpenChange={(open) => !open && setEditPlaylistId(null)}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[760px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40">
-            <div className="flex items-center justify-between px-6 pt-5 pb-4">
-              <Dialog.Title className="text-text-primary font-bold text-lg m-0">
-                Edit Playlist
-              </Dialog.Title>
-              <CancelButton as={Dialog.Close} />
-            </div>
-
-            <ScrollBox className="px-6 pb-5">
-            <div className="flex flex-col gap-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-text-muted text-xs font-semibold">
-                    Name
-                  </span>
-                  <input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="bg-bg-primary border border-border-muted rounded-lg px-3 h-10 text-text-primary text-sm outline-none focus-visible:border-accent-blue"
-                  />
-                </label>
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-text-muted text-xs font-semibold">
-                    Description <span className="font-normal">· optional</span>
-                  </span>
-                  <textarea
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    rows={1}
-                    className="dark-scrollbar bg-bg-primary border border-border-muted rounded-lg px-3 py-2 text-text-primary text-sm outline-none focus-visible:border-accent-blue resize-y min-h-10 max-h-28"
-                  />
-                </label>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <span className="text-text-muted text-xs font-semibold">
-                  Content in this playlist
-                </span>
-                {editContentItems.length === 0 ? (
-                  <p className="text-text-muted text-sm text-center py-8 border border-dashed border-border-muted rounded-lg">
-                    All content removed. Save to leave this playlist empty.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {editContentItems.map((item, index) => (
-                      <RemovableContentTile
-                        key={item._id}
-                        item={item}
-                        slotIndex={index}
-                        onRemove={() => handleRemoveEditItem(item._id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            </ScrollBox>
-
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
-              <Dialog.Close
-                type="button"
-                className="text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-3 py-1.5 text-sm transition-colors"
-              >
-                Close
-              </Dialog.Close>
-              <Button onClick={handleSaveEditName}>Save</Button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+        playlist={playlists.find((p) => p._id === editPlaylistId)}
+        onSave={handleSaveEditPlaylist}
+        onRemoveItem={handleRemoveEditItem}
+      />
 
       {/* confirm delete playlist modal */}
       <ConfirmDeleteModal
