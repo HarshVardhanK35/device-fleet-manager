@@ -2,7 +2,7 @@ import Device from "../models/Device.js";
 
 export const createDevice = async (req, res) => {
   try {
-    const device = await Device.create(req.body);
+    const device = await Device.create({ ...req.body, userId: req.user.id });
     res.status(201).json(device);
   } catch (error) {
     res.status(400).json({ message: error.message });
