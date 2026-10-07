@@ -9,6 +9,8 @@ import {
   resendVerification,
   forgotPassword,
   resetPassword,
+  refresh,
+  logout,
 } from "../controllers/authController.js";
 
 import { protect, requireAdmin } from "../middleware/auth.js";
@@ -23,5 +25,7 @@ router.get("/verify-email", verifyEmail);
 router.post("/resend-verification", resendVerification);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
+router.post("/refresh", refresh);
+router.post("/logout", logout);
 
 export default router;
