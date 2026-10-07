@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import ScrollBox from "./ScrollBox.jsx";
 import ActionMenu from "./ActionMenu.jsx";
 
-import { getMe } from "../api/auth.js";
+import { useAuth } from "../context/useAuth.js";
 import { getInitials } from "../utils/getInitials.js";
 
 import {
@@ -30,19 +30,14 @@ const navItems = [
 
 function Layout({ children }) {
   const navigate = useNavigate();
-  const [userName, setUserName] = useState("");
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    getMe()
-      .then((data) => setUserName(data.name || ""))
-      .catch(() => {});
-  }, []);
-
+  const userName = user ? `${user.firstName} ${user.lastName || ""}`.trim() : "";
   const initials = getInitials(userName);
 
-  function handleLogout() {
-    localStorage.removeItem("token");
+  async function handleLogout() {
+    await logout();
     navigate("/login");
   }
 

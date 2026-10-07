@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // all pages here
 import Layout from "./components/Layout.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { AuthProvider } from "./context/AuthContext.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
@@ -17,6 +19,7 @@ import Player from "./pages/Player.jsx";
 function App() {
   return (
     <BrowserRouter>
+      <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -28,44 +31,55 @@ function App() {
         <Route
           path="/"
           element={
-            <Layout>
-              <Dashboard />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <Dashboard />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/content"
           element={
-            <Layout>
-              <Content />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <Content />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/assignments"
           element={
-            <Layout>
-              <Assignments />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <Assignments />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/playlists"
           element={
-            <Layout>
-              <Playlists />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <Playlists />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/publish"
           element={
-            <Layout>
-              <Publish />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <Publish />
+              </Layout>
+            </ProtectedRoute>
           }
         />
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

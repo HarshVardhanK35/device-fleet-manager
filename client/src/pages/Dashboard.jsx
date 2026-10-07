@@ -21,6 +21,7 @@ import StatTile from "../components/StatTile.jsx";
 import DashboardAttentionPanel from "../components/DashboardAttentionPanel.jsx";
 import ContentTile from "../components/ContentTile.jsx";
 import Button from "../components/Button.jsx";
+import { useAuth } from "../context/useAuth.js";
 
 const RECENT_CONTENT_COUNT = 8;
 
@@ -31,6 +32,7 @@ function Dashboard() {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     load();
@@ -128,8 +130,11 @@ function Dashboard() {
     <div className="max-w-7xl mx-auto flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-text-primary text-xl font-bold m-0">
-            Dashboard
+          <h1 className="text-text-primary text-[32px] font-bold m-0">
+            Welcome
+            {user?.firstName
+              ? `, ${user.firstName.charAt(0).toUpperCase()}${user.firstName.slice(1)}`
+              : ""}
           </h1>
           <p className="text-text-muted text-sm m-0">
             Fleet status as of {new Date().toLocaleString(undefined, {

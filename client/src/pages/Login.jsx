@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, CircleAlert } from "lucide-react";
 
-import { login, resendVerification } from "../api/auth.js";
+import { login as loginApi, resendVerification } from "../api/auth.js";
+import { useAuth } from "../context/useAuth.js";
 import AuthLayout from "../components/AuthLayout.jsx";
 import AuthField from "../components/AuthField.jsx";
 import Button from "../components/Button.jsx";
@@ -14,17 +15,24 @@ function Login() {
   const [error, setError] = useState("");
   const [resent, setResent] = useState(false);
   const navigate = useNavigate();
+  const { login, logout } = useAuth();
+
+  // Explicitly navigating to /login while already logged in logs you out
+  // — this page is the one place the user shouldn't still be authenticated.
+  useEffect(() => {
+    logout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setResent(false);
 
-    const response = await login({ email, password });
+    const response = await loginApi({ email, password });
 
     if (response.token) {
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user", JSON.stringify(response.user));
+      login(response.token, response.user);
       navigate("/");
     } else {
       setError(response.message || "Login failed");

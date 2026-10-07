@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 
 /**
  * replaced these...
@@ -39,7 +40,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // middleware: runs on every incoming req - adds special HTTP res headers (Access-Control-Allow-Origin)
-app.use(cors());
+// app.use(cors());
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cookieParser());
 
 // mounts your router at the /<route> path prefix.
 app.use("/auth", authRoutes);
