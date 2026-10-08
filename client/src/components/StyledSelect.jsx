@@ -1,12 +1,34 @@
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown, Check } from "lucide-react";
 
-function StyledSelect({ value, onChange, options, labelFor, icon: Icon, label }) {
+function StyledSelect({
+  value,
+  onChange,
+  options,
+  labelFor,
+  icon: Icon,
+  label,
+  open,
+  onOpenChange,
+  roundedSide = "full",
+}) {
+  const roundedClass =
+    roundedSide === "left"
+      ? "rounded-l-lg rounded-r-none"
+      : roundedSide === "right"
+        ? "rounded-r-lg rounded-l-none border-l-0"
+        : "rounded-lg";
+
   return (
-    <Select.Root value={value} onValueChange={onChange}>
+    <Select.Root
+      value={value}
+      onValueChange={onChange}
+      open={open}
+      onOpenChange={onOpenChange}
+    >
       <Select.Trigger
         aria-label={label}
-        className="group inline-flex items-center justify-center md:justify-between gap-2 bg-bg-panel border border-border-muted hover:bg-bg-hover hover:border-border-hover text-text-primary text-sm rounded-lg w-9 md:w-auto md:min-w-[140px] px-0 md:px-3 h-9 outline-none transition-colors focus-visible:border-accent-blue data-[state=open]:border-accent-blue"
+        className={`group inline-flex items-center justify-center md:justify-between gap-2 bg-bg-panel border border-border-muted hover:bg-bg-hover hover:border-border-hover text-text-primary text-sm w-9 md:w-auto md:min-w-[140px] px-0 md:px-3 h-9 outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass}`}
       >
         <Icon
           size={16}
@@ -60,6 +82,15 @@ export default StyledSelect;
 // Collapses to an icon-only 36px square below `md`; the dropdown content
 // itself is unaffected, still showing full option labels. `options` is
 // [{ value, label }]; `labelFor(opt)` (optional) overrides the displayed
-// label per-item (e.g. to append a count).
+// label per-item (e.g. to append a count). `open`/`onOpenChange` (optional)
+// make it a controlled dropdown — pass these when a sibling control needs
+// to force this one closed (e.g. ContentFilterSortBar's Filter/Sort pair,
+// so opening one closes the other instead of both being open at once).
+// Omit both to stay uncontrolled (Radix manages its own open state).
+// `roundedSide` ("full" default | "left" | "right") turns two adjacent
+// instances into one visually merged segmented control — "left" keeps its
+// left corners/right border square, "right" keeps its right corners square
+// and drops its own left border so the pair reads as one bordered unit
+// instead of two separate boxes with a gap.
 // Used by: components/ContentFilterSortBar.jsx,
 // components/DashboardAttentionPanel.jsx.

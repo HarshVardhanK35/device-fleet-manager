@@ -58,3 +58,5 @@ function Player() {
 }
 
 export default Player;
+
+// nothing repeated

@@ -1,9 +1,14 @@
+import { forwardRef } from "react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
-function ScrollBox({ className = "", children }) {
+const ScrollBox = forwardRef(function ScrollBox(
+  { className = "", children },
+  ref,
+) {
   return (
     <ScrollArea.Root className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <ScrollArea.Viewport
+        ref={ref}
         className={`w-full h-full [&>div]:!block ${className}`}
       >
         {children}
@@ -16,7 +21,7 @@ function ScrollBox({ className = "", children }) {
       </ScrollArea.Scrollbar>
     </ScrollArea.Root>
   );
-}
+});
 
 export default ScrollBox;
 
@@ -25,5 +30,8 @@ export default ScrollBox;
 // work, and the Viewport's `[&>div]:!block` override is required — Radix
 // injects its own `display:table` wrapper that otherwise collapses grid
 // content to near-zero width (a real bug hit and fixed during this build).
+// Forwards `ref` to the Viewport's scrollable DOM node — optional, only
+// needed by callers that must read/control scroll position themselves
+// (e.g. ScrollToTopButton).
 // Used by: pages/Playlists.jsx, components/ContentPickerModal.jsx,
 // components/ConfirmDeleteModal.jsx, components/Layout.jsx (page scroll).

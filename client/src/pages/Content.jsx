@@ -18,14 +18,19 @@ import ContentEmptyState from "../components/ContentEmptyState.jsx";
 import SelectableContentTile from "../components/SelectableContentTile.jsx";
 import SkeletonGrid from "../components/SkeletonGrid.jsx";
 import ScrollBox from "../components/ScrollBox.jsx";
+import ScrollToTopButton from "../components/ScrollToTopButton.jsx";
 import { getVideoDurationMs } from "../utils/getVideoDuration.js";
+import { pluralizeCount } from "../utils/pluralize.js";
+import { useToggleSet } from "../hooks/useToggleSet.js";
 
 function Content() {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
+  const gridScrollRef = useRef(null);
 
   // bulk selection (checkbox-tick, for multi-item actions)
-  const [checkedIds, setCheckedIds] = useState(new Set());
+  const [checkedIds, { toggle: toggleChecked, toggleAll: toggleCheckedAll, setSet: setCheckedIds }] =
+    useToggleSet();
 
   // single-item inspector (click the card body to open)
   const [inspectedId, setInspectedId] = useState(null);
@@ -154,21 +159,12 @@ function Content() {
   }
 
   function toggleSelectAll() {
-    if (checkedIds.size === visibleContent.length) {
-      setCheckedIds(new Set());
-    } else {
-      setCheckedIds(new Set(visibleContent.map((item) => item._id)));
-    }
+    toggleCheckedAll(visibleContent.map((item) => item._id));
   }
 
   function toggleSelect(id, e) {
     e.stopPropagation();
-    setCheckedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    toggleChecked(id);
   }
 
   function openFilePicker() {
@@ -224,7 +220,7 @@ function Content() {
       />
 
       {/* fixed header: stays put, only the grid below scrolls (nested ScrollBox) */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 pr-4">
         {/* row 1: title + count, search */}
         <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex items-baseline gap-2 min-w-0 flex-shrink-0">
@@ -232,7 +228,7 @@ function Content() {
               All content
             </h1>
             <span className="text-text-muted text-sm whitespace-nowrap">
-              {visibleContent.length} items
+              {pluralizeCount(visibleContent.length, "item")}
             </span>
           </div>
 
@@ -263,33 +259,36 @@ function Content() {
 
       <div className="flex gap-4 flex-1 min-h-0">
         {/* content grid */}
-        <ScrollBox className="flex-1 pr-4 pt-2">
-          {loading ? (
-            <SkeletonGrid />
-          ) : content.length === 0 ? (
-            <ContentEmptyState
-              onUploadClick={openFilePicker}
-              onAddAppClick={() => {}} // no route yet
-            />
-          ) : visibleContent.length === 0 ? (
-            <p className="text-text-muted text-sm pt-8 text-center">
-              No content matches your search or filter.
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {visibleContent.map((item) => (
-                <SelectableContentTile
-                  key={item._id}
-                  item={item}
-                  checked={checkedIds.has(item._id)}
-                  inspected={inspectedId === item._id}
-                  onToggleSelect={toggleSelect}
-                  onClick={() => setInspectedId(item._id)}
-                />
-              ))}
-            </div>
-          )}
-        </ScrollBox>
+        <div className="relative flex-1 min-h-0 flex">
+          <ScrollBox ref={gridScrollRef} className="flex-1 pr-4 pt-2 pb-20 md:pb-0">
+            {loading ? (
+              <SkeletonGrid />
+            ) : content.length === 0 ? (
+              <ContentEmptyState
+                onUploadClick={openFilePicker}
+                onAddAppClick={() => {}} // no route yet
+              />
+            ) : visibleContent.length === 0 ? (
+              <p className="text-text-muted text-sm pt-8 text-center">
+                No content matches your search or filter.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {visibleContent.map((item) => (
+                  <SelectableContentTile
+                    key={item._id}
+                    item={item}
+                    checked={checkedIds.has(item._id)}
+                    inspected={inspectedId === item._id}
+                    onToggleSelect={toggleSelect}
+                    onClick={() => setInspectedId(item._id)}
+                  />
+                ))}
+              </div>
+            )}
+          </ScrollBox>
+          <ScrollToTopButton scrollRef={gridScrollRef} />
+        </div>
 
         {/* inspector panel */}
         {inspectedItem && (

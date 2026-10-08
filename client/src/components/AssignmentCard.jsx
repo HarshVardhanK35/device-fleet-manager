@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Pencil, Square, Trash2 } from "lucide-react";
 
 import ActionMenu from "./ActionMenu.jsx";
 import {
@@ -9,11 +9,51 @@ import {
   formatDuration,
   formatClock,
   formatDateLabel,
+  formatAutoDeleteNotice,
 } from "../utils/scheduleTime.js";
 
-function AssignmentCard({ assignment, device, onDeleteRequest }) {
+// Live and paused (offline-missed) both occupy the "current" slot for
+// this device right now, so they share the same menu rules as Live.
+function getMenuForStatus(status, { onEdit, onStop, onDelete }) {
+  if (status === "live" || status === "paused") {
+    return {
+      items: [
+        { label: "Stop now", icon: Square, variant: "danger", onClick: onStop },
+      ],
+      footer: "Live assignments can't be edited or deleted.",
+    };
+  }
+  if (status === "upcoming") {
+    return {
+      items: [
+        { label: "Edit", icon: Pencil, onClick: onEdit },
+        { type: "separator" },
+        { label: "Delete", icon: Trash2, variant: "danger", onClick: onDelete },
+      ],
+      footer: null,
+    };
+  }
+  // ended
+  return {
+    items: [{ label: "Delete", icon: Trash2, variant: "danger", onClick: onDelete }],
+    footer: "Ended assignments are read-only.",
+  };
+}
+
+function AssignmentCard({
+  assignment,
+  device,
+  onDeleteRequest,
+  onEditRequest,
+  onStopRequest,
+}) {
   const status = getAssignmentStatus(assignment, device);
   const pill = STATUS_PILL[status];
+  const menu = getMenuForStatus(status, {
+    onEdit: () => onEditRequest(assignment),
+    onStop: () => onStopRequest(assignment),
+    onDelete: () => onDeleteRequest(assignment),
+  });
 
   const begin = new Date(assignment.beginDT);
   const end = new Date(assignment.endDT);
@@ -33,21 +73,8 @@ function AssignmentCard({ assignment, device, onDeleteRequest }) {
         </span>
         <ActionMenu
           label={`More actions for ${assignment.playlistId?.name ?? "assignment"}`}
-          items={[
-            {
-              label: "Edit",
-              icon: Pencil,
-              disabled: true, // no edit UI built yet — stubbed, not wired
-              onClick: () => {},
-            },
-            { type: "separator" },
-            {
-              label: "Delete",
-              icon: Trash2,
-              variant: "danger",
-              onClick: () => onDeleteRequest(assignment),
-            },
-          ]}
+          items={menu.items}
+          footer={menu.footer}
         />
       </div>
 
@@ -107,6 +134,12 @@ function AssignmentCard({ assignment, device, onDeleteRequest }) {
           when it reconnects.
         </div>
       )}
+
+      {status === "ended" && (
+        <p className="text-text-muted text-xs mt-2">
+          {formatAutoDeleteNotice(assignment.endDT)}
+        </p>
+      )}
     </div>
   );
 }
@@ -115,7 +148,10 @@ export default AssignmentCard;
 
 // Renders a single assignment's schedule card: status pill (Live/Upcoming/
 // Ended/paused-offline), playlist name, Begins/Ends times, a live progress
-// bar for active assignments, and an ActionMenu (Edit — stubbed, Delete —
-// wired) for managing it. Status/timing logic comes from
-// utils/assignmentStatus.js and utils/scheduleTime.js.
+// bar for active assignments, and a status-aware ActionMenu — Live/paused
+// get "Stop now" only, Upcoming gets Edit+Delete, Ended gets Delete only
+// (matches Assignment-Menu-Reference.html exactly; paused is treated like
+// live since it's still occupying the device's current time slot).
+// Status/timing logic comes from utils/assignmentStatus.js and
+// utils/scheduleTime.js.
 // Used by: pages/Assignments.jsx.

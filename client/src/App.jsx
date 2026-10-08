@@ -13,7 +13,6 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Content from "./pages/Content.jsx";
 import Assignments from "./pages/Assignments.jsx";
 import Playlists from "./pages/Playlists.jsx";
-import Publish from "./pages/Publish.jsx";
 import Player from "./pages/Player.jsx";
 
 function App() {
@@ -64,16 +63,6 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Playlists />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/publish"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Publish />
               </Layout>
             </ProtectedRoute>
           }

@@ -17,6 +17,8 @@ const assignmentSchema = new mongoose.Schema(
     },
     endDT: {
       type: Date,
+      required: true,
+      index: { expireAfterSeconds: 86400 },
     },
   },
   { timestamps: true },

@@ -12,7 +12,6 @@ import {
   Image,
   MonitorPlay,
   ListVideo,
-  UploadCloud,
   Monitor,
   User,
   LogOut,
@@ -23,9 +22,8 @@ import {
 const navItems = [
   { to: "/", label: "Dashboard", icon: Home },
   { to: "/content", label: "Content", icon: Image },
-  { to: "/assignments", label: "Assignments", icon: MonitorPlay },
   { to: "/playlists", label: "Playlists", icon: ListVideo },
-  { to: "/publish", label: "Publish", icon: UploadCloud },
+  { to: "/assignments", label: "Assignments", icon: MonitorPlay },
 ];
 
 function Layout({ children }) {

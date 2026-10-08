@@ -100,9 +100,9 @@ function PickerFormBody({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-      <div className="flex flex-col gap-5 px-6 pb-5 flex-1 min-h-0">
+      <div className="flex flex-col gap-5 pl-11 pr-6 pb-5 flex-1 min-h-0">
         {showNameField && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-5">
             <label className="flex flex-col gap-1.5">
               <span className="text-text-muted text-xs font-semibold">
                 Name
@@ -140,20 +140,20 @@ function PickerFormBody({
             </span>
           )}
 
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <SelectCheckbox
-                checked={allVisibleSelected}
-                indeterminate={someVisibleSelected && !allVisibleSelected}
-                onClick={toggleSelectAllVisible}
-                alwaysVisible
-              />
-              <span className="text-text-muted text-sm whitespace-nowrap">
-                Select all
-              </span>
-            </div>
+          <div className="flex flex-col gap-2.5 pr-5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <SelectCheckbox
+                  checked={allVisibleSelected}
+                  indeterminate={someVisibleSelected && !allVisibleSelected}
+                  onClick={toggleSelectAllVisible}
+                  alwaysVisible
+                />
+                <span className="text-text-muted text-sm whitespace-nowrap">
+                  Select all
+                </span>
+              </div>
 
-            <div className="flex items-center gap-2 flex-wrap justify-end">
               <ContentFilterSortBar
                 counts={counts}
                 filterValue={filterType}
@@ -161,18 +161,19 @@ function PickerFormBody({
                 sortValue={sortBy}
                 onSortChange={setSortBy}
               />
-              <div className="relative flex-1 min-w-[160px]">
-                <Search
-                  size={14}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
-                />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search library"
-                  className="w-full bg-bg-primary border border-border-muted rounded-lg pl-8 pr-3 h-[38px] text-sm text-text-primary outline-none focus-visible:border-accent-blue"
-                />
-              </div>
+            </div>
+
+            <div className="relative">
+              <Search
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search library"
+                className="w-full bg-bg-primary border border-border-muted rounded-lg pl-8 pr-3 h-[38px] text-sm text-text-primary outline-none focus-visible:border-accent-blue"
+              />
             </div>
           </div>
 
@@ -214,7 +215,7 @@ function PickerFormBody({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 px-6 py-4 border-t border-border-muted">
+      <div className="flex items-center gap-2 pl-11 pr-6 py-4 border-t border-border-muted">
         <PickerSelectionStatus
           nameRequired={showNameField}
           hasName={name.trim().length > 0}
@@ -252,7 +253,7 @@ function ContentPickerModal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[760px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40">
-          <div className="flex items-start gap-3 px-6 pt-5 pb-4">
+          <div className="flex items-start gap-3 pl-11 pr-6 pt-5 pb-4">
             <div className="flex-1 min-w-0">
               <Dialog.Title className="text-text-primary font-bold text-lg m-0">
                 {title}

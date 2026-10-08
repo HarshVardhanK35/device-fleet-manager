@@ -3,6 +3,7 @@ import { Pencil, Trash2, ListVideo, Repeat } from "lucide-react";
 import ActionMenu from "./ActionMenu.jsx";
 import SelectCheckbox from "./SelectCheckbox.jsx";
 import { formatDuration } from "../utils/formatDuration.js";
+import { pluralizeCount } from "../utils/pluralize.js";
 
 function getPlaylistRuntimeMs(playlist) {
   return playlist.contentItems.reduce(
@@ -50,7 +51,7 @@ function PlaylistRow({
             {playlist.name}
           </span>
           <span className="text-xs text-text-muted tabular-nums flex items-center gap-1">
-            {playlist.contentItems.length} items
+            {pluralizeCount(playlist.contentItems.length, "item")}
             {playlist.contentItems.length > 0 && (
               <>
                 <span>·</span>

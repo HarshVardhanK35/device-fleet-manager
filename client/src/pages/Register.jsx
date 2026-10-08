@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, Check, Circle, X, CircleAlert } from "lucide-react";
+import { Mail, CircleAlert } from "lucide-react";
 
 import { register } from "../api/auth.js";
 import AuthLayout from "../components/AuthLayout.jsx";
 import AuthField from "../components/AuthField.jsx";
 import AuthEmailSentModal from "../components/AuthEmailSentModal.jsx";
+import AuthErrorBanner from "../components/AuthErrorBanner.jsx";
+import AuthHeading from "../components/AuthHeading.jsx";
+import PasswordField from "../components/PasswordField.jsx";
+import PasswordRequirementsList from "../components/PasswordRequirementsList.jsx";
+import PasswordMatchHint from "../components/PasswordMatchHint.jsx";
 import Button from "../components/Button.jsx";
 import LoadingOverlay from "../components/LoadingOverlay.jsx";
+import { getPasswordRules } from "../utils/passwordRules.js";
 
 function Register() {
   const [firstName, setFirstName] = useState("");
@@ -15,18 +21,12 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const rules = [
-    { text: "8+ characters", ok: password.length >= 8 },
-    { text: "One number", ok: /\d/.test(password) },
-    { text: "One uppercase letter", ok: /[A-Z]/.test(password) },
-  ];
+  const rules = getPasswordRules(password);
 
   const hasConfirm = confirmPassword.length > 0;
   const matches = hasConfirm && confirmPassword === password;
@@ -56,21 +56,12 @@ function Register() {
   return (
     <AuthLayout>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl md:text-[26px] font-medium tracking-tight text-text-primary m-0">
-            Create your account
-          </h1>
-          <p className="text-text-muted m-0">
-            Start managing your screens in a few minutes.
-          </p>
-        </div>
+        <AuthHeading
+          title="Create your account"
+          subtitle="Start managing your screens in a few minutes."
+        />
 
-        {error && (
-          <div className="flex gap-2.5 items-start px-3 py-2.5 rounded-lg bg-accent-red/10 border border-accent-red/35 text-[13px] text-accent-red">
-            <CircleAlert size={17} className="flex-none mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
+        {error && <AuthErrorBanner icon={CircleAlert}>{error}</AuthErrorBanner>}
 
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -105,98 +96,28 @@ function Register() {
           />
 
           <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="rg-pw"
-              className="text-[13px] font-medium text-text-primary/80"
-            >
-              Password
-            </label>
-            <div className="relative flex items-center">
-              <Lock
-                size={16}
-                className="absolute left-3 text-text-muted pointer-events-none"
-              />
-              <input
-                id="rg-pw"
-                type={showPw ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
-                autoComplete="new-password"
-                required
-                className="w-full h-10 pl-10 pr-11 bg-bg-panel border border-border-muted rounded-lg text-text-primary text-sm outline-none transition-colors focus-visible:border-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue/20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw((v) => !v)}
-                aria-label="Toggle password visibility"
-                className="absolute right-1 w-8 h-8 rounded-md flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-bg-hover"
-              >
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-x-3.5 gap-y-1 mt-0.5">
-              {rules.map((r) => (
-                <span
-                  key={r.text}
-                  className={`flex items-center gap-1 text-xs ${
-                    r.ok ? "text-accent-green" : "text-text-muted"
-                  }`}
-                >
-                  {r.ok ? <Check size={14} /> : <Circle size={14} />}
-                  {r.text}
-                </span>
-              ))}
-            </div>
+            <PasswordField
+              id="rg-pw"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Create a password"
+              autoComplete="new-password"
+            />
+            <PasswordRequirementsList rules={rules} variant="inline" />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="rg-pw2"
-              className="text-[13px] font-medium text-text-primary/80"
-            >
-              Confirm password
-            </label>
-            <div className="relative flex items-center">
-              <Lock
-                size={16}
-                className="absolute left-3 text-text-muted pointer-events-none"
-              />
-              <input
-                id="rg-pw2"
-                type={showConfirmPw ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter your password"
-                autoComplete="new-password"
-                required
-                className={`w-full h-10 pl-10 pr-11 bg-bg-panel border rounded-lg text-text-primary text-sm outline-none transition-colors focus-visible:border-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue/20 ${
-                  mismatches
-                    ? "border-accent-red"
-                    : matches
-                      ? "border-accent-green"
-                      : "border-border-muted"
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPw((v) => !v)}
-                aria-label="Toggle password visibility"
-                className="absolute right-1 w-8 h-8 rounded-md flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-bg-hover"
-              >
-                {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            {(matches || mismatches) && (
-              <span
-                className={`flex items-center gap-1.5 text-xs ${
-                  mismatches ? "text-accent-red" : "text-accent-green"
-                }`}
-              >
-                {mismatches ? <X size={14} /> : <Check size={14} />}
-                {mismatches ? "Passwords don't match" : "Passwords match"}
-              </span>
-            )}
+            <PasswordField
+              id="rg-pw2"
+              label="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter your password"
+              autoComplete="new-password"
+              tone={mismatches ? "mismatch" : matches ? "match" : "default"}
+            />
+            <PasswordMatchHint matches={matches} mismatches={mismatches} />
           </div>
         </div>
 

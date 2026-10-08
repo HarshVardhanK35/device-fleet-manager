@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, Calendar, ChevronLeft } from "lucide-react";
+import { Send } from "lucide-react";
 
 import { getDevices } from "../api/devices.js";
-import { getAssignments, deleteAssignment } from "../api/assignments.js";
+import {
+  getAssignments,
+  deleteAssignment,
+  updateAssignment,
+} from "../api/assignments.js";
+import { getPlaylists } from "../api/playlists.js";
 
 import { timeAgo } from "../utils/timeAgo.js";
 import {
@@ -11,19 +15,24 @@ import {
   getDeviceSummary,
   TIMELINE_DOT,
 } from "../utils/assignmentStatus.js";
-import Button from "../components/Button.jsx";
+import { pluralizeCount } from "../utils/pluralize.js";
 import AssignmentCard from "../components/AssignmentCard.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
+import PublishModal from "../components/PublishModal.jsx";
 import SkeletonList from "../components/SkeletonList.jsx";
 import SkeletonPanel from "../components/SkeletonPanel.jsx";
+import EmptyState from "../components/EmptyState.jsx";
+import DetailPane from "../components/DetailPane.jsx";
 
 function Assignments() {
   const [devices, setDevices] = useState([]);
+  const [playlists, setPlaylists] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [mobileView, setMobileView] = useState("list");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const navigate = useNavigate();
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState(null);
 
   useEffect(() => {
     load(true);
@@ -32,17 +41,34 @@ function Assignments() {
   }, []);
 
   async function load(isInitial) {
-    const [deviceData, assignmentData] = await Promise.all([
+    const [deviceData, assignmentData, playlistData] = await Promise.all([
       getDevices(),
       getAssignments(),
+      getPlaylists(),
     ]);
     const merged = deviceData.map((d) => ({
       ...d,
       assignments: assignmentData.filter((a) => a.deviceId?._id === d._id),
     }));
     setDevices(merged);
+    setPlaylists(playlistData);
     if (isInitial && merged.length) setSelectedId(merged[0]._id);
     if (isInitial) setLoading(false);
+  }
+
+  function openPublish() {
+    setEditingAssignment(null);
+    setPublishOpen(true);
+  }
+
+  function handleEditRequest(assignment) {
+    setEditingAssignment(assignment);
+    setPublishOpen(true);
+  }
+
+  async function handleStopRequest(assignment) {
+    await updateAssignment(assignment._id, { endDT: new Date().toISOString() });
+    load(false);
   }
 
   async function handleConfirmDeleteAssignment() {
@@ -147,126 +173,74 @@ function Assignments() {
             <SkeletonPanel rows={3} />
           ) : (
             selectedDevice && (
-              <>
-                <button
-                  onClick={() => setMobileView("list")}
-                  className="lg:hidden inline-flex items-center gap-1.5 bg-bg-panel border border-border-muted hover:border-border-hover hover:bg-bg-hover text-text-muted hover:text-text-primary text-sm rounded-lg px-3 py-1.5 mb-3 transition-colors"
-                >
-                  <ChevronLeft size={16} />
-                  All devices
-                </button>
-
-                <div className="bg-bg-panel border border-border-muted rounded-xl p-6 flex flex-col gap-6 max-w-3xl">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h2 className="text-text-primary text-lg font-bold">
-                        {selectedDevice.name}
-                      </h2>
-                      <Button icon={Plus} onClick={() => navigate("/publish")}>
-                        Schedule
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border font-medium ${
-                          selectedDevice.status === "online"
-                            ? "border-accent-green/40 text-accent-green"
-                            : "border-bg-hover text-text-muted"
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            selectedDevice.status === "online"
-                              ? "bg-accent-green"
-                              : "bg-text-muted"
-                          }`}
-                        />
-                        {selectedDevice.status === "online"
-                          ? "Online"
-                          : "Offline"}
-                      </span>
-                      <span className="text-text-muted">
-                        Last seen {timeAgo(selectedDevice.lastSeenAt)}
-                        {selectedDevice.location &&
-                          ` · ${selectedDevice.location}`}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-bg-hover">
-                      <h3 className="text-text-muted text-xs font-semibold uppercase tracking-wide">
-                        Schedule
-                      </h3>
-                      <span className="text-text-muted text-xs">
-                        {selectedDevice.assignments.length} assignment
-                        {selectedDevice.assignments.length === 1 ? "" : "s"} ·
-                        device local time
-                      </span>
-                    </div>
-
-                    {selectedDevice.assignments.length === 0 ? (
-                      <div className="bg-bg-primary border border-dashed border-border-muted hover:border-border-hover transition-colors rounded-lg p-8 flex flex-col items-center text-center gap-2">
-                        <div className="bg-bg-hover rounded-md p-2.5">
-                          <Calendar size={20} className="text-accent-blue" />
+              <DetailPane
+                backLabel="All devices"
+                onBack={() => setMobileView("list")}
+                title={selectedDevice.name}
+                badge={
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs font-medium ${
+                      selectedDevice.status === "online"
+                        ? "border-accent-green/40 text-accent-green"
+                        : "border-bg-hover text-text-muted"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        selectedDevice.status === "online"
+                          ? "bg-accent-green"
+                          : "bg-text-muted"
+                      }`}
+                    />
+                    {selectedDevice.status === "online" ? "Online" : "Offline"}
+                  </span>
+                }
+                meta={`Last seen ${timeAgo(selectedDevice.lastSeenAt)}${
+                  selectedDevice.location ? ` · ${selectedDevice.location}` : ""
+                }`}
+                actionLabel="Publish"
+                actionIcon={Send}
+                onAction={openPublish}
+                sectionLabel="Schedule"
+                sectionMeta={`${pluralizeCount(selectedDevice.assignments.length, "assignment")} · device local time`}
+              >
+                {selectedDevice.assignments.length === 0 ? (
+                  <EmptyState
+                    title="Nothing scheduled yet"
+                    description={`${selectedDevice.name} is ${
+                      selectedDevice.status === "online" ? "online" : "offline"
+                    } but has no assignments, so it's showing its default content. Schedule a playlist to take over a time window.`}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {selectedDevice.assignments.map((assignment, index) => (
+                      <div key={assignment._id} className="flex gap-3">
+                        <div className="flex flex-col items-center w-3 flex-shrink-0 pt-5">
+                          <span
+                            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                              TIMELINE_DOT[
+                                getAssignmentStatus(assignment, selectedDevice)
+                              ]
+                            }`}
+                          />
+                          {index < selectedDevice.assignments.length - 1 && (
+                            <span className="w-px flex-1 bg-bg-hover mt-1" />
+                          )}
                         </div>
-                        <p className="text-text-primary font-bold">
-                          Nothing scheduled yet
-                        </p>
-                        <p className="text-text-muted text-sm max-w-sm">
-                          {selectedDevice.name} is{" "}
-                          {selectedDevice.status === "online"
-                            ? "online"
-                            : "offline"}{" "}
-                          but has no assignments, so it's showing its default
-                          content. Schedule a playlist to take over a time
-                          window.
-                        </p>
-                        <Button
-                          icon={Plus}
-                          variant="outline"
-                          onClick={() => navigate("/publish")}
-                        >
-                          Schedule first assignment
-                        </Button>
+                        <div className="flex-1">
+                          <AssignmentCard
+                            assignment={assignment}
+                            device={selectedDevice}
+                            onDeleteRequest={setDeleteTarget}
+                            onEditRequest={handleEditRequest}
+                            onStopRequest={handleStopRequest}
+                          />
+                        </div>
                       </div>
-                    ) : (
-                      <div className="flex flex-col gap-3">
-                        {selectedDevice.assignments.map(
-                          (assignment, index) => (
-                            <div key={assignment._id} className="flex gap-3">
-                              <div className="flex flex-col items-center w-3 flex-shrink-0 pt-5">
-                                <span
-                                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                                    TIMELINE_DOT[
-                                      getAssignmentStatus(
-                                        assignment,
-                                        selectedDevice,
-                                      )
-                                    ]
-                                  }`}
-                                />
-                                {index <
-                                  selectedDevice.assignments.length - 1 && (
-                                  <span className="w-px flex-1 bg-bg-hover mt-1" />
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <AssignmentCard
-                                  assignment={assignment}
-                                  device={selectedDevice}
-                                  onDeleteRequest={setDeleteTarget}
-                                />
-                              </div>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    )}
+                    ))}
                   </div>
-                </div>
-              </>
+                )}
+              </DetailPane>
             )
           )}
         </div>
@@ -287,6 +261,15 @@ function Assignments() {
             : []
         }
         onConfirm={handleConfirmDeleteAssignment}
+      />
+
+      <PublishModal
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
+        playlists={playlists}
+        devices={devices}
+        assignment={editingAssignment}
+        onPublished={() => load(false)}
       />
     </div>
   );

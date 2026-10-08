@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { Plus, ChevronLeft, Repeat, CircleMinus } from "lucide-react";
+import { Plus, Repeat, CircleMinus } from "lucide-react";
 
 import {
   getPlaylists,
@@ -15,13 +15,17 @@ import ScrollBox from "../components/ScrollBox.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
 import RemoveContentModal from "../components/RemoveContentModal.jsx";
 import EditPlaylistModal from "../components/EditPlaylistModal.jsx";
-import Button from "../components/Button.jsx";
 import SelectAllBar from "../components/SelectAllBar.jsx";
 import ContentToolbar from "../components/ContentToolbar.jsx";
 import PlaylistSlotTile from "../components/PlaylistSlotTile.jsx";
 import PlaylistRow from "../components/PlaylistRow.jsx";
 import SkeletonPlaylistList from "../components/SkeletonPlaylistList.jsx";
 import SkeletonGrid from "../components/SkeletonGrid.jsx";
+import EmptyState from "../components/EmptyState.jsx";
+import DetailPane from "../components/DetailPane.jsx";
+import Button from "../components/Button.jsx";
+import { pluralizeCount } from "../utils/pluralize.js";
+import { useToggleSet } from "../hooks/useToggleSet.js";
 
 function Playlists() {
   const [playlists, setPlaylists] = useState([]);
@@ -33,7 +37,10 @@ function Playlists() {
   const [createOpen, setCreateOpen] = useState(false);
 
   const [addContentOpen, setAddContentOpen] = useState(false);
-  const [checkedSlotIds, setCheckedSlotIds] = useState(new Set());
+  const [
+    checkedSlotIds,
+    { toggle: toggleSlotSelect, toggleAll: toggleAllSlotsIds, clear: clearCheckedSlots },
+  ] = useToggleSet();
 
   const [editPlaylistId, setEditPlaylistId] = useState(null);
   const [openMenuPlaylistId, setOpenMenuPlaylistId] = useState(null);
@@ -41,7 +48,10 @@ function Playlists() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [slotDeleteConfirmOpen, setSlotDeleteConfirmOpen] = useState(false);
 
-  const [checkedPlaylistIds, setCheckedPlaylistIds] = useState(new Set());
+  const [
+    checkedPlaylistIds,
+    { toggle: toggleCheckPlaylist, toggleAll: toggleAllPlaylistsIds, clear: clearCheckedPlaylists },
+  ] = useToggleSet();
   const [bulkDeletePlaylistsOpen, setBulkDeletePlaylistsOpen] = useState(false);
 
   const [dragIndex, setDragIndex] = useState(null);
@@ -87,7 +97,7 @@ function Playlists() {
   }, []);
 
   function selectPlaylist(id) {
-    setCheckedSlotIds(new Set());
+    clearCheckedSlots();
     setSlotFilterType("all");
     setSelectedPlaylistId(id);
     setMobileView("detail");
@@ -104,7 +114,7 @@ function Playlists() {
     });
 
     setPlaylists(playlists.map((p) => (p._id === updated._id ? updated : p)));
-    setCheckedSlotIds(new Set());
+    clearCheckedSlots();
   }
 
   async function handleConfirmDeletePlaylist() {
@@ -115,28 +125,11 @@ function Playlists() {
     setPlaylists(remaining);
 
     if (selectedPlaylistId === idToDelete) {
-      setCheckedSlotIds(new Set());
+      clearCheckedSlots();
       setSelectedPlaylistId(remaining.length ? remaining[0]._id : null);
     }
 
     setDeleteConfirmId(null);
-  }
-
-  function toggleCheckPlaylist(id) {
-    setCheckedPlaylistIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function toggleAllPlaylists() {
-    if (checkedPlaylistIds.size === playlists.length) {
-      setCheckedPlaylistIds(new Set());
-    } else {
-      setCheckedPlaylistIds(new Set(playlists.map((p) => p._id)));
-    }
   }
 
   async function handleBulkDeletePlaylists() {
@@ -147,11 +140,11 @@ function Playlists() {
     setPlaylists(remaining);
 
     if (checkedPlaylistIds.has(selectedPlaylistId)) {
-      setCheckedSlotIds(new Set());
+      clearCheckedSlots();
       setSelectedPlaylistId(remaining.length ? remaining[0]._id : null);
     }
 
-    setCheckedPlaylistIds(new Set());
+    clearCheckedPlaylists();
     setBulkDeletePlaylistsOpen(false);
   }
 
@@ -167,23 +160,12 @@ function Playlists() {
     setCreateOpen(false);
   }
 
-  function toggleSlotSelect(id) {
-    setCheckedSlotIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function toggleAllSlots() {
+    toggleAllSlotsIds(visibleSlots.map(({ item, index }) => `${item._id}-${index}`));
   }
 
-  function toggleAllSlots() {
-    if (checkedSlotIds.size === visibleSlots.length) {
-      setCheckedSlotIds(new Set());
-    } else {
-      setCheckedSlotIds(
-        new Set(visibleSlots.map(({ item, index }) => `${item._id}-${index}`)),
-      );
-    }
+  function toggleAllPlaylists() {
+    toggleAllPlaylistsIds(playlists.map((p) => p._id));
   }
 
   async function handleAddContentSave(ids) {
@@ -253,16 +235,8 @@ function Playlists() {
             Playlists
           </h2>
           <span className="text-text-muted text-sm tabular-nums">
-            {playlists.length} items
+            {pluralizeCount(playlists.length, "item")}
           </span>
-          <div className="flex-1" />
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-accent-blue/40 text-accent-blue text-sm font-medium hover:bg-accent-blue/10 transition-colors"
-          >
-            <Plus size={16} />
-            <span>Create</span>
-          </button>
         </div>
 
         {playlists.length > 0 && (
@@ -271,11 +245,11 @@ function Playlists() {
             totalCount={playlists.length}
             onToggleAll={toggleAllPlaylists}
             onAction={() => setBulkDeletePlaylistsOpen(true)}
-            className="pb-3 flex-shrink-0"
+            className="pb-3 pr-4 flex-shrink-0"
           />
         )}
 
-        <ScrollBox className="pr-3 pt-1">
+        <ScrollBox className="pr-4 pt-1">
           {loading ? (
             <SkeletonPlaylistList count={4} />
           ) : (
@@ -299,6 +273,12 @@ function Playlists() {
           </div>
           )}
         </ScrollBox>
+
+        <div className="flex-shrink-0 pt-3 pr-4">
+          <Button icon={Plus} onClick={() => setCreateOpen(true)} className="w-full">
+            Create playlist
+          </Button>
+        </div>
       </div>
 
       {/* right pane */}
@@ -311,33 +291,32 @@ function Playlists() {
           <SkeletonGrid count={6} />
         ) : (
           selectedPlaylist && (
-          <>
-            <div className="flex-shrink-0 flex flex-col gap-4 pb-4">
-              <button
-                onClick={() => setMobileView("list")}
-                className="lg:hidden self-start inline-flex items-center gap-1.5 bg-bg-panel border border-border-muted hover:border-border-hover hover:bg-bg-hover text-text-muted hover:text-text-primary text-sm rounded-lg px-3 py-1.5 transition-colors"
-              >
-                <ChevronLeft size={16} />
-                Playlists
-              </button>
-
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-text-primary text-xl font-bold m-0">
-                    {selectedPlaylist.name}
-                  </h1>
-                  <span className="inline-flex items-center gap-1 h-6 px-2 rounded-full border border-border-muted text-text-muted text-xs font-semibold">
-                    loop
-                    <Repeat size={12} />
-                  </span>
-                </div>
-                {selectedPlaylist.description && (
-                  <p className="text-text-muted text-sm mt-1">
-                    {selectedPlaylist.description}
-                  </p>
-                )}
-              </div>
-
+            <DetailPane
+              className="flex-1 min-h-0"
+              bodyClassName="flex-1 min-h-0 flex flex-col"
+              headerClassName="pr-4"
+              backLabel="Playlists"
+              onBack={() => setMobileView("list")}
+              title={selectedPlaylist.name}
+              badge={
+                <span className="inline-flex items-center gap-1 h-6 px-2 rounded-full border border-border-muted text-text-muted text-xs font-semibold">
+                  loop
+                  <Repeat size={12} />
+                </span>
+              }
+              meta={selectedPlaylist.description}
+              actionLabel="Add from library"
+              actionIcon={Plus}
+              onAction={() => setAddContentOpen(true)}
+              sectionLabel="Content"
+              sectionMeta={
+                selectedPlaylist.contentItems.length > 0
+                  ? `${pluralizeCount(visibleSlots.length, "item")}${
+                      slotFilterType === "all" ? " · drag to reorder" : ""
+                    }`
+                  : null
+              }
+            >
               {selectedPlaylist.contentItems.length > 0 && (
                 <ContentToolbar
                   checkedCount={checkedSlotIds.size}
@@ -350,76 +329,55 @@ function Playlists() {
                   filterValue={slotFilterType}
                   onFilterChange={setSlotFilterType}
                   showSort={false}
-                >
-                  <Button
-                    icon={Plus}
-                    onClick={() => setAddContentOpen(true)}
-                    className="!min-h-9"
-                  >
-                    Add from library
-                  </Button>
-                </ContentToolbar>
+                  divider={false}
+                  className="pr-4"
+                />
               )}
 
-              {selectedPlaylist.contentItems.length > 0 &&
-                slotFilterType === "all" && (
-                  <p className="text-xs text-text-muted -mt-2">
-                    Tip: Drag tiles to reorder
+              <ScrollBox className="flex-1 pr-4 pt-2">
+                {selectedPlaylist.contentItems.length === 0 ? (
+                  <EmptyState
+                    minHeight="300px"
+                    title="This playlist has no content yet"
+                    description="Add items from your library. They play in the order you add them, and you can drag them into a new order later."
+                  />
+                ) : visibleSlots.length === 0 ? (
+                  <p className="text-text-muted text-sm pt-8 text-center">
+                    No content matches this filter.
                   </p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {visibleSlots.map(({ item, index }) => {
+                      const slotId = `${item._id}-${index}`;
+                      const canDrag = slotFilterType === "all";
+                      return (
+                        <PlaylistSlotTile
+                          key={slotId}
+                          item={item}
+                          index={index}
+                          checked={checkedSlotIds.has(slotId)}
+                          onToggleSelect={() => toggleSlotSelect(slotId)}
+                          draggable={canDrag}
+                          isDragging={canDrag && dragIndex === index}
+                          isDragOver={canDrag && dragOverIndex === index}
+                          onDragStart={() => canDrag && setDragIndex(index)}
+                          onDragOver={(e) => {
+                            if (!canDrag) return;
+                            e.preventDefault();
+                            setDragOverIndex(index);
+                          }}
+                          onDrop={() => canDrag && handleDrop(index)}
+                          onDragEnd={() => {
+                            setDragIndex(null);
+                            setDragOverIndex(null);
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 )}
-            </div>
-
-            <ScrollBox className="flex-1 pr-1 pt-2">
-              {selectedPlaylist.contentItems.length === 0 ? (
-                <div className="min-h-[300px] border border-dashed border-border-muted rounded-xl flex flex-col items-start justify-center gap-3 px-8 py-10">
-                  <h3 className="text-text-primary font-semibold text-base m-0">
-                    This playlist has no content yet
-                  </h3>
-                  <p className="text-text-muted text-sm max-w-md">
-                    Add items from your library. They play in the order you
-                    add them, and you can drag them into a new order later.
-                  </p>
-                  <Button icon={Plus} onClick={() => setAddContentOpen(true)}>
-                    Add content
-                  </Button>
-                </div>
-              ) : visibleSlots.length === 0 ? (
-                <p className="text-text-muted text-sm pt-8 text-center">
-                  No content matches this filter.
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pl-2">
-                  {visibleSlots.map(({ item, index }) => {
-                    const slotId = `${item._id}-${index}`;
-                    const canDrag = slotFilterType === "all";
-                    return (
-                      <PlaylistSlotTile
-                        key={slotId}
-                        item={item}
-                        index={index}
-                        checked={checkedSlotIds.has(slotId)}
-                        onToggleSelect={() => toggleSlotSelect(slotId)}
-                        draggable={canDrag}
-                        isDragging={canDrag && dragIndex === index}
-                        isDragOver={canDrag && dragOverIndex === index}
-                        onDragStart={() => canDrag && setDragIndex(index)}
-                        onDragOver={(e) => {
-                          if (!canDrag) return;
-                          e.preventDefault();
-                          setDragOverIndex(index);
-                        }}
-                        onDrop={() => canDrag && handleDrop(index)}
-                        onDragEnd={() => {
-                          setDragIndex(null);
-                          setDragOverIndex(null);
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </ScrollBox>
-          </>
+              </ScrollBox>
+            </DetailPane>
           )
         )}
       </div>
@@ -430,7 +388,7 @@ function Playlists() {
         onOpenChange={setCreateOpen}
         content={content}
         title="Create Playlist"
-        submitLabel="Create playlist"
+        submitLabel="Create"
         onSubmit={handleCreatePlaylist}
       />
 
