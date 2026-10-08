@@ -29,3 +29,14 @@ export function formatDateLabel(date) {
   if (isTomorrow) return `Tomorrow · ${weekdayMonthDay}`;
   return weekdayMonthDay;
 }
+
+// Ended assignments auto-delete 24h after their own endDT (server-side TTL
+// index). This describes that moment relative to whenever the viewer has
+// the page open right now — "today"/"tomorrow" re-evaluate on every render,
+// not a fixed label baked in when the assignment ended.
+export function formatAutoDeleteNotice(endDT) {
+  const deleteAt = new Date(new Date(endDT).getTime() + 24 * 60 * 60 * 1000);
+  const dayWord =
+    deleteAt.toDateString() === new Date().toDateString() ? "today" : "tomorrow";
+  return `This completed assignment will be deleted at ${formatClock(deleteAt)} ${dayWord}.`;
+}

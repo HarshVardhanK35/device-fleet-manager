@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Filter, ArrowUpDown } from "lucide-react";
 
 import StyledSelect from "./StyledSelect.jsx";
@@ -22,8 +23,10 @@ function ContentFilterSortBar({
   onSortChange,
   showSort = true,
 }) {
+  const [openMenu, setOpenMenu] = useState(null); // "filter" | "sort" | null
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center">
       <StyledSelect
         value={filterValue}
         onChange={onFilterChange}
@@ -31,6 +34,9 @@ function ContentFilterSortBar({
         labelFor={(f) => `${f.label} (${counts[f.value] ?? 0})`}
         icon={Filter}
         label="Filter content"
+        open={openMenu === "filter"}
+        onOpenChange={(open) => setOpenMenu(open ? "filter" : null)}
+        roundedSide={showSort ? "left" : "full"}
       />
       {showSort && (
         <StyledSelect
@@ -39,6 +45,9 @@ function ContentFilterSortBar({
           options={SORTS}
           icon={ArrowUpDown}
           label="Sort content"
+          open={openMenu === "sort"}
+          onOpenChange={(open) => setOpenMenu(open ? "sort" : null)}
+          roundedSide="right"
         />
       )}
     </div>
@@ -58,6 +67,9 @@ export default ContentFilterSortBar;
 // hides the Sort control entirely — used for the Playlist content grid,
 // where real play order matters and a "sort" would conflict with
 // drag-reorder; only Filter (which doesn't touch order) applies there.
+// When both are shown, they're merged into one segmented control (shared
+// border, no gap) via StyledSelect's `roundedSide` prop, instead of reading
+// as two separate disconnected boxes.
 // Used by: pages/Content.jsx, components/ContentPickerModal.jsx,
 // components/ContentToolbar.jsx (pages/Playlists.jsx, showSort={false}).
 // The underlying dropdown is components/StyledSelect.jsx, shared with

@@ -70,16 +70,33 @@ function DashboardAttentionPanel({ items, onOpenAssignments }) {
 
   const hasIssues = items.length > 0;
 
+  // Full literal class strings per branch (not string-interpolated) since
+  // Tailwind's scanner needs to see each class name written out to
+  // generate it — a `bg-accent-${tone}/15`-style template wouldn't exist
+  // in the compiled CSS.
+  const panelClass = hasIssues
+    ? "bg-bg-panel border border-accent-red/30 rounded-xl overflow-hidden"
+    : "bg-bg-panel border border-accent-green/30 rounded-xl overflow-hidden";
+  const headerClass = hasIssues
+    ? "flex flex-wrap items-center gap-2.5 px-4 py-3.5 bg-accent-red/[0.06] border-b border-border-muted"
+    : "flex flex-wrap items-center gap-2.5 px-4 py-3.5 bg-accent-green/[0.06] border-b border-border-muted";
+  const iconBadgeClass = hasIssues
+    ? "w-7 h-7 rounded-lg bg-accent-red/15 text-accent-red flex items-center justify-center flex-none"
+    : "w-7 h-7 rounded-lg bg-accent-green/15 text-accent-green flex items-center justify-center flex-none";
+  const countPillClass = hasIssues
+    ? "px-2 py-0.5 rounded-full text-xs font-semibold bg-accent-red/15 text-accent-red"
+    : "px-2 py-0.5 rounded-full text-xs font-semibold bg-accent-green/15 text-accent-green";
+
   return (
-    <div className="bg-bg-panel border border-accent-red/30 rounded-xl overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2.5 px-4 py-3.5 bg-accent-red/[0.06] border-b border-border-muted">
-        <span className="w-7 h-7 rounded-lg bg-accent-red/15 text-accent-red flex items-center justify-center flex-none">
-          <TriangleAlert size={15} />
+    <div className={panelClass}>
+      <div className={headerClass}>
+        <span className={iconBadgeClass}>
+          {hasIssues ? <TriangleAlert size={15} /> : <CheckCircle2 size={15} />}
         </span>
         <span className="font-semibold text-[15px] text-text-primary">
           Needs attention
         </span>
-        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-accent-red/15 text-accent-red">
+        <span className={countPillClass}>
           {items.length}
         </span>
 

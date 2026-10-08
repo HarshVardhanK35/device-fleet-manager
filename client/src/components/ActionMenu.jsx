@@ -14,6 +14,7 @@ function ActionMenu({
   trigger,
   open,
   onOpenChange,
+  footer,
 }) {
   return (
     <DropdownMenu.Root open={open} onOpenChange={onOpenChange}>
@@ -45,7 +46,16 @@ function ActionMenu({
               <DropdownMenu.Item
                 key={item.label}
                 disabled={item.disabled}
-                onSelect={item.onClick}
+                onSelect={() => {
+                  // Deferred: if item.onClick causes the trigger element
+                  // itself to unmount (e.g. deleting the row this menu
+                  // belongs to), doing it synchronously here can race
+                  // Radix's own close/cleanup — it sometimes never gets to
+                  // restore the `pointer-events: none` it sets on <body>
+                  // while the menu is open, leaving the whole page
+                  // unclickable. Letting Radix finish closing first avoids it.
+                  setTimeout(() => item.onClick?.(), 0);
+                }}
                 className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-md text-[13px] font-medium cursor-pointer outline-none transition-colors ${
                   item.disabled
                     ? "opacity-45 cursor-not-allowed text-text-muted"
@@ -56,6 +66,11 @@ function ActionMenu({
                 <span className="flex-1">{item.label}</span>
               </DropdownMenu.Item>
             ),
+          )}
+          {footer && (
+            <p className="mt-1 px-2.5 pt-2 pb-1.5 border-t border-border-muted text-xs text-text-muted">
+              {footer}
+            </p>
           )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

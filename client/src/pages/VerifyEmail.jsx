@@ -91,3 +91,5 @@ function VerifyEmail() {
 }
 
 export default VerifyEmail;
+
+// nothing repeated

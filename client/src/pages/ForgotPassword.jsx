@@ -6,6 +6,8 @@ import { forgotPassword } from "../api/auth.js";
 import AuthLayout from "../components/AuthLayout.jsx";
 import AuthField from "../components/AuthField.jsx";
 import AuthEmailSentModal from "../components/AuthEmailSentModal.jsx";
+import AuthErrorBanner from "../components/AuthErrorBanner.jsx";
+import AuthHeading from "../components/AuthHeading.jsx";
 import Button from "../components/Button.jsx";
 import LoadingOverlay from "../components/LoadingOverlay.jsx";
 
@@ -35,25 +37,13 @@ function ForgotPassword() {
   return (
     <AuthLayout>
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <span className="w-11 h-11 rounded-xl bg-accent-blue/10 border border-accent-blue/25 text-accent-blue flex items-center justify-center">
-          <Key size={22} />
-        </span>
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl md:text-[26px] font-medium tracking-tight text-text-primary m-0">
-            Forgot your password?
-          </h1>
-          <p className="text-text-muted m-0 text-pretty">
-            Enter the email linked to your account and we'll send you a reset
-            link.
-          </p>
-        </div>
+        <AuthHeading
+          icon={Key}
+          title="Forgot your password?"
+          subtitle="Enter the email linked to your account and we'll send you a reset link."
+        />
 
-        {error && (
-          <div className="flex gap-2.5 items-start px-3 py-2.5 rounded-lg bg-accent-red/10 border border-accent-red/35 text-[13px] text-accent-red">
-            <CircleAlert size={17} className="flex-none mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
+        {error && <AuthErrorBanner icon={CircleAlert}>{error}</AuthErrorBanner>}
 
         <AuthField
           id="fp-email"

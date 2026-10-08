@@ -16,6 +16,7 @@ import { getContent } from "../api/content.js";
 
 import { getDeviceSummary } from "../utils/assignmentStatus.js";
 import { timeAgo } from "../utils/timeAgo.js";
+import { pluralizeCount, pluralizeWord } from "../utils/pluralize.js";
 
 import StatTile from "../components/StatTile.jsx";
 import DashboardAttentionPanel from "../components/DashboardAttentionPanel.jsx";
@@ -95,19 +96,19 @@ function Dashboard() {
     {
       title: "Content",
       icon: ImageIcon,
-      sub: `${content.length} item${content.length === 1 ? "" : "s"}`,
+      sub: pluralizeCount(content.length, "item"),
       onClick: () => navigate("/content"),
     },
     {
       title: "Playlists",
       icon: ListVideo,
-      sub: `${playlists.length} playlist${playlists.length === 1 ? "" : "s"}`,
+      sub: pluralizeCount(playlists.length, "playlist"),
       onClick: () => navigate("/playlists"),
     },
     {
       title: "Assignments",
       icon: CalendarCheck,
-      sub: `${assignments.length} active assignment${assignments.length === 1 ? "" : "s"}`,
+      sub: pluralizeCount(assignments.length, "active assignment"),
       onClick: () => navigate("/assignments"),
     },
   ];
@@ -169,26 +170,26 @@ function Dashboard() {
           dot="#3fb950"
           value={online.length}
           valueClassName="text-accent-green"
-          sub="Device"
+          sub={pluralizeWord(online.length, "Device")}
         />
         <StatTile
           label="Offline"
           dot="#f0426a"
           value={offline.length}
           valueClassName={offline.length ? "text-accent-red" : ""}
-          sub="Device"
+          sub={pluralizeWord(offline.length, "Device")}
         />
         <StatTile
           label="Playlists"
           icon={ListVideo}
           value={playlists.length}
-          sub={`${assignments.length} active assignments`}
+          sub={pluralizeCount(assignments.length, "active assignment")}
         />
         <StatTile
           label="Content items"
           icon={ImageIcon}
           value={content.length}
-          sub={`${imageCount} images · ${videoCount} videos · ${appCount} apps`}
+          sub={`${pluralizeCount(imageCount, "image")} · ${pluralizeCount(videoCount, "video")} · ${pluralizeCount(appCount, "app")}`}
         />
       </div>
 
