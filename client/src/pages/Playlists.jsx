@@ -13,7 +13,7 @@ import { getContent } from "../api/content.js";
 import ContentPickerModal from "../components/ContentPickerModal.jsx";
 import ScrollBox from "../components/ScrollBox.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
-import RemoveContentModal from "../components/RemoveContentModal.jsx";
+import RemoveConfirmModal from "../components/RemoveConfirmModal.jsx";
 import EditPlaylistModal from "../components/EditPlaylistModal.jsx";
 import SelectAllBar from "../components/SelectAllBar.jsx";
 import ContentToolbar from "../components/ContentToolbar.jsx";
@@ -60,6 +60,12 @@ function Playlists() {
   const [slotFilterType, setSlotFilterType] = useState("all");
 
   const selectedPlaylist = playlists.find((p) => p._id === selectedPlaylistId);
+
+  const removeSlotItems = selectedPlaylist
+    ? selectedPlaylist.contentItems
+        .filter((item, index) => checkedSlotIds.has(`${item._id}-${index}`))
+        .map((item) => ({ id: item._id, name: item.name, type: item.type }))
+    : [];
 
   const slotFilterCounts = selectedPlaylist
     ? {
@@ -337,7 +343,6 @@ function Playlists() {
               <ScrollBox className="flex-1 pr-4 pt-2">
                 {selectedPlaylist.contentItems.length === 0 ? (
                   <EmptyState
-                    minHeight="300px"
                     title="This playlist has no content yet"
                     description="Add items from your library. They play in the order you add them, and you can drag them into a new order later."
                   />
@@ -443,23 +448,18 @@ function Playlists() {
       />
 
       {/* confirm remove slots modal */}
-      <RemoveContentModal
+      <RemoveConfirmModal
         open={slotDeleteConfirmOpen}
         onOpenChange={setSlotDeleteConfirmOpen}
-        playlistName={selectedPlaylist?.name}
-        items={
-          selectedPlaylist
-            ? selectedPlaylist.contentItems
-                .filter((item, index) =>
-                  checkedSlotIds.has(`${item._id}-${index}`),
-                )
-                .map((item) => ({
-                  id: item._id,
-                  name: item.name,
-                  type: item.type,
-                }))
-            : []
+        title={`Remove ${removeSlotItems.length} item${removeSlotItems.length === 1 ? "" : "s"}?`}
+        description={
+          <>
+            From &ldquo;{selectedPlaylist?.name}&rdquo;. They stay in your
+            Content library and in any other playlists.
+          </>
         }
+        items={removeSlotItems}
+        confirmLabel={`Remove ${removeSlotItems.length} item${removeSlotItems.length === 1 ? "" : "s"}`}
         onConfirm={() => {
           handleDeleteSlots();
           setSlotDeleteConfirmOpen(false);
