@@ -2,6 +2,7 @@ import { Pencil, Trash2, ListVideo, Repeat } from "lucide-react";
 
 import ActionMenu from "./ActionMenu.jsx";
 import SelectCheckbox from "./SelectCheckbox.jsx";
+import SelectableRow from "./SelectableRow.jsx";
 import { formatDuration } from "../utils/formatDuration.js";
 import { pluralizeCount } from "../utils/pluralize.js";
 
@@ -24,9 +25,9 @@ function PlaylistRow({
   onMenuOpenChange,
 }) {
   return (
-    <div
+    <SelectableRow
       onClick={onSelect}
-      className={`group relative overflow-hidden flex flex-col gap-2.5 p-3 pl-4 rounded-[10px] border cursor-pointer transition-colors transition-transform duration-100 active:scale-[0.99] ${
+      className={`group relative overflow-hidden flex flex-col gap-2.5 p-3 pl-4 rounded-[10px] border ${
         active
           ? "border-accent-blue bg-bg-panel"
           : "border-border-muted bg-bg-panel hover:border-border-hover"
@@ -84,7 +85,7 @@ function PlaylistRow({
           ]}
         />
       </div>
-    </div>
+    </SelectableRow>
   );
 }
 

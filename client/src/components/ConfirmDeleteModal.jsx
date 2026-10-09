@@ -72,16 +72,16 @@ function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm }) {
 export default ConfirmDeleteModal;
 
 // Reusable destructive-action confirmation dialog (Radix Dialog), styled to
-// match RemoveContentModal.jsx's visual language (icon badge, bordered
+// match RemoveConfirmModal.jsx's visual language (icon badge, bordered
 // item list, red "Delete N items" button with icon) instead of the old
 // plain text-list + generic "Confirm" button. Takes `items`: an array of
 // { id, name }. One item renders inline in the subtitle; two or more
 // render a bordered, scrollable name list so the user can verify the full
-// scope of a bulk delete before confirming. Unlike RemoveContentModal,
+// scope of a bulk delete before confirming. Unlike RemoveConfirmModal,
 // this has no reassurance copy or type badges — it's for *actual*
-// deletion (playlists, assignments, content), not playlist-membership
-// removal, so nothing "stays" anywhere.
+// deletion (playlists, assignments, content), not playlist-membership/
+// pairing removal, so nothing "stays" anywhere.
 // Used by: pages/Assignments.jsx (delete assignment), pages/Content.jsx
 // (bulk delete), pages/Playlists.jsx (delete playlist, bulk delete
-// playlists). For removing content from a playlist specifically, see
-// RemoveContentModal.jsx.
+// playlists). For removing content from a playlist, or unpairing a
+// screen, see RemoveConfirmModal.jsx.

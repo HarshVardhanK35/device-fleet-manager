@@ -14,6 +14,8 @@ import Content from "./pages/Content.jsx";
 import Assignments from "./pages/Assignments.jsx";
 import Playlists from "./pages/Playlists.jsx";
 import Player from "./pages/Player.jsx";
+import PlayerSlots from "./pages/PlayerSlots.jsx";
+import Screens from "./pages/Screens.jsx";
 
 function App() {
   return (
@@ -26,6 +28,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/player/:deviceId" element={<Player />} />
+        <Route path="/screens" element={<Screens />} />
 
         <Route
           path="/"
@@ -63,6 +66,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Playlists />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/player"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <PlayerSlots />
               </Layout>
             </ProtectedRoute>
           }

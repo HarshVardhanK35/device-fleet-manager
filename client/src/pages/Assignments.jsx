@@ -23,6 +23,7 @@ import SkeletonList from "../components/SkeletonList.jsx";
 import SkeletonPanel from "../components/SkeletonPanel.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import DetailPane from "../components/DetailPane.jsx";
+import SelectableRow from "../components/SelectableRow.jsx";
 
 function Assignments() {
   const [devices, setDevices] = useState([]);
@@ -48,7 +49,9 @@ function Assignments() {
     ]);
     const merged = deviceData.map((d) => ({
       ...d,
-      assignments: assignmentData.filter((a) => a.deviceId?._id === d._id),
+      assignments: assignmentData
+        .filter((a) => a.deviceId?._id === d._id)
+        .sort((a, b) => new Date(a.beginDT) - new Date(b.beginDT)),
     }));
     setDevices(merged);
     setPlaylists(playlistData);
@@ -94,11 +97,6 @@ function Assignments() {
     <div
       className={`mx-auto lg:max-w-6xl ${mobileView === "detail" ? "max-w-3xl" : "max-w-xl"}`}
     >
-      <h1 className="text-text-primary text-xl font-bold">Assignments</h1>
-      <p className="text-accent-blue text-sm mb-4">
-        Choose which playlist each screen plays, and when.
-      </p>
-
       <div className="flex gap-4">
         {/* left pane */}
         <div
@@ -106,6 +104,11 @@ function Assignments() {
             mobileView === "detail" ? "hidden lg:block" : ""
           }`}
         >
+          <h1 className="text-text-primary text-xl font-bold">Assignments</h1>
+          <p className="text-accent-blue text-sm mb-4">
+            Choose which playlist each screen plays, and when.
+          </p>
+
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-bg-hover">
             <h2 className="text-text-muted text-xs font-semibold uppercase tracking-wide">
               Your Devices
@@ -122,10 +125,10 @@ function Assignments() {
               {devices.map((device) => {
                 const summary = getDeviceSummary(device);
                 return (
-                  <div
+                  <SelectableRow
                     key={device._id}
                     onClick={() => selectDevice(device._id)}
-                    className={`bg-bg-panel rounded-lg p-3 cursor-pointer border transition-colors transition-transform duration-100 active:scale-[0.99] ${
+                    className={`bg-bg-panel rounded-lg p-3 border ${
                       device._id === selectedId
                         ? "border-accent-blue"
                         : "border-border-muted hover:border-border-hover"
@@ -158,7 +161,7 @@ function Assignments() {
                       />
                       <span className="text-text-muted">{summary.text}</span>
                     </p>
-                  </div>
+                  </SelectableRow>
                 );
               })}
             </div>

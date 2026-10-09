@@ -13,6 +13,7 @@ import {
   MonitorPlay,
   ListVideo,
   Monitor,
+  PlaySquare,
   User,
   LogOut,
   Menu,
@@ -24,6 +25,7 @@ const navItems = [
   { to: "/content", label: "Content", icon: Image },
   { to: "/playlists", label: "Playlists", icon: ListVideo },
   { to: "/assignments", label: "Assignments", icon: MonitorPlay },
+  { to: "/player", label: "Player", icon: PlaySquare },
 ];
 
 function Layout({ children }) {
@@ -186,5 +188,7 @@ export default Layout;
 // their own, scoped to what they're actually searching. Page content
 // scrolls via ScrollBox, not the native browser scrollbar.
 // Used by: App.jsx, wrapping Dashboard, Content, Assignments, Playlists,
-// and Publish. NOT used on Login/Register or the device-facing Player page
-// (those have no nav/console chrome).
+// and PlayerSlots (the "Player" tab). NOT used on Login/Register or the
+// device-facing Player page at "/player/:deviceId" (those have no
+// nav/console chrome) — not to be confused with the "Player" nav tab
+// above, which is PlayerSlots.jsx at "/player".

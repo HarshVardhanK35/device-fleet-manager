@@ -18,6 +18,7 @@ function DetailPane({
   actionIcon,
   onAction,
   actionDisabled,
+  headerExtra,
   sectionLabel,
   sectionMeta,
   className = "",
@@ -52,6 +53,7 @@ function DetailPane({
               </Button>
             </div>
           )}
+          {headerExtra && <div className="flex-shrink-0">{headerExtra}</div>}
         </div>
 
         {(sectionLabel || sectionMeta) && (
@@ -92,12 +94,20 @@ function DetailPane({
 
 export default DetailPane;
 
-// Used by: pages/Playlists.jsx, pages/Assignments.jsx. Both panes drop
-// their old bordered-card wrapper here — per the Claude Design review, the
-// card-wrapped-vs-not split between them was an inconsistency, not a
-// deliberate choice, so both now sit unframed on the page background.
+// Used by: pages/Playlists.jsx, pages/Assignments.jsx, pages/PlayerSlots.jsx.
+// All three panes drop the old bordered-card wrapper here — per the Claude
+// Design review, the card-wrapped-vs-not split between them was an
+// inconsistency, not a deliberate choice, so all now sit unframed on the
+// page background.
 // `headerClassName` (optional) extends the wrapper around BOTH the title/
 // action row and the section-label/meta row — Playlists passes `pr-4`
 // there to match its grid's own scrollbar-gutter inset, so the "Add from
 // library" button and the "N items" text both line up with the tiles below
 // instead of running past their right edge.
+// `headerExtra` (optional) renders instead of/alongside the actionLabel
+// Button, for panes that need something other than a single primary action
+// in the header — e.g. PlayerSlots' "Cancel" button while a screen is
+// awaiting pairing, or its "⋯" ActionMenu once a screen is paired. Unlike
+// `actionLabel`, it never moves into the mobile sticky bar — it's assumed
+// to already work fine inline at every width (a small button, a dropdown
+// trigger), not a full-width primary action.
