@@ -28,10 +28,12 @@ import RemoveConfirmModal from "../components/RemoveConfirmModal.jsx";
 import PlayerStandinModal from "../components/PlayerStandinModal.jsx";
 import StatusPill from "../components/StatusPill.jsx";
 import { pillLabel } from "../utils/screenStatus.js";
+import { claimPairingCode } from "../api/pairing.js";
 
 const MAX_SCREENS = 3;
-// Must match Screens.jsx's CODE_LENGTH — both sides of the same pairing
-// flow have to agree on the code shape.
+// Must match the backend's code length (server/controllers/pairingController.js's
+// ALPHABET loop) — both sides of the same pairing flow have to agree on the
+// code shape.
 const PAIRING_CODE_LENGTH = 8;
 
 // Seed data so there's something to look at before this is wired to a real
@@ -79,6 +81,7 @@ function PlayerSlots() {
   const [draft, setDraft] = useState({ name: "", type: "" });
   const [codes, setCodes] = useState({});
   const [codeFocused, setCodeFocused] = useState(false);
+  const [pairErrors, setPairErrors] = useState({});
   const [busyId, setBusyId] = useState(null);
   const [modal, setModal] = useState(null); // { mode: "preview"|"take"|"remove"|"player", id }
   const [ack, setAck] = useState(false);
@@ -112,32 +115,44 @@ function PlayerSlots() {
     selectScreen(id);
   }
 
-  function handlePair(id) {
+  async function handlePair(id) {
     const code = codes[id] || "";
     if (code.length < PAIRING_CODE_LENGTH || busyId) return;
     setBusyId(id);
-    setTimeout(() => {
-      setBusyId(null);
-      setCodes((prev) => ({ ...prev, [id]: "" }));
-      setScreens((prev) =>
-        prev.map((s) =>
-          s.id === id
-            ? {
-                id,
-                name: s.name,
-                type: "",
-                pending: false,
-                status: "online",
-                seen: "Online · paired just now",
-                res: "1920×1080",
-                playing: null,
-              }
-            : s,
-        ),
-      );
-      setEditingId(id);
-      setDraft({ name: (screens.find((s) => s.id === id) || {}).name || "", type: "" });
-    }, 1100);
+
+    const slotName = (screens.find((s) => s.id === id) || {}).name || "";
+    const result = await claimPairingCode(code, { name: slotName, type: "" });
+    setBusyId(null);
+
+    if (!result || result.message) {
+      setPairErrors((prev) => ({
+        ...prev,
+        [id]: result?.message || "Pairing failed. Check the code and try again.",
+      }));
+      return;
+    }
+
+    setPairErrors((prev) => ({ ...prev, [id]: "" }));
+    setCodes((prev) => ({ ...prev, [id]: "" }));
+    setScreens((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? {
+              id: result._id,
+              name: result.name,
+              type: result.type || "",
+              pending: false,
+              status: "offline",
+              seen: "Paired just now",
+              res: "1920×1080",
+              playing: null,
+            }
+          : s,
+      ),
+    );
+    setSelectedId((prev) => (prev === id ? result._id : prev));
+    setEditingId(result._id);
+    setDraft({ name: result.name, type: result.type || "" });
   }
 
   function cancelPairing(id) {
@@ -383,15 +398,16 @@ function PlayerSlots() {
                     })}
                     <input
                       value={codes[selected.id] || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        setPairErrors((prev) => ({ ...prev, [selected.id]: "" }));
                         setCodes((prev) => ({
                           ...prev,
                           [selected.id]: e.target.value
                             .toUpperCase()
                             .replace(/[^A-Z0-9]/g, "")
                             .slice(0, PAIRING_CODE_LENGTH),
-                        }))
-                      }
+                        }));
+                      }}
                       onKeyDown={(e) => e.key === "Enter" && handlePair(selected.id)}
                       onFocus={() => setCodeFocused(true)}
                       onBlur={() => setCodeFocused(false)}
@@ -401,12 +417,14 @@ function PlayerSlots() {
                       className="absolute inset-0 w-full opacity-0 cursor-text text-base"
                     />
                   </div>
-                  <span className="text-text-muted text-xs">
+                  <span className={`text-xs ${pairErrors[selected.id] ? "text-accent-red" : "text-text-muted"}`}>
                     {busyId === selected.id
                       ? "Connecting to the screen…"
-                      : (codes[selected.id] || "").length === PAIRING_CODE_LENGTH
-                        ? "Press Enter or Pair screen"
-                        : "Codes expire after 15 minutes"}
+                      : pairErrors[selected.id]
+                        ? pairErrors[selected.id]
+                        : (codes[selected.id] || "").length === PAIRING_CODE_LENGTH
+                          ? "Press Enter or Pair screen"
+                          : "Codes expire after 15 minutes"}
                   </span>
                   <div>
                     <Button

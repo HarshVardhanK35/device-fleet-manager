@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { MonitorPlay, Check, Play, Square } from "lucide-react";
 
-const CODE_LENGTH = 8;
+import { generatePairingCode, getPairingStatus } from "../api/pairing.js";
+
 const CODE_SECONDS = 15 * 60;
-// No ambiguous characters (no O/0, I/1) — this is read off a TV from across a room.
-const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const STATUS_POLL_MS = 2000;
 
 const THEME = {
   "--color-bg": "#151235",
@@ -19,14 +19,6 @@ const THEME = {
   "--color-neutral-200": "#c7c5e6",
   "--color-neutral-400": "#726fae",
 };
-
-function generateCode() {
-  let code = "";
-  for (let i = 0; i < CODE_LENGTH; i++) {
-    code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
-  }
-  return code;
-}
 
 function formatCountdown(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -81,27 +73,47 @@ function Screens() {
   const [phase, setPhase] = useState("loading"); // loading|code|paired|tap|playing|stopped
   const [code, setCode] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(CODE_SECONDS);
-  const [screenName] = useState("Lobby TV"); // seed name — real pairing response supplies this later
+  const [screenName, setScreenName] = useState("");
   const stageRef = useRef(null);
   const longPressTimer = useRef(null);
 
+  // Generates a fresh code from the real backend. Retries on failure
+  // (network hiccup, rate limit, etc.) rather than getting stuck — the TV
+  // has no one to show an error to, so it just keeps trying.
   useEffect(() => {
     if (phase !== "loading") return;
-    const t = setTimeout(() => {
-      setCode(generateCode());
-      setSecondsLeft(CODE_SECONDS);
-      setPhase("code");
-    }, 900);
-    return () => clearTimeout(t);
+    let cancelled = false;
+
+    async function attempt() {
+      try {
+        const data = await generatePairingCode();
+        if (cancelled) return;
+        if (!data?.code) throw new Error(data?.message || "generate failed");
+        setCode(data.code);
+        const remaining = Math.round((new Date(data.expiresAt).getTime() - Date.now()) / 1000);
+        setSecondsLeft(Math.max(0, remaining));
+        setPhase("code");
+      } catch {
+        if (!cancelled) setTimeout(attempt, 3000);
+      }
+    }
+
+    attempt();
+    return () => {
+      cancelled = true;
+    };
   }, [phase]);
 
+  // Ticks the countdown down to 0, then goes back through "loading" —
+  // the countdown hitting zero IS the refresh, automatic, no manual
+  // action — which re-triggers the generate effect above for a fresh code.
   useEffect(() => {
     if (phase !== "code") return;
     const t = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
-          setCode(generateCode());
-          return CODE_SECONDS;
+          setPhase("loading");
+          return 0;
         }
         return s - 1;
       });
@@ -109,17 +121,33 @@ function Screens() {
     return () => clearInterval(t);
   }, [phase]);
 
+  // Polls the real backend for the phone-side pairing confirmation —
+  // this is what actually detects a real "Pair screen" submit from
+  // PlayerSlots.jsx, no more click-to-simulate.
+  useEffect(() => {
+    if (phase !== "code" || !code) return;
+    let cancelled = false;
+    const t = setInterval(async () => {
+      try {
+        const data = await getPairingStatus(code);
+        if (cancelled || data?.status !== "claimed") return;
+        setScreenName(data.screenName || "");
+        setPhase("paired");
+      } catch {
+        // Network hiccup — just try again on the next tick.
+      }
+    }, STATUS_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [phase, code]);
+
   useEffect(() => {
     if (phase !== "paired") return;
     const t = setTimeout(() => setPhase("tap"), 1500);
     return () => clearTimeout(t);
   }, [phase]);
-
-  function simulatePaired() {
-    // Dev stand-in for the real phone-side pairing confirmation — no
-    // backend/poll exists yet, so clicking the code card simulates it.
-    if (phase === "code") setPhase("paired");
-  }
 
   async function startPlaying() {
     try {
@@ -213,13 +241,8 @@ function Screens() {
           )}
 
           {phase === "code" && (
-            <button
-              type="button"
-              onClick={simulatePaired}
-              title="(dev) click to simulate pairing — no backend yet"
+            <div
               style={{
-                all: "unset",
-                cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "flex-start",
@@ -251,7 +274,7 @@ function Screens() {
                   ))}
                 </div>
               </div>
-            </button>
+            </div>
           )}
 
           {phase === "paired" && (

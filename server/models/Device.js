@@ -6,10 +6,8 @@ const deviceSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    deviceType: {
+    type: {
       type: String,
-      required: true,
-      enum: ["android", "console", "arch"],
     },
     status: {
       type: String,
