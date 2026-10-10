@@ -2,6 +2,15 @@ import Device from "../models/Device.js";
 
 export const createDevice = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      const count = await Device.countDocuments({ userId: req.user.id });
+      if (count >= 3) {
+        return res
+          .status(403)
+          .json({ message: "Device limit reached (3 max)" });
+      }
+    }
+
     const device = await Device.create({ ...req.body, userId: req.user.id });
     res.status(201).json(device);
   } catch (error) {
@@ -11,7 +20,8 @@ export const createDevice = async (req, res) => {
 
 export const getAllDevices = async (req, res) => {
   try {
-    const devices = await Device.find();
+    const filter = req.user.role === "admin" ? {} : { userId: req.user.id };
+    const devices = await Device.find(filter);
     res.status(200).json(devices);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -58,13 +68,17 @@ export const connectDevice = async (req, res) => {
 
 export const updateDevice = async (req, res) => {
   try {
-    const device = await Device.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const device = await Device.findById(req.params.id);
     if (!device) {
       return res.status(404).json({ message: "Device not found" });
     }
+
+    if (device.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not your device" });
+    }
+
+    Object.assign(device, req.body);
+    await device.save();
     res.status(200).json(device);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -73,10 +87,16 @@ export const updateDevice = async (req, res) => {
 
 export const deleteDevice = async (req, res) => {
   try {
-    const device = await Device.findByIdAndDelete(req.params.id);
+    const device = await Device.findById(req.params.id);
     if (!device) {
       return res.status(404).json({ message: "Device not found" });
     }
+
+    if (device.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not your device" });
+    }
+    
+    await device.deleteOne();
     res.status(200).json({ message: "Device deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
