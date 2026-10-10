@@ -8,7 +8,7 @@ import {
   connectDevice,
 } from "../controllers/deviceController.js";
 
-import { protect, requireAdmin } from "../middleware/auth.js";
+import { protect } from "../middleware/auth.js";
 
 // express.Router() creates a mini, self-contained instance of Express's routing system
 const router = express.Router();
@@ -24,6 +24,6 @@ router.get("/", protect, getAllDevices);
 router.get("/:id", protect, getDeviceById);
 router.post("/:id/connect", connectDevice);
 router.put("/:id", protect, updateDevice);
-router.delete("/:id", protect, requireAdmin, deleteDevice);
+router.delete("/:id", protect, deleteDevice);
 
 export default router;

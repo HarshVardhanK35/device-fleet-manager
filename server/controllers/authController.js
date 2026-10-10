@@ -2,6 +2,9 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
 import User from "../models/User.js";
+import Device from "../models/Device.js";
+import Assignment from "../models/Assignment.js";
+
 import { sendEmail } from "../utils/sendEmail.js";
 import {
   buildVerificationEmail,
@@ -293,4 +296,27 @@ export const refresh = async (req, res) => {
 export const logout = (req, res) => {
   res.clearCookie("refreshToken");
   res.status(200).json({ message: "Logged out" });
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const devices = await Device.find({ userId: user._id });
+    const deviceIds = devices.map((d) => d._id);
+
+    // "$in" is a mongoDB operator that matches any value in a given array
+    await Assignment.deleteMany({ deviceId: { $in: deviceIds } });
+    await Device.deleteMany({ userId: user._id });
+    await user.deleteOne();
+
+    res
+      .status(200)
+      .json({ message: "User, their devices, and assignments deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };

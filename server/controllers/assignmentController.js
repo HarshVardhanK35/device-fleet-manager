@@ -9,10 +9,7 @@ export const createAssignment = async (req, res) => {
     }
 
     const isOwner = device.userId && req.user.id === device.userId.toString();
-    const isAllowedAdmin =
-      req.user.role === "admin" && device.adminControl === true;
-
-    if (!isOwner && !isAllowedAdmin) {
+    if (!isOwner) {
       return res.status(403).json({
         message: "You don't have permission to publish to this device",
       });
@@ -52,17 +49,18 @@ export const getAssignmentById = async (req, res) => {
 
 export const updateAssignments = async (req, res) => {
   try {
-    const assignment = await Assignment.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
+    const assignment = await Assignment.findById(req.params.id);
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }
+
+    const device = await Device.findById(assignment.deviceId);
+    if (!device || device.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not your device's assignment" });
+    }
+
+    Object.assign(assignment, req.body);
+    await assignment.save();
     res.status(200).json(assignment);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -71,10 +69,17 @@ export const updateAssignments = async (req, res) => {
 
 export const deleteAssignment = async (req, res) => {
   try {
-    const assignment = await Assignment.findByIdAndDelete(req.params.id);
+    const assignment = await Assignment.findById(req.params.id);
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }
+
+    const device = await Device.findById(assignment.deviceId);
+    if (!device || device.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not your device's assignment" });
+    }
+
+    await assignment.deleteOne();
     res.status(200).json({ message: "Assignment deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });

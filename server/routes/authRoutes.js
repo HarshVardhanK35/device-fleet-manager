@@ -11,6 +11,7 @@ import {
   resetPassword,
   refresh,
   logout,
+  deleteUser,
 } from "../controllers/authController.js";
 
 import { protect, requireAdmin } from "../middleware/auth.js";
@@ -27,5 +28,6 @@ router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.post("/refresh", refresh);
 router.post("/logout", logout);
+router.delete("/users/:id", protect, requireAdmin, deleteUser);
 
 export default router;
