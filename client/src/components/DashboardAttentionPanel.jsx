@@ -44,7 +44,7 @@ function AttentionRow({ item }) {
           </span>
         </div>
         <div className="hidden md:block text-xs text-text-muted whitespace-nowrap overflow-hidden text-ellipsis">
-          {item.device.deviceType}
+          {item.device.type}
         </div>
       </div>
 

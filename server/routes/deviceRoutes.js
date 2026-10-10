@@ -5,6 +5,7 @@ import {
   getDeviceById,
   updateDevice,
   deleteDevice,
+  connectDevice,
 } from "../controllers/deviceController.js";
 
 import { protect, requireAdmin } from "../middleware/auth.js";
@@ -21,6 +22,7 @@ router.post("/", protect, createDevice);
 router.get("/", protect, getAllDevices);
 
 router.get("/:id", protect, getDeviceById);
+router.post("/:id/connect", connectDevice);
 router.put("/:id", protect, updateDevice);
 router.delete("/:id", protect, requireAdmin, deleteDevice);
 
