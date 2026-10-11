@@ -1,11 +1,46 @@
 import { useState, useEffect, useRef } from "react";
-import { MonitorPlay, Check, Play, Square } from "lucide-react";
+import { MonitorPlay, Check, Play, Square, RotateCcw } from "lucide-react";
 
 import { generatePairingCode, getPairingStatus } from "../api/pairing.js";
+import { checkDeviceExists, unpairDevice, disconnectDevice } from "../api/devices.js";
 import DevicePlayback from "../components/DevicePlayback.jsx";
 
 const CODE_SECONDS = 15 * 60;
 const STATUS_POLL_MS = 2000;
+
+// This browser's memory of its own pairing — once a physical screen pairs
+// successfully, it shouldn't have to re-pair from scratch every time the
+// tab reloads or playback is stopped. Scoped to this one browser/device,
+// same as how real signage hardware remembers its own setup.
+const STORAGE_KEY = "dfm.screen.pairing";
+
+function readStoredPairing() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.deviceId ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function storePairing(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Private browsing / storage disabled — the screen just won't
+    // remember itself across reloads; pairing still works either way.
+  }
+}
+
+function clearStoredPairing() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 const THEME = {
   "--color-bg": "#151235",
@@ -78,15 +113,46 @@ function Screens() {
   const [pairedDeviceId, setPairedDeviceId] = useState(null);
   const stageRef = useRef(null);
   const longPressTimer = useRef(null);
+  const playbackRef = useRef(null);
+  // Position captured right before long-press stops playback, so "Continue"
+  // can hand it back in as DevicePlayback's `initialPosition` prop; cleared
+  // (set to null) by "Restart" instead.
+  const [pendingPosition, setPendingPosition] = useState(null);
 
-  // Generates a fresh code from the real backend. Retries on failure
-  // (network hiccup, rate limit, etc.) rather than getting stuck — the TV
-  // has no one to show an error to, so it just keeps trying.
+  // First checks whether this browser already remembers a pairing — if
+  // so, confirms it still exists server-side (it may have been removed
+  // from the account) and skips straight to reconnecting as that same
+  // screen, no new code needed. Otherwise generates a fresh code, same as
+  // before. Retries on failure (network hiccup, rate limit, etc.) rather
+  // than getting stuck — the TV has no one to show an error to, so it
+  // just keeps trying.
   useEffect(() => {
     if (phase !== "loading") return;
     let cancelled = false;
 
     async function attempt() {
+      const stored = readStoredPairing();
+      if (stored) {
+        try {
+          const check = await checkDeviceExists(stored.deviceId);
+          if (cancelled) return;
+          if (check?.exists) {
+            setPairedDeviceId(stored.deviceId);
+            setScreenName(stored.screenName || "");
+            setPhase("tap");
+            return;
+          }
+          // Confirmed gone (removed from the account) — fall through to
+          // a fresh pairing below instead of retrying this screen.
+          clearStoredPairing();
+        } catch {
+          // Network hiccup — don't throw away a valid remembered pairing
+          // over this, just retry the whole check shortly.
+          if (!cancelled) setTimeout(attempt, 3000);
+          return;
+        }
+      }
+
       try {
         const data = await generatePairingCode();
         if (cancelled) return;
@@ -135,6 +201,9 @@ function Screens() {
         if (cancelled || data?.status !== "claimed") return;
         setScreenName(data.screenName || "");
         setPairedDeviceId(data.deviceId || null);
+        if (data.deviceId) {
+          storePairing({ deviceId: data.deviceId, screenName: data.screenName || "" });
+        }
         setPhase("paired");
       } catch {
         // Network hiccup — just try again on the next tick.
@@ -163,8 +232,43 @@ function Screens() {
   }
 
   function stopPlaying() {
+    // Capture exactly where playback was before DevicePlayback unmounts —
+    // this is the only moment that position is still readable.
+    setPendingPosition(playbackRef.current?.getPosition() ?? null);
+    // Tell the server this device is voluntarily going offline right now,
+    // so an immediate Continue/Restart doesn't get wrongly 409-rejected by
+    // connectDevice's own stale "still online" check (20s threshold).
+    // Best-effort, fire-and-forget — doesn't block the phase transition.
+    if (pairedDeviceId) disconnectDevice(pairedDeviceId).catch(() => {});
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     setPhase("stopped");
+  }
+
+  function continuePlaying() {
+    // Reconnect as the screen this browser already remembers, resuming
+    // from the position captured on stop — DevicePlayback itself discards
+    // it if the schedule has since moved to a different assignment.
+    setPhase(pairedDeviceId ? "tap" : "loading");
+  }
+
+  function restartPlaying() {
+    setPendingPosition(null);
+    setPhase(pairedDeviceId ? "tap" : "loading");
+  }
+
+  async function unpairThisScreen() {
+    if (!pairedDeviceId) return;
+    try {
+      await unpairDevice(pairedDeviceId);
+    } catch {
+      // Best-effort — even if the request itself fails (e.g. a network
+      // hiccup), still forget it locally so the TV doesn't stay stuck
+      // claiming a pairing the owner clearly wants to abandon.
+    }
+    clearStoredPairing();
+    setPairedDeviceId(null);
+    setScreenName("");
+    setPhase("loading");
   }
 
   function handlePointerDown() {
@@ -238,7 +342,7 @@ function Screens() {
                 }}
               />
               <div style={{ fontSize: "clamp(16px,3.4cqmin,170px)", color: "var(--color-neutral-200)" }}>
-                Generating your pairing code…
+                Connecting…
               </div>
             </div>
           )}
@@ -364,7 +468,9 @@ function Screens() {
               }}
             >
               <DevicePlayback
+                ref={playbackRef}
                 deviceId={pairedDeviceId}
+                initialPosition={pendingPosition}
                 waitingView={
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(12px,3.4cqmin,170px)" }}>
                     <div
@@ -399,19 +505,7 @@ function Screens() {
           )}
 
           {phase === "stopped" && (
-            <button
-              type="button"
-              onClick={() => setPhase("loading")}
-              title="(dev) click to restart the pairing cycle"
-              style={{
-                all: "unset",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "clamp(12px,3cqmin,150px)",
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(20px,5cqmin,260px)" }}>
               <div
                 style={{
                   width: "clamp(44px,11cqmin,560px)",
@@ -430,7 +524,68 @@ function Screens() {
               <div style={{ fontSize: "clamp(24px,6.4cqmin,330px)", fontWeight: 500, letterSpacing: "-0.02em" }}>
                 Playback stopped
               </div>
-            </button>
+
+              <div style={{ display: "flex", gap: "clamp(12px,2.8cqmin,140px)" }}>
+                <button
+                  type="button"
+                  onClick={continuePlaying}
+                  title="Resume from where it stopped"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "clamp(8px,1.8cqmin,90px)",
+                    padding: "clamp(12px,2.8cqmin,140px) clamp(22px,5.4cqmin,270px)",
+                    borderRadius: 999,
+                    border: "clamp(2px,0.42cqmin,20px) solid var(--color-accent-400)",
+                    background: "color-mix(in srgb, var(--color-accent) 16%, var(--color-section))",
+                    color: "var(--color-neutral-100)",
+                    fontSize: "clamp(16px,3.6cqmin,180px)",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Play style={{ width: "1em", height: "1em", color: "var(--color-accent-200)" }} fill="currentColor" />
+                  Continue
+                </button>
+
+                <button
+                  type="button"
+                  onClick={restartPlaying}
+                  title="Start the current item from the top"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "clamp(8px,1.8cqmin,90px)",
+                    padding: "clamp(12px,2.8cqmin,140px) clamp(22px,5.4cqmin,270px)",
+                    borderRadius: 999,
+                    border: "clamp(2px,0.42cqmin,20px) solid var(--color-neutral-400)",
+                    background: "transparent",
+                    color: "var(--color-neutral-100)",
+                    fontSize: "clamp(16px,3.6cqmin,180px)",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  <RotateCcw style={{ width: "1em", height: "1em", color: "var(--color-neutral-200)" }} />
+                  Restart
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={unpairThisScreen}
+                style={{
+                  all: "unset",
+                  cursor: "pointer",
+                  fontSize: "clamp(13px,2.4cqmin,120px)",
+                  color: "var(--color-neutral-400)",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                }}
+              >
+                Unpair this screen
+              </button>
+            </div>
           )}
         </div>
 
@@ -512,4 +667,29 @@ export default Screens;
 // pages/Player.jsx uses, not a separate copy) are all real, not simulated.
 // The "tap to start" -> fullscreen and the long-press -> exit-fullscreen
 // interactions are real too (Fullscreen API + Pointer Events).
+//
+// Remembers its own pairing (localStorage, STORAGE_KEY) so this browser
+// doesn't have to re-pair from scratch every time the tab reloads or
+// playback is stopped — on mount, a remembered deviceId is confirmed to
+// still exist (GET /devices/:id/exists) and, if so, goes straight to
+// "tap" to reconnect as that same screen; only pairs fresh if nothing's
+// remembered or the remembered screen was removed from the account.
+// "Unpair this screen" (shown on the "stopped" state) explicitly deletes
+// the device (DELETE /devices/:id/unpair) and clears this memory — see
+// future-implementations.md's Preview-tab section for why that endpoint
+// has to be unauthenticated and the tradeoff that comes with it.
+//
+// "Stopped" phase shows two buttons: "Continue" resumes DevicePlayback from
+// the exact position captured (via its forwarded ref's getPosition()) the
+// moment long-press triggered stopPlaying(); "Restart" discards that
+// captured position so it starts the current item fresh at the top. Both
+// just flip back through "tap" (or "loading" as a fallback) — the real
+// difference is only in what `pendingPosition` holds when DevicePlayback
+// next mounts.
+//
+// stopPlaying() also fires POST /devices/:id/disconnect (best-effort, not
+// awaited) the moment long-press triggers — tells the server this device
+// is voluntarily going offline so a fast Continue/Restart right after
+// isn't wrongly 409-rejected by connectDevice's own "still online within
+// the last 20s" check.
 // Used by: App.jsx (route "/screens", public, outside ProtectedRoute).
