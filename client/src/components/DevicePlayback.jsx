@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import mqtt from "mqtt";
 
 const HEARTBEAT_MS = 10000; // matches services/deviceSimulator.js's interval
@@ -14,22 +14,74 @@ function findActiveAssignment(manifest, nowMs) {
   );
 }
 
-function DevicePlayback({
-  deviceId,
-  rejectedView,
-  waitingView,
-  nothingScheduledView,
-  takenOverView,
-}) {
+function DevicePlayback(
+  {
+    deviceId,
+    rejectedView,
+    waitingView,
+    nothingScheduledView,
+    takenOverView,
+    initialPosition,
+  },
+  ref,
+) {
   const [manifest, setManifest] = useState(null);
   const [connection, setConnection] = useState("connecting"); // connecting|connected|rejected|taken-over
   const [now, setNow] = useState(() => Date.now());
   const [contentIndex, setContentIndex] = useState(0);
+  const videoRef = useRef(null);
+  // Consumed once, right after the initial content index is derived from it
+  // below — a later prop change (e.g. parent re-render) must not re-seek an
+  // already-playing video. State (not a ref) because it's set during
+  // render, alongside contentIndex, in the block below.
+  const [initialPositionApplied, setInitialPositionApplied] = useState(false);
+  const [pendingVideoSeek, setPendingVideoSeek] = useState(null);
+  // When the current item started, in epoch ms — backdated on resume by
+  // however much of it had already played, so the rotation effect below
+  // schedules only the *remaining* time instead of the item's full
+  // duration. Reset to "now" on every normal advance.
+  const [itemStartedAt, setItemStartedAt] = useState(() => Date.now());
 
   useEffect(() => {
     let cancelled = false;
     let mqttClient = null;
     let heartbeatTimer = null;
+
+    function stopHeartbeat() {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+    }
+
+    function startHeartbeat() {
+      stopHeartbeat();
+      // Heartbeat keeps the device "online" (see server/services/
+      // heartbeatListener.js + offlineChecker.js).
+      heartbeatTimer = setInterval(() => {
+        mqttClient.publish(
+          `devices/${deviceId}/heartbeat`,
+          JSON.stringify({ status: "online", timestamp: new Date() }),
+        );
+      }, HEARTBEAT_MS);
+    }
+
+    // Claims the one-connection slot (POST /devices/:id/connect). Used for
+    // the initial connect and again after a "reconnect" control message
+    // (release) brings a taken-over screen back — see the message handler
+    // below.
+    async function claimConnection() {
+      try {
+        const res = await fetch(`http://localhost:5000/devices/${deviceId}/connect`, {
+          method: "POST",
+        });
+        return res.ok;
+      } catch {
+        // Backend unreachable — treat the same as rejected rather than
+        // silently connecting with no server-side registration.
+        return false;
+      }
+    }
 
     (async () => {
       // One active connection per device: claim the slot before doing
@@ -37,18 +89,7 @@ function DevicePlayback({
       // while one is already connected gets rejected here and never
       // subscribes or starts a heartbeat — see future-implementations.md's
       // Preview-tab section for the full reasoning.
-      let accepted;
-      try {
-        const res = await fetch(`http://localhost:5000/devices/${deviceId}/connect`, {
-          method: "POST",
-        });
-        accepted = res.ok;
-      } catch {
-        // Backend unreachable — treat the same as rejected rather than
-        // silently connecting with no server-side registration.
-        accepted = false;
-      }
-
+      const accepted = await claimConnection();
       if (cancelled) return;
 
       if (!accepted) {
@@ -62,9 +103,8 @@ function DevicePlayback({
       mqttClient = mqtt.connect("ws://localhost:9001");
 
       // subscription - to topic devices/<deviceId>/manifest, plus a control
-      // topic the backend's "take over" action publishes to (POST
-      // /devices/:id/take-over -> publishControlMessage) to force this
-      // connection to drop.
+      // topic the backend's take-over/release actions publish to (POST
+      // /devices/:id/take-over | /release -> publishControlMessage).
       mqttClient.on("connect", () => {
         mqttClient.subscribe(`devices/${deviceId}/manifest`);
         mqttClient.subscribe(`devices/${deviceId}/control`);
@@ -77,30 +117,38 @@ function DevicePlayback({
 
         if (topic.endsWith("/control")) {
           if (data.action === "disconnect") {
-            if (heartbeatTimer) clearInterval(heartbeatTimer);
-            mqttClient.end();
+            // Taken over: go idle rather than fully ending the MQTT
+            // connection — it stays subscribed to this same control topic
+            // so a later "reconnect" (release) can actually reach it.
+            // Only the heartbeat stops, so the device correctly ages to
+            // "offline" server-side while taken over.
+            stopHeartbeat();
             setConnection("taken-over");
+          } else if (data.action === "reconnect") {
+            claimConnection().then((reaccepted) => {
+              if (cancelled) return;
+              if (!reaccepted) {
+                setConnection("rejected");
+                return;
+              }
+              setConnection("connected");
+              startHeartbeat();
+            });
           }
           return;
         }
 
+        if (cancelled) return;
         setManifest(data);
       });
 
-      // Heartbeat keeps the device "online" (see server/services/
-      // heartbeatListener.js + offlineChecker.js).
-      heartbeatTimer = setInterval(() => {
-        mqttClient.publish(
-          `devices/${deviceId}/heartbeat`,
-          JSON.stringify({ status: "online", timestamp: new Date() }),
-        );
-      }, HEARTBEAT_MS);
+      startHeartbeat();
     })();
 
     // whenever deviceId changes and component unmounts - clean up fn ends the connection
     return () => {
       cancelled = true;
-      if (heartbeatTimer) clearInterval(heartbeatTimer);
+      stopHeartbeat();
       if (mqttClient) mqttClient.end();
     };
 
@@ -108,6 +156,17 @@ function DevicePlayback({
   }, [deviceId]);
 
   const activeAssignment = findActiveAssignment(manifest, now);
+
+  useImperativeHandle(ref, () => ({
+    getPosition() {
+      return {
+        assignmentId: activeAssignment?.assignmentId ?? null,
+        contentIndex,
+        elapsedMs: Date.now() - itemStartedAt,
+        videoTime: videoRef.current?.currentTime || 0,
+      };
+    },
+  }));
 
   // Re-checks "what's active now" right at the next meaningful boundary —
   // the current assignment ending, or the next one beginning — instead of
@@ -140,21 +199,38 @@ function DevicePlayback({
   const [prevAssignment, setPrevAssignment] = useState(activeAssignment);
   if (prevAssignment !== activeAssignment) {
     setPrevAssignment(activeAssignment);
-    if (contentIndex !== 0) setContentIndex(0);
+    // A saved position only applies to the assignment it was captured
+    // from — if the schedule has since moved on to a different assignment,
+    // always start that one fresh at item 0.
+    const canResume =
+      !initialPositionApplied &&
+      initialPosition &&
+      activeAssignment?.assignmentId &&
+      initialPosition.assignmentId === activeAssignment.assignmentId;
+    setInitialPositionApplied(true);
+    setPendingVideoSeek(canResume ? initialPosition.videoTime || 0 : null);
+    setContentIndex(canResume ? initialPosition.contentIndex : 0);
+    setItemStartedAt(canResume ? now - (initialPosition.elapsedMs || 0) : now);
   }
 
   // Rotates through the active playlist's content, each item for its own
-  // durationInMillis, looping back to the start.
+  // durationInMillis, looping back to the start. Schedules only the time
+  // *remaining* in the current item (duration minus however long it's
+  // already been showing since itemStartedAt) rather than always the full
+  // duration — this is what makes resuming mid-item actually pick up where
+  // it left off instead of replaying the whole item from scratch.
   useEffect(() => {
     const items = activeAssignment?.content;
     const current = items?.[contentIndex];
     if (!current) return;
     const duration = current.durationInMillis > 0 ? current.durationInMillis : FALLBACK_ITEM_MS;
+    const remaining = Math.max(duration - (Date.now() - itemStartedAt), 0);
     const t = setTimeout(() => {
       setContentIndex((i) => (i + 1) % items.length);
-    }, duration);
+      setItemStartedAt(Date.now());
+    }, remaining);
     return () => clearTimeout(t);
-  }, [activeAssignment, contentIndex]);
+  }, [activeAssignment, contentIndex, itemStartedAt]);
 
   if (connection === "rejected") {
     return rejectedView ?? <h1>This screen is already connected elsewhere.</h1>;
@@ -185,10 +261,17 @@ function DevicePlayback({
       {currentContent.type === "video" && (
         <video
           key={currentContent._id}
+          ref={videoRef}
           src={currentContent.mediaUrl}
           autoPlay
           loop
           muted
+          onLoadedMetadata={(e) => {
+            if (pendingVideoSeek != null) {
+              e.currentTarget.currentTime = pendingVideoSeek;
+              setPendingVideoSeek(null);
+            }
+          }}
           style={{ maxWidth: "100%", maxHeight: "100vh" }}
         />
       )}
@@ -197,7 +280,7 @@ function DevicePlayback({
   );
 }
 
-export default DevicePlayback;
+export default forwardRef(DevicePlayback);
 
 // The real device-facing playback logic: claims the one-connection slot
 // (POST /devices/:id/connect), subscribes to devices/<deviceId>/manifest
@@ -209,12 +292,30 @@ export default DevicePlayback;
 // back assignments on its own — and rotates through that assignment's
 // playlist content by each item's durationInMillis, looping. Shows
 // `nothingScheduledView` when no assignment currently covers "now".
-// Also subscribes to devices/<deviceId>/control — the "take over" action
-// (PlayerSlots.jsx -> POST /devices/:id/take-over -> publishControlMessage)
-// publishes { action: "disconnect" } there, which ends this connection and
-// switches to the taken-over state rather than trying to reconnect.
+// Also subscribes to devices/<deviceId>/control, for the take-over/release
+// actions (PlayerSlots.jsx -> POST /devices/:id/take-over|release ->
+// publishControlMessage). "disconnect" goes idle (heartbeat stops, MQTT
+// connection stays up) rather than ending the connection outright — it
+// has to stay subscribed to this same topic to ever hear a later
+// "reconnect", which re-claims the connection slot and resumes normally.
+// Ending the connection on take-over would make release impossible to
+// deliver to an already-disconnected client.
 // `rejectedView`/`waitingView`/`nothingScheduledView`/`takenOverView` let a
 // caller override the default messages to match its own page's visual
 // language — all optional.
 // Used by: pages/Player.jsx (route "/player/:deviceId"), pages/Screens.jsx
 // (the "playing" phase, after pairing + the tap-to-start gesture).
+//
+// Resume support: forwards a ref exposing getPosition() -> { assignmentId,
+// contentIndex, elapsedMs, videoTime }, read by a caller right before
+// unmounting this component (e.g. Screens.jsx's long-press stop handler)
+// so it can be captured and later passed back in as the `initialPosition`
+// prop. On mount, `initialPosition` is only honored if its assignmentId
+// still matches whatever's actually active now — if the schedule moved on
+// to a different assignment in the meantime, playback always starts that
+// one fresh at item 0 instead. `elapsedMs` (how long the saved item had
+// already been showing) backdates `itemStartedAt` on resume, so the
+// rotation effect schedules only the item's *remaining* time instead of
+// its full duration — this is what makes a resumed image/video actually
+// pick up mid-item instead of replaying from its own start. `videoTime`
+// additionally seeks the actual `<video>` element to the right frame.

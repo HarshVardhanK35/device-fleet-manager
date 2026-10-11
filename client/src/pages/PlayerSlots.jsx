@@ -34,6 +34,7 @@ import {
   updateDevice,
   deleteDevice,
   takeOverDevice,
+  releaseDevice,
 } from "../api/devices.js";
 import { getAssignments } from "../api/assignments.js";
 import { timeAgo } from "../utils/timeAgo.js";
@@ -109,6 +110,7 @@ function PlayerSlots() {
   const [loading, setLoading] = useState(true);
   const [removeError, setRemoveError] = useState("");
   const [takeOverError, setTakeOverError] = useState("");
+  const [releaseError, setReleaseError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -272,18 +274,21 @@ function PlayerSlots() {
     setModal({ mode: "player", id });
   }
 
-  function releaseScreen(id) {
+  async function releaseScreen(id) {
+    const result = await releaseDevice(id);
+    if (!result || result.message !== "Release signal sent") {
+      setReleaseError(result?.message || "Couldn't release this screen. Try again.");
+      return;
+    }
+
+    setReleaseError("");
+    // Optimistic, but honest: the real screen still has to receive the
+    // signal and re-register its own connection — this doesn't claim
+    // "online" outright the way the old local-only version did.
     setScreens((prev) =>
       prev.map((s) =>
         s.id === id
-          ? {
-              ...s,
-              status: s.prevStatus || "online",
-              seen:
-                s.prevStatus === "offline"
-                  ? "Last seen 2h ago"
-                  : "Online · reconnected",
-            }
+          ? { ...s, status: "offline", seen: "Released — waiting to reconnect" }
           : s,
       ),
     );
@@ -707,45 +712,50 @@ function PlayerSlots() {
                   )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 p-4 rounded-lg border border-accent-red/35 bg-accent-red/[0.04]">
-                  <div className="flex-1 min-w-0 flex flex-col gap-1">
-                    <span className="flex items-center gap-2 text-accent-red text-sm font-semibold">
-                      <Plug size={15} />
-                      Take over this screen
-                    </span>
-                    <span className="text-text-muted text-xs leading-relaxed">
-                      Opens the full player here and disconnects the physical
-                      screen at once — only one connection per screen is
-                      allowed.
-                    </span>
-                  </div>
-                  {selected.status !== "taken" ? (
-                    <Button
-                      icon={Plug}
-                      onClick={() => {
-                        setModal({ mode: "take", id: selected.id });
-                        setAck(false);
-                        setTakeOverError("");
-                      }}
-                      className="!bg-accent-red !border-accent-red hover:!brightness-110 flex-none"
-                    >
-                      Take over…
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2 flex-wrap flex-none">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setModal({ mode: "player", id: selected.id })
-                        }
-                        className="h-9 px-3 rounded-lg border border-border-muted bg-bg-hover text-text-primary text-xs font-medium transition-colors"
-                      >
-                        Open player
-                      </button>
-                      <ReleaseScreenButton
-                        onClick={() => releaseScreen(selected.id)}
-                      />
+                <div className="flex flex-col gap-2 p-4 rounded-lg border border-accent-red/35 bg-accent-red/[0.04]">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3.5">
+                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                      <span className="flex items-center gap-2 text-accent-red text-sm font-semibold">
+                        <Plug size={15} />
+                        Take over this screen
+                      </span>
+                      <span className="text-text-muted text-xs leading-relaxed">
+                        Opens the full player here and disconnects the physical
+                        screen at once — only one connection per screen is
+                        allowed.
+                      </span>
                     </div>
+                    {selected.status !== "taken" ? (
+                      <Button
+                        icon={Plug}
+                        onClick={() => {
+                          setModal({ mode: "take", id: selected.id });
+                          setAck(false);
+                          setTakeOverError("");
+                        }}
+                        className="!bg-accent-red !border-accent-red hover:!brightness-110 flex-none"
+                      >
+                        Take over…
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2 flex-wrap flex-none">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setModal({ mode: "player", id: selected.id })
+                          }
+                          className="h-9 px-3 rounded-lg border border-border-muted bg-bg-hover text-text-primary text-xs font-medium transition-colors"
+                        >
+                          Open player
+                        </button>
+                        <ReleaseScreenButton
+                          onClick={() => releaseScreen(selected.id)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {releaseError && (
+                    <span className="text-accent-red text-xs">{releaseError}</span>
                   )}
                 </div>
               </div>

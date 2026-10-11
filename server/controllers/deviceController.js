@@ -1,4 +1,5 @@
 import Device from "../models/Device.js";
+import Assignment from "../models/Assignment.js";
 import { publishControlMessage } from "../services/mqttService.js";
 
 export const createDevice = async (req, res) => {
@@ -117,6 +118,70 @@ export const takeOverDevice = async (req, res) => {
 
     publishControlMessage(device._id, { action: "disconnect" });
     res.status(200).json({ message: "Take-over signal sent" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const releaseDevice = async (req, res) => {
+  try {
+    const device = await Device.findById(req.params.id);
+    if (!device) {
+      return res.status(404).json({ message: "Device not found" });
+    }
+
+    if (device.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not your device" });
+    }
+
+    publishControlMessage(device._id, { action: "reconnect" });
+    res.status(200).json({ message: "Release signal sent" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deviceExists = async (req, res) => {
+  try {
+    const exists = await Device.exists({ _id: req.params.id });
+    if (!exists) {
+      return res.status(404).json({ exists: false });
+    }
+    
+    res.status(200).json({ exists: true });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const unpairDevice = async (req, res) => {
+  try {
+    const device = await Device.findById(req.params.id);
+    if (!device) {
+      return res.status(404).json({ message: "Device not found" });
+    }
+
+    await Assignment.deleteMany({ deviceId: device._id });
+    await device.deleteOne();
+
+    res.status(200).json({ message: "Device deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const disconnectDevice = async (req, res) => {
+  try {
+    const device = await Device.findById(req.params.id);
+    if (!device) {
+      return res.status(404).json({ message: "Device not found" });
+    }
+
+    device.status = "offline";
+    device.lastSeenAt = null;
+    await device.save();
+
+    res.status(200).json({ disconnected: true });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
