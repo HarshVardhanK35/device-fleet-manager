@@ -1,4 +1,4 @@
-import { apiFetch } from "./apiClient";
+import { apiFetch, getAccessToken } from "./apiClient";
 
 export async function getContent() {
   return apiFetch("http://localhost:5000/content");
@@ -18,7 +18,8 @@ export function uploadFile(file, { onProgress, signal } = {}) {
     const formData = new FormData();
     formData.append("file", file);
 
-    const token = localStorage.getItem("token");
+    const token = getAccessToken();
+
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "http://localhost:5000/upload");
     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
@@ -37,7 +38,8 @@ export function uploadFile(file, { onProgress, signal } = {}) {
       }
     };
     xhr.onerror = () => reject(new Error("Upload failed"));
-    xhr.onabort = () => reject(new DOMException("Upload cancelled", "AbortError"));
+    xhr.onabort = () =>
+      reject(new DOMException("Upload cancelled", "AbortError"));
 
     if (signal) {
       if (signal.aborted) {

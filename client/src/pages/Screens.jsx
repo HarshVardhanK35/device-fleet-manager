@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { MonitorPlay, Check, Play, Square } from "lucide-react";
 
 import { generatePairingCode, getPairingStatus } from "../api/pairing.js";
+import DevicePlayback from "../components/DevicePlayback.jsx";
 
 const CODE_SECONDS = 15 * 60;
 const STATUS_POLL_MS = 2000;
@@ -74,6 +75,7 @@ function Screens() {
   const [code, setCode] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(CODE_SECONDS);
   const [screenName, setScreenName] = useState("");
+  const [pairedDeviceId, setPairedDeviceId] = useState(null);
   const stageRef = useRef(null);
   const longPressTimer = useRef(null);
 
@@ -132,6 +134,7 @@ function Screens() {
         const data = await getPairingStatus(code);
         if (cancelled || data?.status !== "claimed") return;
         setScreenName(data.screenName || "");
+        setPairedDeviceId(data.deviceId || null);
         setPhase("paired");
       } catch {
         // Network hiccup — just try again on the next tick.
@@ -356,27 +359,42 @@ function Screens() {
                 inset: 0,
                 display: "grid",
                 placeItems: "center",
-                background: "repeating-linear-gradient(135deg, #0d0b22 0 2cqmin, var(--color-bg) 2cqmin 4cqmin)",
+                background: "var(--color-bg)",
                 cursor: "pointer",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "clamp(6px,1.4cqmin,70px)",
-                  padding: "clamp(12px,3cqmin,150px) clamp(16px,4cqmin,200px)",
-                  borderRadius: "clamp(8px,1.6cqmin,80px)",
-                  background: "var(--color-bg)",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: "clamp(16px,3.4cqmin,170px)", fontWeight: 500 }}>Playlist content plays here</div>
-                <div style={{ fontSize: "clamp(13px,2.4cqmin,120px)", color: "var(--color-neutral-400)" }}>
-                  Long-press anywhere to stop playback
-                </div>
-              </div>
+              <DevicePlayback
+                deviceId={pairedDeviceId}
+                waitingView={
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(12px,3.4cqmin,170px)" }}>
+                    <div
+                      style={{
+                        width: "clamp(40px,10cqmin,520px)",
+                        height: "clamp(40px,10cqmin,520px)",
+                        borderRadius: "50%",
+                        border: "clamp(3px,0.75cqmin,36px) solid color-mix(in srgb, var(--color-accent-200) 20%, transparent)",
+                        borderTopColor: "var(--color-accent-200)",
+                        animation: "screens-spin 0.9s linear infinite",
+                      }}
+                    />
+                    <div style={{ fontSize: "clamp(16px,3.4cqmin,170px)", color: "var(--color-neutral-200)" }}>
+                      Waiting for content…
+                    </div>
+                  </div>
+                }
+                rejectedView={
+                  <div
+                    style={{
+                      textAlign: "center",
+                      maxWidth: "80cqw",
+                      fontSize: "clamp(16px,3.4cqmin,170px)",
+                      color: "var(--color-neutral-200)",
+                    }}
+                  >
+                    This screen is already connected elsewhere.
+                  </div>
+                }
+              />
             </div>
           )}
 
@@ -488,14 +506,10 @@ export default Screens;
 // properties on the root, intentionally more vibrant than the rest of the
 // app's muted dark theme, per the 10-foot-viewing-distance brief.
 //
-// UI-only, no backend yet (none exists for this feature): `code`/
-// `secondsLeft` are generated and counted down locally, and the
-// loading->code->paired transition is simulated — clicking the code card
-// stands in for the real phone-side pairing confirmation (there's no poll/
-// WebSocket to receive that from yet). The "tap to start" -> fullscreen
-// and the long-press -> exit-fullscreen interactions ARE real (Fullscreen
-// API + Pointer Events), not simulated, so both are testable on a laptop
-// browser today. The "playing" state is a static placeholder — real
-// playback should reuse Player.jsx's existing manifest-rendering logic
-// when this gets wired up, not be rebuilt here.
+// Real backend wiring: code generation/expiry (api/pairing.js), the
+// paired-detection poll, and the "playing" phase (components/
+// DevicePlayback.jsx — the same connect/heartbeat/MQTT/render logic
+// pages/Player.jsx uses, not a separate copy) are all real, not simulated.
+// The "tap to start" -> fullscreen and the long-press -> exit-fullscreen
+// interactions are real too (Fullscreen API + Pointer Events).
 // Used by: App.jsx (route "/screens", public, outside ProtectedRoute).

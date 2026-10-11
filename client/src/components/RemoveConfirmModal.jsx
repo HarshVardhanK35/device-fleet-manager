@@ -14,6 +14,7 @@ function RemoveConfirmModal({
   items,
   confirmLabel,
   onConfirm,
+  error,
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -66,6 +67,8 @@ function RemoveConfirmModal({
                 </ScrollBox>
               </div>
             )}
+
+            {error && <p className="text-accent-red text-xs m-0">{error}</p>}
           </div>
 
           <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
@@ -97,6 +100,7 @@ export default RemoveConfirmModal;
 // entirely for a single-entity removal with no list. Distinct from
 // ConfirmDeleteModal (actual, permanent deletion of records); this is for
 // "removed from this list/pairing, but the underlying thing still exists
-// elsewhere" actions.
+// elsewhere" actions. `error` (optional) shows a backend failure message
+// above the footer instead of silently closing on a failed confirm.
 // Used by: pages/Playlists.jsx (remove content from a playlist, bulk),
 // pages/PlayerSlots.jsx (unpair/remove a screen, single).
