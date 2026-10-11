@@ -1,11 +1,12 @@
 import { CalendarOff, Play } from "lucide-react";
+import { getTypeMeta } from "../utils/contentTypeMeta.js";
 
 // `playing` is null (nothing scheduled) or
-// { kicker, title, sub, pos, bg } describing the current content.
-// `mini` = small rail thumbnail (no play button, no "nothing scheduled"
-// text, just the bare visual). `bare` = full-size but without the play
-// button overlay (used inside modals where it's a passive mirror, not a
-// clickable preview trigger).
+// { type, name, mediaUrl, thumbnailUrl, pos } — the first content item of
+// the screen's currently-active assignment. `mini` = small rail thumbnail
+// (no badges/overlay, just the bare visual). `bare` = full-size but
+// without the play button overlay (used inside modals where it's a
+// passive mirror, not a clickable preview trigger).
 function ScreenThumb({ playing, mini = false, bare = false }) {
   if (!playing) {
     return (
@@ -20,23 +21,28 @@ function ScreenThumb({ playing, mini = false, bare = false }) {
     );
   }
 
+  const meta = getTypeMeta(playing.type);
+
   return (
-    <div
-      className="relative w-full h-full flex flex-col justify-center gap-1 px-[8%] overflow-hidden"
-      style={{ background: playing.bg }}
-    >
+    <div className="relative w-full h-full overflow-hidden bg-[#201e1e]">
+      {playing.type === "app" ? (
+        <div className="w-full h-full flex items-center justify-center">
+          {!mini && <span className="text-text-muted text-sm">App</span>}
+        </div>
+      ) : (
+        <img
+          src={playing.thumbnailUrl || playing.mediaUrl}
+          alt={playing.name}
+          className="absolute inset-0 w-full h-full object-contain"
+        />
+      )}
+
       {!mini && (
-        <>
-          <span className="text-accent-amber text-[10px] sm:text-xs font-bold tracking-[0.2em]">
-            {playing.kicker}
-          </span>
-          <span className="text-text-primary text-xl sm:text-3xl font-bold leading-none tracking-tight truncate">
-            {playing.title}
-          </span>
-          <span className="text-text-muted text-xs sm:text-sm">
-            {playing.sub}
-          </span>
-        </>
+        <span
+          className={`absolute left-1.5 top-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-[5px] ${meta.textClass} ${meta.bgClass}`}
+        >
+          {meta.label}
+        </span>
       )}
 
       {!mini && !bare && (
@@ -47,7 +53,7 @@ function ScreenThumb({ playing, mini = false, bare = false }) {
         </div>
       )}
 
-      {!mini && (
+      {!mini && playing.pos && (
         <span className="absolute right-1.5 bottom-1.5 px-1.5 py-0.5 rounded bg-bg-primary/85 text-text-primary text-[10px] font-medium">
           {playing.pos}
         </span>
@@ -59,8 +65,11 @@ function ScreenThumb({ playing, mini = false, bare = false }) {
 export default ScreenThumb;
 
 // Renders a screen's current content as a thumbnail — three sizes/contexts:
-// full interactive preview (default), `mini` (tiny rail thumbnail, just the
-// gradient + icon, no text), `bare` (full-size but no play-button overlay,
-// for read-only modal contexts). Falls back to a dashed "Nothing scheduled
-// at this time" panel when `playing` is null.
+// full interactive preview (default), `mini` (tiny rail thumbnail, just
+// the image), `bare` (full-size but no play-button overlay, for read-only
+// modal contexts). Falls back to a dashed "Nothing scheduled at this
+// time" panel when `playing` is null. Shows the content item's own
+// thumbnail/mediaUrl (same convention as components/ContentTile.jsx) —
+// not a live render of what's actually on the physical screen right now;
+// see pages/PlayerSlots.jsx for how `playing` gets computed.
 // Used by: pages/PlayerSlots.jsx.

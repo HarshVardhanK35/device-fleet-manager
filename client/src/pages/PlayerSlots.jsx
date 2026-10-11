@@ -29,6 +29,14 @@ import PlayerStandinModal from "../components/PlayerStandinModal.jsx";
 import StatusPill from "../components/StatusPill.jsx";
 import { pillLabel } from "../utils/screenStatus.js";
 import { claimPairingCode } from "../api/pairing.js";
+import {
+  getDevices,
+  updateDevice,
+  deleteDevice,
+  takeOverDevice,
+} from "../api/devices.js";
+import { getAssignments } from "../api/assignments.js";
+import { timeAgo } from "../utils/timeAgo.js";
 
 const MAX_SCREENS = 3;
 // Must match the backend's code length (server/controllers/pairingController.js's
@@ -36,49 +44,62 @@ const MAX_SCREENS = 3;
 // code shape.
 const PAIRING_CODE_LENGTH = 8;
 
-// Seed data so there's something to look at before this is wired to a real
-// backend — matches the mock's "mixed" state (one online+playing, one
-// offline, one pending). UI-only for now, per 2026-10-09 scope.
-function seedScreens() {
-  return [
-    {
-      id: "s1",
-      name: "Lobby TV",
-      type: '55" TV · entrance wall',
-      pending: false,
-      status: "online",
-      seen: "Online now",
-      res: "1920×1080",
-      playing: {
-        kicker: "SPRING MENU",
-        title: "Oat latte",
-        sub: "$4.50 · this season only",
-        pos: "3 of 8",
-        bg: "linear-gradient(135deg,#3d3014 0%,#161b22 72%)",
-        playlist: "Spring Menu Loop",
-        item: "Oat latte promo",
-        next: "Pastry case",
-      },
-    },
-    {
-      id: "s2",
-      name: "Back office",
-      type: "iPad on a stand",
-      pending: false,
-      status: "offline",
-      seen: "Last seen 2h ago",
-      res: "2360×1640",
-      playing: null,
-    },
-  ];
+// Picks whichever assignment currently covers "now" for this device (same
+// simple beginDT/endDT comparison as components/DevicePlayback.jsx — just
+// evaluated once on fetch, not live/MQTT-driven) and returns its playlist's
+// first content item, shaped for ScreenThumb. Not a live mirror of what's
+// actually on the physical screen right now — see future-implementations.md
+// for that (deferred, needs MQTT).
+function computePlaying(assignments, deviceId) {
+  const now = Date.now();
+  const active = assignments.find((a) => {
+    if (!a.deviceId || a.deviceId._id !== deviceId) return false;
+    const begin = a.beginDT ? new Date(a.beginDT).getTime() : -Infinity;
+    const end = new Date(a.endDT).getTime();
+    return now >= begin && now <= end;
+  });
+
+  const items = active?.playlistId?.contentItems;
+  const first = items?.[0];
+  if (!first) return null;
+
+  return {
+    type: first.type,
+    name: first.name,
+    mediaUrl: first.mediaUrl,
+    thumbnailUrl: first.thumbnailUrl,
+    playlistName: active.playlistId.name,
+    pos: items.length > 1 ? `1 of ${items.length}` : null,
+    nextName: items[1]?.name || null,
+  };
+}
+
+// Maps a real backend Device into this page's local "screen" shape. `res`
+// has no backend source yet (no resolution reporting) — shown as unknown
+// rather than invented.
+function mapDevice(d, playing = null) {
+  return {
+    id: d._id,
+    name: d.name,
+    type: d.type || "",
+    pending: false,
+    status: d.status,
+    seen:
+      d.status === "online"
+        ? "Online now"
+        : `Last seen ${timeAgo(d.lastSeenAt)}`,
+    res: "—",
+    playing,
+  };
 }
 
 function PlayerSlots() {
-  const [screens, setScreens] = useState(seedScreens);
-  const [selectedId, setSelectedId] = useState("s1");
+  const [screens, setScreens] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [mobileView, setMobileView] = useState("list");
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState({ name: "", type: "" });
+  const [editError, setEditError] = useState("");
   const [codes, setCodes] = useState({});
   const [codeFocused, setCodeFocused] = useState(false);
   const [pairErrors, setPairErrors] = useState({});
@@ -86,17 +107,41 @@ function PlayerSlots() {
   const [modal, setModal] = useState(null); // { mode: "preview"|"take"|"remove"|"player", id }
   const [ack, setAck] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [removeError, setRemoveError] = useState("");
+  const [takeOverError, setTakeOverError] = useState("");
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    (async () => {
+      const [devicesData, assignmentsData] = await Promise.all([
+        getDevices(),
+        getAssignments(),
+      ]);
+      if (cancelled) return;
+      const assignments = Array.isArray(assignmentsData) ? assignmentsData : [];
+      const mapped = Array.isArray(devicesData)
+        ? devicesData.map((d) =>
+            mapDevice(d, computePlaying(assignments, d._id)),
+          )
+        : [];
+      setScreens(mapped);
+      if (mapped.length) setSelectedId(mapped[0].id);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const used = screens.length;
   const full = used >= MAX_SCREENS;
   const selected = screens.find((s) => s.id === selectedId) || null;
-  const selectedSlot = selected ? screens.findIndex((s) => s.id === selected.id) + 1 : null;
-  const modalScreen = modal ? screens.find((s) => s.id === modal.id) || null : null;
+  const selectedSlot = selected
+    ? screens.findIndex((s) => s.id === selected.id) + 1
+    : null;
+  const modalScreen = modal
+    ? screens.find((s) => s.id === modal.id) || null
+    : null;
   const previewScreen = modal?.mode === "preview" ? modalScreen : null;
 
   function selectScreen(id) {
@@ -127,7 +172,8 @@ function PlayerSlots() {
     if (!result || result.message) {
       setPairErrors((prev) => ({
         ...prev,
-        [id]: result?.message || "Pairing failed. Check the code and try again.",
+        [id]:
+          result?.message || "Pairing failed. Check the code and try again.",
       }));
       return;
     }
@@ -135,20 +181,7 @@ function PlayerSlots() {
     setPairErrors((prev) => ({ ...prev, [id]: "" }));
     setCodes((prev) => ({ ...prev, [id]: "" }));
     setScreens((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              id: result._id,
-              name: result.name,
-              type: result.type || "",
-              pending: false,
-              status: "offline",
-              seen: "Paired just now",
-              res: "1920×1080",
-              playing: null,
-            }
-          : s,
-      ),
+      prev.map((s) => (s.id === id ? mapDevice(result) : s)),
     );
     setSelectedId((prev) => (prev === id ? result._id : prev));
     setEditingId(result._id);
@@ -167,20 +200,40 @@ function PlayerSlots() {
   function startEdit(screen) {
     setEditingId(screen.id);
     setDraft({ name: screen.name, type: screen.type || "" });
+    setEditError("");
   }
 
-  function saveEdit(id) {
+  async function saveEdit(id) {
+    const current = screens.find((s) => s.id === id);
+    const name = draft.name.trim() || current?.name || "";
+    const type = draft.type.trim();
+
+    const result = await updateDevice(id, { name, type });
+    if (!result || result.message) {
+      setEditError(result?.message || "Couldn't save changes. Try again.");
+      return;
+    }
+
+    setEditError("");
     setScreens((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? { ...s, name: draft.name.trim() || s.name, type: draft.type.trim() }
-          : s,
-      ),
+      prev.map((s) => (s.id === id ? { ...s, name, type } : s)),
     );
     setEditingId(null);
   }
 
-  function removeScreen(id) {
+  async function removeScreen(id) {
+    const result = await deleteDevice(id);
+    // deleteDevice's success response is also { message: "Device deleted" },
+    // unlike other endpoints where success has no `message` field at all —
+    // so check the exact success text rather than just "has a message".
+    if (!result || result.message !== "Device deleted") {
+      setRemoveError(
+        result?.message || "Couldn't remove this screen. Try again.",
+      );
+      return;
+    }
+
+    setRemoveError("");
     setScreens((prev) => prev.filter((s) => s.id !== id));
     setModal(null);
     if (selectedId === id) {
@@ -190,14 +243,29 @@ function PlayerSlots() {
     }
   }
 
-  function confirmTakeOver() {
+  async function confirmTakeOver() {
     if (!ack || !modal) return;
     const id = modal.id;
+
+    const result = await takeOverDevice(id);
+    if (!result || result.message !== "Take-over signal sent") {
+      setTakeOverError(
+        result?.message || "Couldn't take over this screen. Try again.",
+      );
+      return;
+    }
+
     setAck(false);
+    setTakeOverError("");
     setScreens((prev) =>
       prev.map((s) =>
         s.id === id
-          ? { ...s, prevStatus: s.status, status: "taken", seen: "Physical screen disconnected" }
+          ? {
+              ...s,
+              prevStatus: s.status,
+              status: "taken",
+              seen: "Physical screen disconnected",
+            }
           : s,
       ),
     );
@@ -211,7 +279,10 @@ function PlayerSlots() {
           ? {
               ...s,
               status: s.prevStatus || "online",
-              seen: s.prevStatus === "offline" ? "Last seen 2h ago" : "Online · reconnected",
+              seen:
+                s.prevStatus === "offline"
+                  ? "Last seen 2h ago"
+                  : "Online · reconnected",
             }
           : s,
       ),
@@ -234,9 +305,13 @@ function PlayerSlots() {
         >
           <div className="mb-1">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-text-primary text-xl font-bold m-0">Player</h1>
+              <h1 className="text-text-primary text-xl font-bold m-0">
+                Player
+              </h1>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border-muted bg-bg-panel text-xs text-text-muted">
-                <span className={`font-semibold ${full ? "text-accent-amber" : "text-text-primary"}`}>
+                <span
+                  className={`font-semibold ${full ? "text-accent-amber" : "text-text-primary"}`}
+                >
                   {used} of {MAX_SCREENS}
                 </span>
                 screens used
@@ -334,7 +409,24 @@ function PlayerSlots() {
           {!loading && !selected && screens.length === 0 && (
             <EmptyState
               title="Add your first screen"
-              description="1. Add a screen — it takes a slot. 2. On the TV, tablet or monitor, open /screens in its browser. 3. Type the 8-character code it shows."
+              description={
+                <>
+                  1. Add a screen — it takes a slot.
+                  <br />
+                  2. On the TV, tablet or monitor browser, open{" "}
+                  <a
+                    href="http://localhost:5173/screens"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent-blue hover:underline"
+                  >
+                    Screens.
+                  </a>{" "}
+                  <br />
+                  3. Type the 8-character code after clicking{" "}
+                  <strong>Add a screen</strong> below.
+                </>
+              }
               actionLabel="Add your first screen"
               actionIcon={Plus}
               onAction={addScreen}
@@ -356,15 +448,19 @@ function PlayerSlots() {
               badge={<StatusPill screen={selected} />}
               meta={`Slot ${selectedSlot}`}
               headerExtra={
-                <GhostButton onClick={() => cancelPairing(selected.id)}>Cancel</GhostButton>
+                <GhostButton onClick={() => cancelPairing(selected.id)}>
+                  Cancel
+                </GhostButton>
               }
             >
               <div className="flex flex-col md:flex-row gap-3 items-stretch">
                 <div className="flex-1 min-w-0 aspect-video rounded-lg border border-dashed border-border-hover bg-[repeating-linear-gradient(135deg,#0d1117_0_8px,#11161d_8px_16px)] flex flex-col items-center justify-center gap-2 text-center px-4">
                   <Monitor size={28} className="text-border-hover" />
-                  <span className="text-text-muted text-sm">The physical screen</span>
+                  <span className="text-text-muted text-sm">
+                    The physical screen
+                  </span>
                   <span className="text-text-muted text-xs">
-                    Open /play on it — a code appears
+                    Open /screens on it — a code appears
                   </span>
                 </div>
                 <div className="flex-none flex items-center justify-center text-accent-amber">
@@ -390,16 +486,20 @@ function PlayerSlots() {
                                 : "border-border-muted"
                           }`}
                         >
-                          {typed[i] || (isActive && codeFocused && (
-                            <span className="caret-blink w-[2px] h-5 bg-accent-blue" />
-                          ))}
+                          {typed[i] ||
+                            (isActive && codeFocused && (
+                              <span className="caret-blink w-[2px] h-5 bg-accent-blue" />
+                            ))}
                         </div>
                       );
                     })}
                     <input
                       value={codes[selected.id] || ""}
                       onChange={(e) => {
-                        setPairErrors((prev) => ({ ...prev, [selected.id]: "" }));
+                        setPairErrors((prev) => ({
+                          ...prev,
+                          [selected.id]: "",
+                        }));
                         setCodes((prev) => ({
                           ...prev,
                           [selected.id]: e.target.value
@@ -408,7 +508,9 @@ function PlayerSlots() {
                             .slice(0, PAIRING_CODE_LENGTH),
                         }));
                       }}
-                      onKeyDown={(e) => e.key === "Enter" && handlePair(selected.id)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handlePair(selected.id)
+                      }
                       onFocus={() => setCodeFocused(true)}
                       onBlur={() => setCodeFocused(false)}
                       maxLength={PAIRING_CODE_LENGTH}
@@ -417,12 +519,15 @@ function PlayerSlots() {
                       className="absolute inset-0 w-full opacity-0 cursor-text text-base"
                     />
                   </div>
-                  <span className={`text-xs ${pairErrors[selected.id] ? "text-accent-red" : "text-text-muted"}`}>
+                  <span
+                    className={`text-xs ${pairErrors[selected.id] ? "text-accent-red" : "text-text-muted"}`}
+                  >
                     {busyId === selected.id
                       ? "Connecting to the screen…"
                       : pairErrors[selected.id]
                         ? pairErrors[selected.id]
-                        : (codes[selected.id] || "").length === PAIRING_CODE_LENGTH
+                        : (codes[selected.id] || "").length ===
+                            PAIRING_CODE_LENGTH
                           ? "Press Enter or Pair screen"
                           : "Codes expire after 15 minutes"}
                   </span>
@@ -430,7 +535,10 @@ function PlayerSlots() {
                     <Button
                       icon={Plug}
                       onClick={() => handlePair(selected.id)}
-                      disabled={(codes[selected.id] || "").length < PAIRING_CODE_LENGTH || !!busyId}
+                      disabled={
+                        (codes[selected.id] || "").length <
+                          PAIRING_CODE_LENGTH || !!busyId
+                      }
                       className="!min-h-9"
                     >
                       {busyId === selected.id ? "Pairing…" : "Pair screen"}
@@ -453,10 +561,25 @@ function PlayerSlots() {
                   label="Screen actions"
                   align="end"
                   items={[
-                    { label: "Edit", icon: Pencil, onClick: () => startEdit(selected) },
-                    { label: "Preview", icon: Eye, onClick: () => setModal({ mode: "preview", id: selected.id }) },
+                    {
+                      label: "Edit",
+                      icon: Pencil,
+                      onClick: () => startEdit(selected),
+                    },
+                    {
+                      label: "Preview",
+                      icon: Eye,
+                      onClick: () =>
+                        setModal({ mode: "preview", id: selected.id }),
+                    },
                     { type: "separator" },
-                    { label: "Remove screen", icon: Trash2, variant: "danger", onClick: () => setModal({ mode: "remove", id: selected.id }) },
+                    {
+                      label: "Remove screen",
+                      icon: Trash2,
+                      variant: "danger",
+                      onClick: () =>
+                        setModal({ mode: "remove", id: selected.id }),
+                    },
                   ]}
                   trigger={
                     <button
@@ -475,7 +598,9 @@ function PlayerSlots() {
                   <div className="flex-[1.5] min-w-0 flex flex-col gap-2">
                     <button
                       type="button"
-                      onClick={() => setModal({ mode: "preview", id: selected.id })}
+                      onClick={() =>
+                        setModal({ mode: "preview", id: selected.id })
+                      }
                       className="aspect-video rounded-lg overflow-hidden border border-border-muted hover:border-border-hover transition-colors block w-full"
                     >
                       <ScreenThumb playing={selected.playing} />
@@ -486,9 +611,24 @@ function PlayerSlots() {
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col">
                     {[
-                      ["Now playing", selected.playing ? selected.playing.playlist : "Nothing scheduled"],
-                      ["Item", selected.playing ? `${selected.playing.item} · ${selected.playing.pos}` : "—"],
-                      ["Up next", selected.playing ? selected.playing.next : "—"],
+                      [
+                        "Now playing",
+                        selected.playing
+                          ? selected.playing.playlistName
+                          : "Nothing scheduled",
+                      ],
+                      [
+                        "Item",
+                        selected.playing
+                          ? `${selected.playing.name}${selected.playing.pos ? ` · ${selected.playing.pos}` : ""}`
+                          : "—",
+                      ],
+                      [
+                        "Up next",
+                        selected.playing
+                          ? selected.playing.nextName || "—"
+                          : "—",
+                      ],
                       ["Connection", selected.seen],
                       ["Resolution", selected.res],
                     ].map(([label, value], i, arr) => (
@@ -499,19 +639,25 @@ function PlayerSlots() {
                         }`}
                       >
                         <span className="text-text-muted">{label}</span>
-                        <span className="text-text-primary text-right">{value}</span>
+                        <span className="text-text-primary text-right">
+                          {value}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-3 pt-4 border-t border-border-muted">
-                  <span className="text-text-primary text-sm font-semibold">Details</span>
+                  <span className="text-text-primary text-sm font-semibold">
+                    Details
+                  </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="flex flex-col gap-1 text-xs font-medium text-text-muted">
                       Name
                       <input
-                        value={editingId === selected.id ? draft.name : selected.name}
+                        value={
+                          editingId === selected.id ? draft.name : selected.name
+                        }
                         onChange={(e) => {
                           setEditingId(selected.id);
                           setDraft((d) => ({ ...d, name: e.target.value }));
@@ -522,7 +668,11 @@ function PlayerSlots() {
                     <label className="flex flex-col gap-1 text-xs font-medium text-text-muted">
                       Type
                       <input
-                        value={editingId === selected.id ? draft.type : selected.type || ""}
+                        value={
+                          editingId === selected.id
+                            ? draft.type
+                            : selected.type || ""
+                        }
                         onChange={(e) => {
                           setEditingId(selected.id);
                           setDraft((d) => ({ ...d, type: e.target.value }));
@@ -533,11 +683,26 @@ function PlayerSlots() {
                     </label>
                   </div>
                   {editingId === selected.id && (
-                    <div className="flex gap-2">
-                      <GhostButton size="lg" onClick={() => setEditingId(null)}>
-                        Discard
-                      </GhostButton>
-                      <Button onClick={() => saveEdit(selected.id)}>Save changes</Button>
+                    <div className="flex flex-col gap-2">
+                      {editError && (
+                        <span className="text-accent-red text-xs">
+                          {editError}
+                        </span>
+                      )}
+                      <div className="flex gap-2">
+                        <GhostButton
+                          size="lg"
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditError("");
+                          }}
+                        >
+                          Discard
+                        </GhostButton>
+                        <Button onClick={() => saveEdit(selected.id)}>
+                          Save changes
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -549,8 +714,9 @@ function PlayerSlots() {
                       Take over this screen
                     </span>
                     <span className="text-text-muted text-xs leading-relaxed">
-                      Opens the full player here and disconnects the physical screen at once —
-                      only one connection per screen is allowed.
+                      Opens the full player here and disconnects the physical
+                      screen at once — only one connection per screen is
+                      allowed.
                     </span>
                   </div>
                   {selected.status !== "taken" ? (
@@ -559,6 +725,7 @@ function PlayerSlots() {
                       onClick={() => {
                         setModal({ mode: "take", id: selected.id });
                         setAck(false);
+                        setTakeOverError("");
                       }}
                       className="!bg-accent-red !border-accent-red hover:!brightness-110 flex-none"
                     >
@@ -568,12 +735,16 @@ function PlayerSlots() {
                     <div className="flex gap-2 flex-wrap flex-none">
                       <button
                         type="button"
-                        onClick={() => setModal({ mode: "player", id: selected.id })}
+                        onClick={() =>
+                          setModal({ mode: "player", id: selected.id })
+                        }
                         className="h-9 px-3 rounded-lg border border-border-muted bg-bg-hover text-text-primary text-xs font-medium transition-colors"
                       >
                         Open player
                       </button>
-                      <ReleaseScreenButton onClick={() => releaseScreen(selected.id)} />
+                      <ReleaseScreenButton
+                        onClick={() => releaseScreen(selected.id)}
+                      />
                     </div>
                   )}
                 </div>
@@ -589,7 +760,9 @@ function PlayerSlots() {
         onOpenChange={(open) => !open && setModal(null)}
         title={previewScreen?.name}
         subtitle="Preview only — the physical screen keeps playing"
-        media={previewScreen && <ScreenThumb playing={previewScreen.playing} bare />}
+        media={
+          previewScreen && <ScreenThumb playing={previewScreen.playing} bare />
+        }
         meta={
           previewScreen
             ? [
@@ -597,13 +770,21 @@ function PlayerSlots() {
                 <span key="playlist">
                   Playlist{" "}
                   <span className="text-text-primary">
-                    {previewScreen.playing ? previewScreen.playing.playlist : "Nothing scheduled"}
+                    {previewScreen.playing
+                      ? previewScreen.playing.playlistName
+                      : "Nothing scheduled"}
                   </span>
                 </span>,
                 ...(previewScreen.playing
                   ? [
                       <span key="item">
-                        Item <span className="text-text-primary">{previewScreen.playing.item} · {previewScreen.playing.pos}</span>
+                        Item{" "}
+                        <span className="text-text-primary">
+                          {previewScreen.playing.name}
+                          {previewScreen.playing.pos
+                            ? ` · ${previewScreen.playing.pos}`
+                            : ""}
+                        </span>
                       </span>,
                     ]
                   : []),
@@ -615,21 +796,33 @@ function PlayerSlots() {
 
       <TakeOverModal
         open={modal?.mode === "take"}
-        onOpenChange={(o) => !o && setModal(null)}
+        onOpenChange={(o) => {
+          if (!o) {
+            setModal(null);
+            setTakeOverError("");
+          }
+        }}
         screen={modal?.mode === "take" ? modalScreen : null}
         ack={ack}
         onAckToggle={() => setAck((v) => !v)}
         onConfirm={confirmTakeOver}
+        error={takeOverError}
       />
 
       <RemoveConfirmModal
         open={modal?.mode === "remove"}
-        onOpenChange={(o) => !o && setModal(null)}
+        onOpenChange={(o) => {
+          if (!o) {
+            setModal(null);
+            setRemoveError("");
+          }
+        }}
         icon={Trash2}
         title={modal?.mode === "remove" ? `Remove ${modalScreen?.name}?` : ""}
         description="It's unpaired from your account and frees one of your 3 slots. To use it again, pair it with a new code."
         confirmLabel="Remove screen"
         onConfirm={() => modalScreen && removeScreen(modalScreen.id)}
+        error={removeError}
       />
 
       <PlayerStandinModal
@@ -648,13 +841,14 @@ export default PlayerSlots;
 // an 8-character code (entered here; generated/shown on the physical
 // screen's own pairing page, pages/Screens.jsx at "/screens" — code shape
 // must stay in sync between the two), preview without touching the live
-// screen, and
-// explicitly "take over" a screen (disconnects it, since only one
-// connection per screen is ever allowed — see z-files/future-
+// screen, and explicitly "take over" a screen (disconnects it, since only
+// one connection per screen is ever allowed — see z-files/future-
 // implementations.md's Preview-tab section for the full reasoning).
-// UI-only for now: screens/pairing/take-over all live in local state with
-// a short fake "Pairing…" delay — no backend wired yet (none exists for
-// this feature yet).
+// Real backend wiring: fetching the screen list, pairing/claiming, editing
+// (name/type), and removing a screen all go through the real API
+// (api/devices.js, api/pairing.js). Still local-state-only, no backend yet:
+// preview, take-over, and release — there's no live streaming-state/
+// manifest-correlation backend for those yet.
 // Used by: App.jsx (route "/player", inside Layout/ProtectedRoute — not to
 // be confused with pages/Player.jsx, the unauthenticated device-facing
 // "/player/:deviceId" route a real paired screen uses).

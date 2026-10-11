@@ -1,5 +1,7 @@
 import Assignment from "../models/Assignment.js";
 import Device from "../models/Device.js";
+import buildManifestForDevice from "../services/manifestService.js";
+import { publishManifestToDevice } from "../services/mqttService.js";
 
 export const createAssignment = async (req, res) => {
   try {
@@ -16,11 +18,17 @@ export const createAssignment = async (req, res) => {
     }
 
     const assignment = await Assignment.create(req.body);
+    await pushManifest(device._id);
     res.status(201).json(assignment);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
+
+async function pushManifest(deviceId) {
+  const manifest = await buildManifestForDevice(deviceId);
+  publishManifestToDevice(deviceId, manifest);
+}
 
 export const getAllAssignments = async (req, res) => {
   try {
@@ -61,6 +69,7 @@ export const updateAssignments = async (req, res) => {
 
     Object.assign(assignment, req.body);
     await assignment.save();
+    await pushManifest(device._id);
     res.status(200).json(assignment);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -80,6 +89,7 @@ export const deleteAssignment = async (req, res) => {
     }
 
     await assignment.deleteOne();
+    await pushManifest(device._id);
     res.status(200).json({ message: "Assignment deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });

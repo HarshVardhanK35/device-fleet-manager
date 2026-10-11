@@ -6,6 +6,7 @@ import {
   updateDevice,
   deleteDevice,
   connectDevice,
+  takeOverDevice,
 } from "../controllers/deviceController.js";
 
 import { protect } from "../middleware/auth.js";
@@ -23,6 +24,7 @@ router.get("/", protect, getAllDevices);
 
 router.get("/:id", protect, getDeviceById);
 router.post("/:id/connect", connectDevice);
+router.post("/:id/take-over", protect, takeOverDevice);
 router.put("/:id", protect, updateDevice);
 router.delete("/:id", protect, deleteDevice);
 

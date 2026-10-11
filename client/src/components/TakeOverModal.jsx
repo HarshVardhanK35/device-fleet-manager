@@ -3,7 +3,7 @@ import { Plug, StopCircle, Info, Check } from "lucide-react";
 
 import GhostButton from "./GhostButton.jsx";
 
-function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm }) {
+function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm, error }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -36,7 +36,7 @@ function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm
                     <StopCircle size={16} className="text-accent-red" />
                     <span className="text-text-muted">Will stop on the screen:</span>
                     <span className="text-text-primary">
-                      {screen.playing.playlist} — {screen.playing.item}
+                      {screen.playing.playlistName} — {screen.playing.name}
                     </span>
                   </div>
                 ) : (
@@ -68,6 +68,8 @@ function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm
                     I understand {screen.name} will be disconnected right now.
                   </span>
                 </button>
+
+                {error && <p className="text-accent-red text-xs m-0">{error}</p>}
               </div>
 
               <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
@@ -100,4 +102,6 @@ export default TakeOverModal;
 // confirm-dialog language (icon badge, Dialog.Title, border-t footer, solid
 // red action button) instead of a one-off red-bordered card. Still requires
 // the explicit acknowledgment checkbox before the take-over button enables.
+// `error` (optional) shows a backend failure message instead of silently
+// closing on a failed confirm.
 // Used by: pages/PlayerSlots.jsx.
