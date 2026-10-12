@@ -3,6 +3,11 @@ import mongoose from "mongoose";
 // defines shape to our document
 const contentSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     name: {
       type: String,
       required: true,
@@ -31,6 +36,10 @@ const contentSchema = new mongoose.Schema(
     },
     thumbnailUrl: {
       type: String,
+    },
+    sizeBytes: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true },

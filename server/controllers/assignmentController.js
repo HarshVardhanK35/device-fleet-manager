@@ -1,7 +1,13 @@
 import Assignment from "../models/Assignment.js";
 import Device from "../models/Device.js";
+import Playlist from "../models/Playlist.js";
 import buildManifestForDevice from "../services/manifestService.js";
 import { publishManifestToDevice } from "../services/mqttService.js";
+
+async function pushManifest(deviceId) {
+  const manifest = await buildManifestForDevice(deviceId);
+  publishManifestToDevice(deviceId, manifest);
+}
 
 export const createAssignment = async (req, res) => {
   try {
@@ -17,6 +23,17 @@ export const createAssignment = async (req, res) => {
       });
     }
 
+    const playlist = await Playlist.findById(req.body.playlistId);
+    if (!playlist) {
+      return res.status(404).json({ message: "Playlist not found" });
+    }
+
+    if (playlist.userId.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "You don't have permission to use this playlist",
+      });
+    }
+
     const assignment = await Assignment.create(req.body);
     await pushManifest(device._id);
     res.status(201).json(assignment);
@@ -25,14 +42,12 @@ export const createAssignment = async (req, res) => {
   }
 };
 
-async function pushManifest(deviceId) {
-  const manifest = await buildManifestForDevice(deviceId);
-  publishManifestToDevice(deviceId, manifest);
-}
-
 export const getAllAssignments = async (req, res) => {
   try {
-    const assignments = await Assignment.find()
+    const devices = await Device.find({ userId: req.user.id });
+    const deviceIds = devices.map((d) => d._id);
+
+    const assignments = await Assignment.find({ deviceId: { $in: deviceIds } })
       .populate("deviceId")
       .populate({ path: "playlistId", populate: { path: "contentItems" } });
     res.status(200).json(assignments);
@@ -46,9 +61,18 @@ export const getAssignmentById = async (req, res) => {
     const assignment = await Assignment.findById(req.params.id)
       .populate("deviceId")
       .populate({ path: "playlistId", populate: { path: "contentItems" } });
+
     if (!assignment) {
       return res.status(404).json({ message: "Assignment not found" });
     }
+
+    if (
+      !assignment.deviceId ||
+      assignment.deviceId.userId.toString() !== req.user.id
+    ) {
+      return res.status(403).json({ message: "Not your assignment" });
+    }
+
     res.status(200).json(assignment);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -65,6 +89,19 @@ export const updateAssignments = async (req, res) => {
     const device = await Device.findById(assignment.deviceId);
     if (!device || device.userId.toString() !== req.user.id) {
       return res.status(403).json({ message: "Not your device's assignment" });
+    }
+
+    if (req.body.playlistId) {
+      const playlist = await Playlist.findById(req.body.playlistId);
+      if (!playlist) {
+        return res.status(404).json({ message: "Playlist not found" });
+      }
+
+      if (playlist.userId.toString() !== req.user.id) {
+        return res.status(403).json({
+          message: "You don't have permission to use this playlist",
+        });
+      }
     }
 
     Object.assign(assignment, req.body);

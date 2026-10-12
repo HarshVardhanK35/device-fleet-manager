@@ -9,10 +9,20 @@ import { sendEmail } from "../utils/sendEmail.js";
 import {
   buildVerificationEmail,
   buildResetPasswordEmail,
+  buildAccountLockedEmail,
 } from "../utils/emailTemplates.js";
 
 function hashToken(rawToken) {
   return crypto.createHash("sha256").update(rawToken).digest("hex");
+}
+
+function isPasswordStrong(password) {
+  return (
+    typeof password === "string" &&
+    password.length >= 8 &&
+    /\d/.test(password) &&
+    /[A-Z]/.test(password)
+  );
 }
 
 // send verification email
@@ -31,6 +41,14 @@ async function sendVerificationEmail(user) {
 export const register = async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
+
+    if (!isPasswordStrong(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters with one number and one uppercase letter",
+      });
+    }
+
     const user = await User.create({
       firstName,
       lastName,
@@ -93,6 +111,13 @@ export const verifyEmail = async (req, res) => {
 export const resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
+
+    if (typeof email !== "string") {
+      return res
+        .status(404)
+        .json({ message: "No account found with that email" });
+    }
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -123,6 +148,13 @@ export const resendVerification = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+
+    if (typeof email !== "string") {
+      return res
+        .status(404)
+        .json({ message: "No account found with that email" });
+    }
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -164,12 +196,19 @@ export const resetPassword = async (req, res) => {
         .json({ message: "Token and new password are required" });
     }
 
+    if (!isPasswordStrong(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters with one number and one uppercase letter",
+      });
+    }
+
     const hashedToken = hashToken(token);
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpiry: { $gt: Date.now() },
-    }).select("+resetPasswordToken +resetPasswordExpiry");
+    }).select("+resetPasswordToken +resetPasswordExpiry +failedLoginAttempts");
 
     if (!user) {
       return res.status(400).json({ message: "Invalid or expired reset link" });
@@ -178,6 +217,7 @@ export const resetPassword = async (req, res) => {
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiry = undefined;
+    user.failedLoginAttempts = 0;
     await user.save();
 
     res.status(200).json({ message: "Password reset successfully" });
@@ -218,15 +258,54 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select("+password");
+    if (typeof email !== "string" || typeof password !== "string") {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const user = await User.findOne({ email }).select(
+      "+password +failedLoginAttempts",
+    );
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    if (user.failedLoginAttempts >= 5) {
+      return res.status(423).json({
+        message:
+          "Too many attempts. Check your email to reset your password and regain access.",
+      });
+    }
+
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      user.failedLoginAttempts += 1;
+
+      if (user.failedLoginAttempts === 5) {
+        const rawToken = crypto.randomBytes(32).toString("hex");
+        user.resetPasswordToken = hashToken(rawToken);
+        user.resetPasswordExpiry = Date.now() + 60 * 60 * 1000;
+        await user.save();
+
+        const link = `${process.env.CLIENT_URL}/reset-password?token=${rawToken}`;
+        try {
+          const { subject, html, text } = buildAccountLockedEmail(link);
+          await sendEmail({ to: user.email, subject, html, text });
+        } catch (emailErr) {
+          console.error("Failed to send lockout email:", emailErr.message);
+        }
+
+        return res.status(423).json({
+          message:
+            "Too many attempts. Check your email to reset your password and regain access.",
+        });
+      }
+
+      await user.save();
       return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    user.failedLoginAttempts = 0;
+    await user.save();
 
     if (!user.emailVerified) {
       return res

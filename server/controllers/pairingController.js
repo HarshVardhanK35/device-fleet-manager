@@ -39,7 +39,7 @@ export const getCodeStatus = async (req, res) => {
   try {
     const pairingCode = await PairingCode.findOne({
       code: req.params.code,
-    }).populate("deviceId");
+    }).populate("deviceId", "+accessToken");
 
     if (!pairingCode) {
       return res.status(404).json({ message: "Code not found or expired" });
@@ -51,7 +51,7 @@ export const getCodeStatus = async (req, res) => {
 
     res.status(200).json({
       status: "claimed",
-      deviceId: pairingCode.deviceId?._id,
+      screenToken: pairingCode.deviceId?.accessToken,
       screenName: pairingCode.deviceId?.name,
     });
   } catch (err) {

@@ -27,7 +27,9 @@ export const uploadMedia = async (req, res) => {
         : result.secure_url;
 
     // 4. success - result.secure_url is the Cloudinary URL - returned to the frontend
-    res.status(200).json({ url: result.secure_url, thumbnailUrl });
+    res
+      .status(200)
+      .json({ url: result.secure_url, thumbnailUrl, bytes: result.bytes });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

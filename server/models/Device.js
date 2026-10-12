@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 const deviceSchema = new mongoose.Schema(
   {
@@ -21,6 +22,12 @@ const deviceSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+    },
+    accessToken: {
+      type: String,
+      unique: true,
+      default: () => crypto.randomBytes(32).toString("hex"),
+      select: false,
     },
   },
   { timestamps: true },
