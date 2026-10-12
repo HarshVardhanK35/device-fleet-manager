@@ -139,6 +139,13 @@ function DevicePlayback(
         }
 
         if (cancelled) return;
+        // Refresh "now" the moment a manifest actually arrives, not just at
+        // the next scheduled boundary check — otherwise a reset triggered
+        // by this manifest (see the prevAssignment block below) backdates
+        // itemStartedAt from a stale "now" (up to 60s old), making the
+        // rotation effect compute ~0ms remaining on item 0 and instantly
+        // skip past it, which looked like playback never restarted at all.
+        setNow(Date.now());
         setManifest(data);
       });
 

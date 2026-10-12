@@ -1,4 +1,13 @@
 import Content from "../models/Content.js";
+import Playlist from "../models/Playlist.js";
+import Assignment from "../models/Assignment.js";
+import buildManifestForDevice from "../services/manifestService.js";
+import { publishManifestToDevice } from "../services/mqttService.js";
+
+async function pushManifest(deviceId) {
+  const manifest = await buildManifestForDevice(deviceId);
+  publishManifestToDevice(deviceId, manifest);
+}
 
 export const createContent = async (req, res) => {
   try {
@@ -49,6 +58,19 @@ export const updateContent = async (req, res) => {
     if (!content) {
       return res.status(404).json({ message: "Content not found" });
     }
+
+    const playlists = await Playlist.find({ contentItems: content._id });
+    const playlistIds = playlists.map((p) => p._id);
+
+    const assignments = await Assignment.find({
+      playlistId: { $in: playlistIds },
+    });
+    
+    const deviceIds = [
+      ...new Set(assignments.map((a) => a.deviceId.toString())),
+    ];
+    await Promise.all(deviceIds.map((id) => pushManifest(id)));
+
     res.status(200).json(content);
   } catch (error) {
     res.status(400).json({ message: error.message });

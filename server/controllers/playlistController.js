@@ -1,4 +1,12 @@
 import Playlist from "../models/Playlist.js";
+import Assignment from "../models/Assignment.js";
+import buildManifestForDevice from "../services/manifestService.js";
+import { publishManifestToDevice } from "../services/mqttService.js";
+
+async function pushManifest(deviceId) {
+  const manifest = await buildManifestForDevice(deviceId);
+  publishManifestToDevice(deviceId, manifest);
+}
 
 export const createPlaylist = async (req, res) => {
   try {
@@ -42,6 +50,13 @@ export const updatePlaylist = async (req, res) => {
     if (!playlist) {
       return res.status(404).json({ message: "Playlist not found" });
     }
+
+    const assignments = await Assignment.find({ playlistId: playlist._id });
+    const deviceIds = [
+      ...new Set(assignments.map((a) => a.deviceId.toString())),
+    ];
+    await Promise.all(deviceIds.map((id) => pushManifest(id)));
+
     res.status(200).json(playlist);
   } catch (error) {
     res.status(400).json({ message: error.message });
