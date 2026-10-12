@@ -10,4 +10,4 @@ cp /etc/secrets/mosquitto.passwd /tmp/mosquitto.passwd
 chown mosquitto:mosquitto /tmp/mosquitto.passwd
 chmod 600 /tmp/mosquitto.passwd
 
-exec su-exec mosquitto mosquitto -c /mosquitto/config/mosquitto.conf
+exec mosquitto -c /mosquitto/config/mosquitto.conf
