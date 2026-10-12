@@ -1,4 +1,4 @@
-export function formatDuration(ms) {
+export function formatScheduleDuration(ms) {
   const totalMin = Math.max(0, Math.round(ms / 60000));
   const days = Math.floor(totalMin / 1440);
   const hours = Math.floor((totalMin % 1440) / 60);

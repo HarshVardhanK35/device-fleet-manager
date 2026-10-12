@@ -855,10 +855,11 @@ export default PlayerSlots;
 // one connection per screen is ever allowed — see z-files/future-
 // implementations.md's Preview-tab section for the full reasoning).
 // Real backend wiring: fetching the screen list, pairing/claiming, editing
-// (name/type), and removing a screen all go through the real API
-// (api/devices.js, api/pairing.js). Still local-state-only, no backend yet:
-// preview, take-over, and release — there's no live streaming-state/
-// manifest-correlation backend for those yet.
+// (name/type), removing a screen, take-over, and release all go through the
+// real API (api/devices.js, api/pairing.js) — take-over/release publish a
+// real MQTT control message the screen reacts to. Still local-state-only,
+// no backend yet: preview — it has no live streaming-state/manifest-
+// correlation backend yet.
 // Used by: App.jsx (route "/player", inside Layout/ProtectedRoute — not to
 // be confused with pages/Player.jsx, the unauthenticated device-facing
 // "/player/:deviceId" route a real paired screen uses).

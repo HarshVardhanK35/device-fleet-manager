@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:5000";
+export const API_BASE = "http://localhost:5000";
 
 // In-memory only — never localStorage. This is the XSS fix: a token that
 // only ever lives in a JS variable can't be read by `localStorage.getItem`

@@ -20,7 +20,7 @@ import {
   overlapRange,
 } from "../utils/publishConflicts.js";
 import { getAssignmentStatus, STATUS_PILL } from "../utils/assignmentStatus.js";
-import { formatDuration } from "../utils/scheduleTime.js";
+import { formatScheduleDuration } from "../utils/scheduleTime.js";
 import { timeAgo } from "../utils/timeAgo.js";
 import SelectCheckbox from "./SelectCheckbox.jsx";
 import CancelButton from "./CancelButton.jsx";
@@ -53,7 +53,7 @@ function playlistMeta(playlist) {
     (sum, c) => sum + (c.durationInMillis || 0),
     0,
   );
-  return `${count} item${count === 1 ? "" : "s"} · ${formatDuration(totalMs)} loop`;
+  return `${count} item${count === 1 ? "" : "s"} · ${formatScheduleDuration(totalMs)} loop`;
 }
 
 function PlaylistSelectField({ playlists, value, onChange }) {
@@ -403,7 +403,7 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
 
   const runsLabel =
     !beginError && !endError
-      ? `Runs ${formatDuration(end - begin)} on ${begin.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} · device local time.`
+      ? `Runs ${formatScheduleDuration(end - begin)} on ${begin.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} · device local time.`
       : null;
 
   return (

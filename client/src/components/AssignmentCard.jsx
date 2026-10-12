@@ -6,7 +6,7 @@ import {
   STATUS_PILL,
 } from "../utils/assignmentStatus.js";
 import {
-  formatDuration,
+  formatScheduleDuration,
   formatClock,
   formatDateLabel,
   formatAutoDeleteNotice,
@@ -110,10 +110,10 @@ function AssignmentCard({
           </div>
           <div className="flex items-center justify-between mt-1.5">
             <span className="text-text-muted text-xs">
-              {formatDuration(end - now)} left
+              {formatScheduleDuration(end - now)} left
             </span>
             <span className="text-text-muted text-xs">
-              {formatDuration(end - begin)} total
+              {formatScheduleDuration(end - begin)} total
             </span>
           </div>
         </>
@@ -121,8 +121,8 @@ function AssignmentCard({
 
       {status === "upcoming" && (
         <p className="text-text-muted text-xs">
-          Starts in {formatDuration(begin - now)} · runs{" "}
-          {formatDuration(end - begin)}
+          Starts in {formatScheduleDuration(begin - now)} · runs{" "}
+          {formatScheduleDuration(end - begin)}
         </p>
       )}
 
