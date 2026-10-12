@@ -1,7 +1,7 @@
-import { apiFetch } from "./apiClient.js";
+import { apiFetch, API_BASE } from "./apiClient.js";
 
 export async function register(data) {
-  const res = await fetch("http://localhost:5000/auth/register", {
+  const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -10,7 +10,7 @@ export async function register(data) {
 }
 
 export async function login(data) {
-  const res = await fetch("http://localhost:5000/auth/login", {
+  const res = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -20,7 +20,7 @@ export async function login(data) {
 }
 
 export async function refreshAccessToken() {
-  const res = await fetch("http://localhost:5000/auth/refresh", {
+  const res = await fetch(`${API_BASE}/auth/refresh`, {
     method: "POST",
     credentials: "include",
   });
@@ -28,7 +28,7 @@ export async function refreshAccessToken() {
 }
 
 export async function logout() {
-  const res = await fetch("http://localhost:5000/auth/logout", {
+  const res = await fetch(`${API_BASE}/auth/logout`, {
     method: "POST",
     credentials: "include",
   });
@@ -36,11 +36,11 @@ export async function logout() {
 }
 
 export async function getMe() {
-  return apiFetch("http://localhost:5000/auth/me");
+  return apiFetch(`${API_BASE}/auth/me`);
 }
 
 export async function forgotPassword(data) {
-  const res = await fetch("http://localhost:5000/auth/forgot-password", {
+  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -49,7 +49,7 @@ export async function forgotPassword(data) {
 }
 
 export async function resetPassword(data) {
-  const res = await fetch("http://localhost:5000/auth/reset-password", {
+  const res = await fetch(`${API_BASE}/auth/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -59,13 +59,13 @@ export async function resetPassword(data) {
 
 export async function verifyEmail(token) {
   const res = await fetch(
-    `http://localhost:5000/auth/verify-email?token=${token}`,
+    `${API_BASE}/auth/verify-email?token=${token}`,
   );
   return res.json();
 }
 
 export async function resendVerification(data) {
-  const res = await fetch("http://localhost:5000/auth/resend-verification", {
+  const res = await fetch(`${API_BASE}/auth/resend-verification`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

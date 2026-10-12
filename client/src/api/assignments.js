@@ -1,26 +1,26 @@
-import { apiFetch } from "./apiClient";
+import { apiFetch, API_BASE } from "./apiClient.js";
 
 export async function getAssignments() {
-  return apiFetch("http://localhost:5000/assignments");
+  return apiFetch(`${API_BASE}/assignments`);
 }
 
 // publish flow
 export async function createAssignment(data) {
-  return apiFetch("http://localhost:5000/assignments", {
+  return apiFetch(`${API_BASE}/assignments`, {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export async function updateAssignment(id, data) {
-  return apiFetch(`http://localhost:5000/assignments/${id}`, {
+  return apiFetch(`${API_BASE}/assignments/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 }
 
 export async function deleteAssignment(id) {
-  return apiFetch(`http://localhost:5000/assignments/${id}`, {
+  return apiFetch(`${API_BASE}/assignments/${id}`, {
     method: "DELETE",
   });
 }

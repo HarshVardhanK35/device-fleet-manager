@@ -1,11 +1,11 @@
-import { apiFetch, getAccessToken } from "./apiClient";
+import { apiFetch, getAccessToken, API_BASE } from "./apiClient.js";
 
 export async function getContent() {
-  return apiFetch("http://localhost:5000/content");
+  return apiFetch(`${API_BASE}/content`);
 }
 
 export async function createContent(data) {
-  return apiFetch("http://localhost:5000/content", {
+  return apiFetch(`${API_BASE}/content`, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -21,7 +21,7 @@ export function uploadFile(file, { onProgress, signal } = {}) {
     const token = getAccessToken();
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "http://localhost:5000/upload");
+    xhr.open("POST", `${API_BASE}/upload`);
     xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
     xhr.upload.onprogress = (e) => {
@@ -54,14 +54,14 @@ export function uploadFile(file, { onProgress, signal } = {}) {
 }
 
 export async function updateContent(id, data) {
-  return apiFetch(`http://localhost:5000/content/${id}`, {
+  return apiFetch(`${API_BASE}/content/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 }
 
 export async function deleteContent(id) {
-  return apiFetch(`http://localhost:5000/content/${id}`, {
+  return apiFetch(`${API_BASE}/content/${id}`, {
     method: "DELETE",
   });
 }
