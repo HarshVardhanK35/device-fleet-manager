@@ -1,6 +1,10 @@
 import Device from "../models/Device.js";
 import Assignment from "../models/Assignment.js";
-import { publishControlMessage } from "../services/mqttService.js";
+import buildManifestForDevice from "../services/manifestService.js";
+import {
+  publishControlMessage,
+  publishManifestToDevice,
+} from "../services/mqttService.js";
 
 export const createDevice = async (req, res) => {
   try {
@@ -61,6 +65,9 @@ export const connectDevice = async (req, res) => {
     device.status = "online";
     device.lastSeenAt = new Date();
     await device.save();
+
+    const manifest = await buildManifestForDevice(device._id);
+    publishManifestToDevice(device._id, manifest);
 
     res.status(200).json({ connected: true });
   } catch (error) {

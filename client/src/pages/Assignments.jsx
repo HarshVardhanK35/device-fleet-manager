@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, RefreshCw } from "lucide-react";
 
 import { getDevices } from "../api/devices.js";
 import {
@@ -34,6 +34,7 @@ function Assignments() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [publishOpen, setPublishOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     load(true);
@@ -57,6 +58,20 @@ function Assignments() {
     setPlaylists(playlistData);
     if (isInitial && merged.length) setSelectedId(merged[0]._id);
     if (isInitial) setLoading(false);
+  }
+
+  // Manual refresh — the 10s poll above already keeps progress bars/countdowns
+  // moving on its own, but a durationInMillis edit on a Content item (or any
+  // other change that doesn't touch this device's own assignments) can take
+  // up to that same 10s to show up here. This gives an immediate way to pull
+  // the latest state without waiting on the poll or a full page reload.
+  async function manualRefresh() {
+    setRefreshing(true);
+    try {
+      await load(false);
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   function openPublish() {
@@ -113,9 +128,21 @@ function Assignments() {
             <h2 className="text-text-muted text-xs font-semibold uppercase tracking-wide">
               Your Devices
             </h2>
-            <span className="text-text-muted text-xs">
-              {onlineCount} of {devices.length} online
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-text-muted text-xs">
+                {onlineCount} of {devices.length} online
+              </span>
+              <button
+                type="button"
+                onClick={manualRefresh}
+                disabled={refreshing}
+                title="Refresh"
+                aria-label="Refresh"
+                className="text-accent-blue hover:text-accent-blue/80 disabled:opacity-50 transition-colors"
+              >
+                <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+              </button>
+            </div>
           </div>
 
           {loading ? (
