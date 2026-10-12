@@ -1,4 +1,6 @@
 export function timeAgo(dateString) {
+  if (!dateString) return "Never";
+
   const diffMs = Date.now() - new Date(dateString).getTime();
   const diffSec = Math.floor(diffMs / 1000);
 

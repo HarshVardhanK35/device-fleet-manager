@@ -862,4 +862,4 @@ export default PlayerSlots;
 // correlation backend yet.
 // Used by: App.jsx (route "/player", inside Layout/ProtectedRoute — not to
 // be confused with pages/Player.jsx, the unauthenticated device-facing
-// "/player/:deviceId" route a real paired screen uses).
+// "/player/:token" route a real paired screen uses).

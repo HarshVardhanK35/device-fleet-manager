@@ -86,3 +86,19 @@ export function buildResetPasswordEmail(link) {
 
   return { subject: "Reset your password", html, text };
 }
+
+export function buildAccountLockedEmail(link) {
+  const html = baseShell({
+    heading: "Account temporarily locked",
+    intro:
+      "We noticed 5 failed login attempts on your Device Fleet Manager account. For your security, it's temporarily locked. Reset your password below to regain access:",
+    ctaLabel: "Reset password & unlock",
+    link,
+    expiryNote:
+      "This link expires in 1 hour. If this wasn't you, resetting your password now will also secure your account.",
+  });
+
+  const text = `Account temporarily locked\n\nWe noticed 5 failed login attempts on your Device Fleet Manager account. For your security, it's temporarily locked.\n\nReset your password to regain access: ${link}\n\nThis link expires in 1 hour.`;
+
+  return { subject: "Account temporarily locked", html, text };
+}

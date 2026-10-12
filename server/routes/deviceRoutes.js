@@ -27,10 +27,10 @@ router.post("/", protect, createDevice);
 router.get("/", protect, getAllDevices);
 
 router.get("/:id", protect, getDeviceById);
-router.post("/:id/connect", connectDevice);
-router.post("/:id/disconnect", disconnectDevice);
-router.get("/:id/exists", deviceExists);
-router.delete("/:id/unpair", unpairDevice);
+router.post("/:token/connect", connectDevice);
+router.post("/:token/disconnect", disconnectDevice);
+router.get("/:token/exists", deviceExists);
+router.delete("/:token/unpair", unpairDevice);
 router.post("/:id/take-over", protect, takeOverDevice);
 router.post("/:id/release", protect, releaseDevice);
 router.put("/:id", protect, updateDevice);

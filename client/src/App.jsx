@@ -27,7 +27,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/player/:deviceId" element={<Player />} />
+        <Route path="/player/:token" element={<Player />} />
         <Route path="/screens" element={<Screens />} />
 
         <Route

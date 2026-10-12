@@ -19,7 +19,7 @@ function readStoredPairing() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    return parsed?.deviceId ? parsed : null;
+    return parsed?.screenToken ? parsed : null;
   } catch {
     return null;
   }
@@ -110,7 +110,7 @@ function Screens() {
   const [code, setCode] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(CODE_SECONDS);
   const [screenName, setScreenName] = useState("");
-  const [pairedDeviceId, setPairedDeviceId] = useState(null);
+  const [screenToken, setScreenToken] = useState(null);
   const stageRef = useRef(null);
   const longPressTimer = useRef(null);
   const playbackRef = useRef(null);
@@ -134,10 +134,10 @@ function Screens() {
       const stored = readStoredPairing();
       if (stored) {
         try {
-          const check = await checkDeviceExists(stored.deviceId);
+          const check = await checkDeviceExists(stored.screenToken);
           if (cancelled) return;
           if (check?.exists) {
-            setPairedDeviceId(stored.deviceId);
+            setScreenToken(stored.screenToken);
             setScreenName(stored.screenName || "");
             setPhase("tap");
             return;
@@ -200,9 +200,9 @@ function Screens() {
         const data = await getPairingStatus(code);
         if (cancelled || data?.status !== "claimed") return;
         setScreenName(data.screenName || "");
-        setPairedDeviceId(data.deviceId || null);
-        if (data.deviceId) {
-          storePairing({ deviceId: data.deviceId, screenName: data.screenName || "" });
+        setScreenToken(data.screenToken || null);
+        if (data.screenToken) {
+          storePairing({ screenToken: data.screenToken, screenName: data.screenName || "" });
         }
         setPhase("paired");
       } catch {
@@ -239,7 +239,7 @@ function Screens() {
     // so an immediate Continue/Restart doesn't get wrongly 409-rejected by
     // connectDevice's own stale "still online" check (20s threshold).
     // Best-effort, fire-and-forget — doesn't block the phase transition.
-    if (pairedDeviceId) disconnectDevice(pairedDeviceId).catch(() => {});
+    if (screenToken) disconnectDevice(screenToken).catch(() => {});
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     setPhase("stopped");
   }
@@ -248,25 +248,25 @@ function Screens() {
     // Reconnect as the screen this browser already remembers, resuming
     // from the position captured on stop — DevicePlayback itself discards
     // it if the schedule has since moved to a different assignment.
-    setPhase(pairedDeviceId ? "tap" : "loading");
+    setPhase(screenToken ? "tap" : "loading");
   }
 
   function restartPlaying() {
     setPendingPosition(null);
-    setPhase(pairedDeviceId ? "tap" : "loading");
+    setPhase(screenToken ? "tap" : "loading");
   }
 
   async function unpairThisScreen() {
-    if (!pairedDeviceId) return;
+    if (!screenToken) return;
     try {
-      await unpairDevice(pairedDeviceId);
+      await unpairDevice(screenToken);
     } catch {
       // Best-effort — even if the request itself fails (e.g. a network
       // hiccup), still forget it locally so the TV doesn't stay stuck
       // claiming a pairing the owner clearly wants to abandon.
     }
     clearStoredPairing();
-    setPairedDeviceId(null);
+    setScreenToken(null);
     setScreenName("");
     setPhase("loading");
   }
@@ -469,7 +469,7 @@ function Screens() {
             >
               <DevicePlayback
                 ref={playbackRef}
-                deviceId={pairedDeviceId}
+                screenToken={screenToken}
                 initialPosition={pendingPosition}
                 waitingView={
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(12px,3.4cqmin,170px)" }}>
@@ -670,14 +670,21 @@ export default Screens;
 //
 // Remembers its own pairing (localStorage, STORAGE_KEY) so this browser
 // doesn't have to re-pair from scratch every time the tab reloads or
-// playback is stopped — on mount, a remembered deviceId is confirmed to
-// still exist (GET /devices/:id/exists) and, if so, goes straight to
-// "tap" to reconnect as that same screen; only pairs fresh if nothing's
-// remembered or the remembered screen was removed from the account.
+// playback is stopped — on mount, a remembered screenToken is confirmed
+// to still exist (GET /devices/:token/exists) and, if so, goes straight
+// to "tap" to reconnect as that same screen; only pairs fresh if
+// nothing's remembered or the remembered screen was removed from the
+// account.
 // "Unpair this screen" (shown on the "stopped" state) explicitly deletes
-// the device (DELETE /devices/:id/unpair) and clears this memory — see
-// future-implementations.md's Preview-tab section for why that endpoint
-// has to be unauthenticated and the tradeoff that comes with it.
+// the device (DELETE /devices/:token/unpair) and clears this memory —
+// see future-implementations.md's Preview-tab section for why that
+// endpoint has to be unauthenticated and the tradeoff that comes with it.
+//
+// screenToken is Device.accessToken (a long random public token), never
+// the real Mongo _id — Phase 3 fix, 2026-10-12. This is what makes the
+// unauthenticated /connect|exists|unpair|disconnect routes and this
+// browser's localStorage safe to expose: the value is unguessable and
+// revocable, unlike the raw _id this used to be keyed by.
 //
 // "Stopped" phase shows two buttons: "Continue" resumes DevicePlayback from
 // the exact position captured (via its forwarded ref's getPosition()) the

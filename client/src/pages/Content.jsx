@@ -23,6 +23,26 @@ import { getVideoDurationMs } from "../utils/getVideoDuration.js";
 import { pluralizeCount } from "../utils/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
 
+// Mirrors the server-side quota in contentController.js's createContent —
+// this is purely a pre-upload UX check (avoid wasting a Cloudinary upload
+// on something already known to be rejected). The real enforcement is the
+// backend check; these numbers must stay in sync with it, not replace it.
+const MAX_IMAGES = 30;
+const MAX_VIDEO_BYTES = 150 * 1024 * 1024; // 150MB
+
+function formatMB(bytes) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+// Bottom third of the cap = normal, middle third = amber, top third = red —
+// same banding applied to images (count-based, max 30) and video
+// (byte-based, max 150MB), so both read the same way at a glance.
+function quotaColorClass(value, max) {
+  if (value >= (max * 2) / 3) return "text-accent-red";
+  if (value >= max / 3) return "text-accent-amber";
+  return "text-text-muted";
+}
+
 function Content() {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,9 +98,43 @@ function Content() {
       return;
     }
 
+    // Running totals across this batch, starting from what's already saved
+    // — checked against each file *before* it's uploaded, so a file that
+    // would be rejected never reaches Cloudinary at all.
+    let imagesQueued = content.filter((c) => c.type === "image").length;
+    let videoBytesQueued = content
+      .filter((c) => c.type === "video")
+      .reduce((sum, c) => sum + (c.sizeBytes || 0), 0);
+
     for (let i = 0; i < validFiles.length; i++) {
       const selectedFile = validFiles[i];
       const isVideo = selectedFile.type.startsWith("video");
+
+      if (!isVideo && imagesQueued >= MAX_IMAGES) {
+        setUploadState({
+          fileName: selectedFile.name,
+          isVideo,
+          progress: 0,
+          done: false,
+          error: `Image limit reached (${MAX_IMAGES} max)`,
+          queueIndex: i + 1,
+          queueTotal: validFiles.length,
+        });
+        return;
+      }
+
+      if (isVideo && videoBytesQueued + selectedFile.size > MAX_VIDEO_BYTES) {
+        setUploadState({
+          fileName: selectedFile.name,
+          isVideo,
+          progress: 0,
+          done: false,
+          error: "Video storage limit reached (150MB max)",
+          queueIndex: i + 1,
+          queueTotal: validFiles.length,
+        });
+        return;
+      }
 
       setUploadState({
         fileName: selectedFile.name,
@@ -106,13 +160,38 @@ function Content() {
           ? await getVideoDurationMs(selectedFile).catch(() => undefined)
           : undefined;
 
-        await createContent({
+        const created = await createContent({
           name,
           type: isVideo ? "video" : "image",
           mediaUrl: uploadResult.url,
           thumbnailUrl: uploadResult.thumbnailUrl,
+          sizeBytes: uploadResult.bytes,
           ...(durationInMillis && { durationInMillis }),
         });
+
+        // createContent resolves (doesn't throw) on a quota rejection too —
+        // apiFetch returns the JSON body regardless of status code, so an
+        // error here looks like { message: "..." } with no _id, same
+        // convention used elsewhere in this app.
+        if (!created?._id) {
+          setUploadState((s) =>
+            s
+              ? {
+                  ...s,
+                  error:
+                    created?.message ||
+                    `Upload failed for "${selectedFile.name}". Please try again.`,
+                }
+              : s,
+          );
+          return;
+        }
+
+        if (isVideo) {
+          videoBytesQueued += uploadResult.bytes || 0;
+        } else {
+          imagesQueued += 1;
+        }
 
         fetchContent();
 
@@ -124,8 +203,14 @@ function Content() {
         if (err.name === "AbortError") {
           setUploadState(null);
         } else {
-          alert(`Upload failed for "${selectedFile.name}". Please try again.`);
-          setUploadState(null);
+          setUploadState((s) =>
+            s
+              ? {
+                  ...s,
+                  error: `Upload failed for "${selectedFile.name}". Please try again.`,
+                }
+              : s,
+          );
         }
         return;
       }
@@ -177,6 +262,9 @@ function Content() {
       image: content.filter((c) => c.type === "image").length,
       video: content.filter((c) => c.type === "video").length,
       app: content.filter((c) => c.type === "app").length,
+      videoBytes: content
+        .filter((c) => c.type === "video")
+        .reduce((sum, c) => sum + (c.sizeBytes || 0), 0),
     }),
     [content],
   );
@@ -221,15 +309,28 @@ function Content() {
 
       {/* fixed header: stays put, only the grid below scrolls (nested ScrollBox) */}
       <div className="flex-shrink-0 pr-4">
-        {/* row 1: title + count, search */}
+        {/* row 1: title + count + quota (left, two lines), search (right,
+            vertically centered against the full left column via items-center) */}
         <div className="flex items-center justify-between gap-4 mb-3">
-          <div className="flex items-baseline gap-2 min-w-0 flex-shrink-0">
-            <h1 className="text-text-primary text-xl font-bold whitespace-nowrap">
-              All content
-            </h1>
-            <span className="text-text-muted text-sm whitespace-nowrap">
-              {pluralizeCount(visibleContent.length, "item")}
-            </span>
+          <div className="flex flex-col gap-1 min-w-0 flex-shrink-0">
+            <div className="flex items-baseline gap-2 min-w-0">
+              <h1 className="text-text-primary text-xl font-bold whitespace-nowrap">
+                All content
+              </h1>
+              <span className="text-text-muted text-sm whitespace-nowrap">
+                {pluralizeCount(visibleContent.length, "item")}
+              </span>
+            </div>
+            <p className="text-text-muted text-xs whitespace-nowrap">
+              <span className={quotaColorClass(counts.image, MAX_IMAGES)}>
+                {counts.image}
+              </span>
+              /{MAX_IMAGES} images ·{" "}
+              <span className={quotaColorClass(counts.videoBytes, MAX_VIDEO_BYTES)}>
+                {formatMB(counts.videoBytes)}
+              </span>
+              /{formatMB(MAX_VIDEO_BYTES)} video · {counts.app} apps
+            </p>
           </div>
 
           <ContentSearchInput
@@ -330,6 +431,7 @@ function Content() {
         isVideo={uploadState?.isVideo}
         progress={uploadState?.progress ?? 0}
         done={uploadState?.done ?? false}
+        error={uploadState?.error}
         queueIndex={uploadState?.queueIndex}
         queueTotal={uploadState?.queueTotal}
         onCancel={handleCancelUpload}

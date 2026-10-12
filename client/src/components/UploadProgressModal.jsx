@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, Film, Image as ImageIcon } from "lucide-react";
+import { Check, Film, Image as ImageIcon, AlertTriangle } from "lucide-react";
 
 import Button from "./Button.jsx";
 import CancelButton from "./CancelButton.jsx";
@@ -10,6 +10,7 @@ function UploadProgressModal({
   isVideo,
   progress,
   done,
+  error,
   queueIndex,
   queueTotal,
   onCancel,
@@ -18,10 +19,10 @@ function UploadProgressModal({
   const [dot, setDot] = useState(1);
 
   useEffect(() => {
-    if (!open || done) return;
+    if (!open || done || error) return;
     const id = setInterval(() => setDot((d) => (d % 3) + 1), 420);
     return () => clearInterval(id);
-  }, [open, done]);
+  }, [open, done, error]);
 
   if (!open) return null;
 
@@ -34,7 +35,14 @@ function UploadProgressModal({
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0 flex flex-col gap-1.5">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-text-primary m-0">
-              {done ? (
+              {error ? (
+                <>
+                  <span className="w-6 h-6 rounded-full bg-accent-red text-bg-primary flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle size={13} strokeWidth={3} />
+                  </span>
+                  Upload failed
+                </>
+              ) : done ? (
                 <>
                   <span className="w-6 h-6 rounded-full bg-accent-green text-bg-primary flex items-center justify-center flex-shrink-0">
                     <Check size={14} strokeWidth={3} />
@@ -77,7 +85,7 @@ function UploadProgressModal({
             </div>
           </div>
 
-          {!done && (
+          {!done && !error && (
             <CancelButton
               size="lg"
               title="Cancel upload"
@@ -87,35 +95,42 @@ function UploadProgressModal({
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <div
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={progress}
-            aria-label="Upload progress"
-            className="relative h-2 rounded bg-bg-primary border border-border-muted overflow-hidden"
-          >
+        {error ? (
+          <div className="flex items-start gap-2 bg-accent-red/10 border border-accent-red/30 text-accent-red text-sm rounded px-3 py-2">
+            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+            {error}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
             <div
-              className={`absolute inset-y-0 left-0 rounded transition-[width] duration-200 ${
-                done ? "bg-accent-green" : "bg-[#1f6feb]"
-              }`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-text-muted">
-              {done ? "Upload complete" : "Uploading file"}
-            </span>
-            <span
-              className={`font-semibold ${done ? "text-accent-green" : "text-text-primary"}`}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress}
+              aria-label="Upload progress"
+              className="relative h-2 rounded bg-bg-primary border border-border-muted overflow-hidden"
             >
-              {progress}%
-            </span>
+              <div
+                className={`absolute inset-y-0 left-0 rounded transition-[width] duration-200 ${
+                  done ? "bg-accent-green" : "bg-[#1f6feb]"
+                }`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-text-muted">
+                {done ? "Upload complete" : "Uploading file"}
+              </span>
+              <span
+                className={`font-semibold ${done ? "text-accent-green" : "text-text-primary"}`}
+              >
+                {progress}%
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {done && (
+        {(done || error) && (
           <div className="flex justify-end">
             <Button onClick={onClose}>Okay</Button>
           </div>

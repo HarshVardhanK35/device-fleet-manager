@@ -31,21 +31,24 @@ export async function releaseDevice(id) {
 
 // Unauthenticated — called from pages/Screens.jsx, which has no logged-in
 // user (same reasoning as api/pairing.js's generatePairingCode/
-// getPairingStatus and Player.jsx's own plain-fetch /connect call).
-export async function checkDeviceExists(id) {
-  const res = await fetch(`${API_BASE}/devices/${id}/exists`);
+// getPairingStatus and DevicePlayback.jsx's own plain-fetch /connect
+// call). Keyed by Device.accessToken (a long random token), not the real
+// Mongo _id — Phase 3 fix, 2026-10-12: these routes are fully public, so
+// the identifier they trust has to be unguessable and revocable.
+export async function checkDeviceExists(token) {
+  const res = await fetch(`${API_BASE}/devices/${token}/exists`);
   return res.json();
 }
 
-export async function unpairDevice(id) {
-  const res = await fetch(`${API_BASE}/devices/${id}/unpair`, {
+export async function unpairDevice(token) {
+  const res = await fetch(`${API_BASE}/devices/${token}/unpair`, {
     method: "DELETE",
   });
   return res.json();
 }
 
-export async function disconnectDevice(id) {
-  const res = await fetch(`${API_BASE}/devices/${id}/disconnect`, {
+export async function disconnectDevice(token) {
+  const res = await fetch(`${API_BASE}/devices/${token}/disconnect`, {
     method: "POST",
   });
   return res.json();

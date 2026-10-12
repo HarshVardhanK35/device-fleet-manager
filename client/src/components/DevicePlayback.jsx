@@ -16,7 +16,7 @@ function findActiveAssignment(manifest, nowMs) {
 
 function DevicePlayback(
   {
-    deviceId,
+    screenToken,
     rejectedView,
     waitingView,
     nothingScheduledView,
@@ -46,6 +46,13 @@ function DevicePlayback(
     let cancelled = false;
     let mqttClient = null;
     let heartbeatTimer = null;
+    // The real Mongo _id, resolved once from /connect's response. MQTT
+    // topics are keyed by this (internal, never exposed to this client
+    // beyond this one response) — screenToken (the public, unguessable,
+    // revocable identifier) is only ever used for the HTTP connect/
+    // disconnect calls themselves. See Player.jsx's trailing comment for
+    // the full Phase 3 reasoning.
+    let resolvedId = null;
 
     function stopHeartbeat() {
       if (heartbeatTimer) {
@@ -60,54 +67,58 @@ function DevicePlayback(
       // heartbeatListener.js + offlineChecker.js).
       heartbeatTimer = setInterval(() => {
         mqttClient.publish(
-          `devices/${deviceId}/heartbeat`,
+          `devices/${resolvedId}/heartbeat`,
           JSON.stringify({ status: "online", timestamp: new Date() }),
         );
       }, HEARTBEAT_MS);
     }
 
-    // Claims the one-connection slot (POST /devices/:id/connect). Used for
-    // the initial connect and again after a "reconnect" control message
-    // (release) brings a taken-over screen back — see the message handler
-    // below.
+    // Claims the one-connection slot (POST /devices/:token/connect).
+    // Returns the real device _id on success (or null on rejection/
+    // failure) — used for the initial connect and again after a
+    // "reconnect" control message (release) brings a taken-over screen
+    // back — see the message handler below.
     async function claimConnection() {
       try {
-        const res = await fetch(`http://localhost:5000/devices/${deviceId}/connect`, {
+        const res = await fetch(`http://localhost:5000/devices/${screenToken}/connect`, {
           method: "POST",
         });
-        return res.ok;
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.deviceId ?? null;
       } catch {
         // Backend unreachable — treat the same as rejected rather than
         // silently connecting with no server-side registration.
-        return false;
+        return null;
       }
     }
 
     (async () => {
       // One active connection per device: claim the slot before doing
-      // anything else. A second tab/browser hitting the same deviceId
+      // anything else. A second tab/browser hitting the same screenToken
       // while one is already connected gets rejected here and never
       // subscribes or starts a heartbeat — see future-implementations.md's
       // Preview-tab section for the full reasoning.
-      const accepted = await claimConnection();
+      const realId = await claimConnection();
       if (cancelled) return;
 
-      if (!accepted) {
+      if (!realId) {
         setConnection("rejected");
         return;
       }
 
+      resolvedId = realId;
       setConnection("connected");
 
       // ws: browser's websocket connection to 9001
       mqttClient = mqtt.connect("ws://localhost:9001");
 
-      // subscription - to topic devices/<deviceId>/manifest, plus a control
-      // topic the backend's take-over/release actions publish to (POST
-      // /devices/:id/take-over | /release -> publishControlMessage).
+      // subscription - to topic devices/<resolvedId>/manifest, plus a
+      // control topic the backend's take-over/release actions publish to
+      // (POST /devices/:id/take-over | /release -> publishControlMessage).
       mqttClient.on("connect", () => {
-        mqttClient.subscribe(`devices/${deviceId}/manifest`);
-        mqttClient.subscribe(`devices/${deviceId}/control`);
+        mqttClient.subscribe(`devices/${resolvedId}/manifest`);
+        mqttClient.subscribe(`devices/${resolvedId}/control`);
       });
 
       // on subscribing - browser receives a message
@@ -131,6 +142,7 @@ function DevicePlayback(
                 setConnection("rejected");
                 return;
               }
+              resolvedId = reaccepted;
               setConnection("connected");
               startHeartbeat();
             });
@@ -152,15 +164,15 @@ function DevicePlayback(
       startHeartbeat();
     })();
 
-    // whenever deviceId changes and component unmounts - clean up fn ends the connection
+    // whenever screenToken changes and component unmounts - clean up fn ends the connection
     return () => {
       cancelled = true;
       stopHeartbeat();
       if (mqttClient) mqttClient.end();
     };
 
-    // whenever there is a change in "deviceId" - useEffect runs
-  }, [deviceId]);
+    // whenever there is a change in "screenToken" - useEffect runs
+  }, [screenToken]);
 
   const activeAssignment = findActiveAssignment(manifest, now);
 
@@ -290,8 +302,12 @@ function DevicePlayback(
 export default forwardRef(DevicePlayback);
 
 // The real device-facing playback logic: claims the one-connection slot
-// (POST /devices/:id/connect), subscribes to devices/<deviceId>/manifest
-// over MQTT-over-WebSocket, publishes a heartbeat every 10s while
+// (POST /devices/:token/connect, keyed by Device.accessToken — a long
+// random public token, not the real Mongo _id, see Player.jsx's trailing
+// comment for the Phase 3 reasoning), subscribes to the real device's
+// devices/<_id>/manifest over MQTT-over-WebSocket (the real _id is
+// resolved once from /connect's response and used only for MQTT topics —
+// screenToken is never used there), publishes a heartbeat every 10s while
 // connected, and renders whatever's actually scheduled right now.
 // Schedule-aware: picks the assignment whose beginDT/endDT window covers
 // the current time (not just the first one in the manifest), re-checked
@@ -310,7 +326,7 @@ export default forwardRef(DevicePlayback);
 // `rejectedView`/`waitingView`/`nothingScheduledView`/`takenOverView` let a
 // caller override the default messages to match its own page's visual
 // language — all optional.
-// Used by: pages/Player.jsx (route "/player/:deviceId"), pages/Screens.jsx
+// Used by: pages/Player.jsx (route "/player/:token"), pages/Screens.jsx
 // (the "playing" phase, after pairing + the tap-to-start gesture).
 //
 // Resume support: forwards a ref exposing getPosition() -> { assignmentId,

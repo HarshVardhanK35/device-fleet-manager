@@ -189,6 +189,6 @@ export default Layout;
 // scrolls via ScrollBox, not the native browser scrollbar.
 // Used by: App.jsx, wrapping Dashboard, Content, Assignments, Playlists,
 // and PlayerSlots (the "Player" tab). NOT used on Login/Register or the
-// device-facing Player page at "/player/:deviceId" (those have no
+// device-facing Player page at "/player/:token" (those have no
 // nav/console chrome) — not to be confused with the "Player" nav tab
 // above, which is PlayerSlots.jsx at "/player".
