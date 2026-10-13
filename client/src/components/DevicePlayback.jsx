@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import mqtt from "mqtt";
 
+import { API_BASE } from "../api/apiClient.js";
+
 const HEARTBEAT_MS = 10000; // matches services/deviceSimulator.js's interval
 const FALLBACK_ITEM_MS = 8000; // used only if a content item has no/invalid durationInMillis
 
@@ -80,7 +82,7 @@ function DevicePlayback(
     // back — see the message handler below.
     async function claimConnection() {
       try {
-        const res = await fetch(`http://localhost:5000/devices/${screenToken}/connect`, {
+        const res = await fetch(`${API_BASE}/devices/${screenToken}/connect`, {
           method: "POST",
         });
         if (!res.ok) return null;

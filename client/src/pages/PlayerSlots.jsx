@@ -420,7 +420,7 @@ function PlayerSlots() {
                   <br />
                   2. On the TV, tablet or monitor browser, open{" "}
                   <a
-                    href="http://localhost:5173/screens"
+                    href={`${window.location.origin}/screens`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-accent-blue hover:underline"
