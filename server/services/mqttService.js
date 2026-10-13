@@ -1,5 +1,10 @@
 import mqtt from "mqtt";
 
+console.log(
+  "Connecting to MQTT broker:",
+  process.env.MQTT_URL || "mqtt://localhost:1883",
+);
+
 const client = mqtt.connect(process.env.MQTT_URL || "mqtt://localhost:1883", {
   username: process.env.MQTT_USERNAME,
   password: process.env.MQTT_PASSWORD,
