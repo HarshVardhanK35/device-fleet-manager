@@ -359,20 +359,31 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
   }
   const { message: footerMessage, tone: footerTone } = getFooter();
 
+  // beginDT/endDT are a timezone-less local string (e.g. "2026-10-13T17:54",
+  // from toLocalInputValue) — fine for local UI/conflict math since
+  // new Date(naiveString) parses using the browser's own local timezone,
+  // but never send that naive string to the API directly: the backend's
+  // own new Date(...) parses a timezone-less string using the SERVER's
+  // system timezone, which only happened to match local dev (both IST) and
+  // silently breaks once deployed to a server in a different timezone
+  // (e.g. UTC). .toISOString() is explicit/unambiguous regardless of where
+  // the server runs.
   async function resolveConflict(conflict, deviceId) {
     const { beforeNeeded, afterNeeded } = classifyOverride(conflict, beginDT, endDT);
+    const beginISO = new Date(beginDT).toISOString();
+    const endISO = new Date(endDT).toISOString();
     if (beforeNeeded && afterNeeded) {
-      await updateAssignment(conflict._id, { endDT: beginDT });
+      await updateAssignment(conflict._id, { endDT: beginISO });
       await createAssignment({
         deviceId,
         playlistId: conflict.playlistId?._id ?? conflict.playlistId,
-        beginDT: endDT,
+        beginDT: endISO,
         endDT: conflict.endDT,
       });
     } else if (beforeNeeded) {
-      await updateAssignment(conflict._id, { endDT: beginDT });
+      await updateAssignment(conflict._id, { endDT: beginISO });
     } else if (afterNeeded) {
-      await updateAssignment(conflict._id, { beginDT: endDT });
+      await updateAssignment(conflict._id, { beginDT: endISO });
     } else {
       await deleteAssignment(conflict._id);
     }
@@ -382,6 +393,8 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
     if (!canPublish) return;
     setSubmitting(true);
     try {
+      const beginISO = new Date(beginDT).toISOString();
+      const endISO = new Date(endDT).toISOString();
       for (const deviceId of selectedIds) {
         const conflict = conflictsByDevice.get(deviceId);
         if (conflict) {
@@ -389,9 +402,9 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
         }
 
         if (assignment && deviceId === editingDeviceId) {
-          await updateAssignment(assignment._id, { deviceId, playlistId, beginDT, endDT });
+          await updateAssignment(assignment._id, { deviceId, playlistId, beginDT: beginISO, endDT: endISO });
         } else {
-          await createAssignment({ deviceId, playlistId, beginDT, endDT });
+          await createAssignment({ deviceId, playlistId, beginDT: beginISO, endDT: endISO });
         }
       }
       onPublished();
