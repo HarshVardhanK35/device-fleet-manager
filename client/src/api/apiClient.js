@@ -1,4 +1,7 @@
-export const API_BASE = "http://localhost:5000";
+// Falls back to the local backend when unset, same pattern as the MQTT env
+// vars in components/DevicePlayback.jsx — deployed builds get the real
+// backend URL baked in at build time via Vite.
+export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000";
 
 // In-memory only — never localStorage. This is the XSS fix: a token that
 // only ever lives in a JS variable can't be read by `localStorage.getItem`

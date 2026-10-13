@@ -115,8 +115,11 @@ function DevicePlayback(
       // the backend's mqttService.js — deployed builds get the real wss://
       // URL + credentials baked in at build time via Vite env vars, since a
       // static frontend build has no other way to vary this per environment.
+      const mqttUrl = import.meta.env.VITE_MQTT_WS_URL || "ws://localhost:9001";
+      console.log("Connecting to MQTT broker:", mqttUrl);
+
       mqttClient = mqtt.connect(
-        import.meta.env.VITE_MQTT_WS_URL || "ws://localhost:9001",
+        mqttUrl,
         {
           username: import.meta.env.VITE_MQTT_USERNAME,
           password: import.meta.env.VITE_MQTT_PASSWORD,
