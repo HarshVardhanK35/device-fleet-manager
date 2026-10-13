@@ -34,6 +34,7 @@ import pairingRoutes from "./routes/pairingRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 
 const app = express(); // creates express application
+app.set("trust proxy", 1);
 
 // gets the PORT from .env or fallback keeps server runnable without a .env file
 const PORT = process.env.PORT || 3000;
