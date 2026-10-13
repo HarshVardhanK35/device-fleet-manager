@@ -67,6 +67,7 @@ app.get("/health", (req, res) => {
 // use this script in package.json - "dev": "nodemon index.js" - npm run dev
 connectDB().then(() => {
   // server only starts accepting requests once DB is connected, so no request hits a dead DB
+  const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
