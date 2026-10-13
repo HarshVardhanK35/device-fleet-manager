@@ -110,8 +110,18 @@ function DevicePlayback(
       resolvedId = realId;
       setConnection("connected");
 
-      // ws: browser's websocket connection to 9001
-      mqttClient = mqtt.connect("ws://localhost:9001");
+      // ws: browser's websocket connection to the broker. Falls back to the
+      // local dev broker (no auth) when these aren't set, same pattern as
+      // the backend's mqttService.js — deployed builds get the real wss://
+      // URL + credentials baked in at build time via Vite env vars, since a
+      // static frontend build has no other way to vary this per environment.
+      mqttClient = mqtt.connect(
+        import.meta.env.VITE_MQTT_WS_URL || "ws://localhost:9001",
+        {
+          username: import.meta.env.VITE_MQTT_USERNAME,
+          password: import.meta.env.VITE_MQTT_PASSWORD,
+        },
+      );
 
       // subscription - to topic devices/<resolvedId>/manifest, plus a
       // control topic the backend's take-over/release actions publish to
