@@ -43,7 +43,7 @@ app.use(express.json());
 
 // middleware: runs on every incoming req - adds special HTTP res headers (Access-Control-Allow-Origin)
 // app.use(cors());
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(cookieParser());
 app.use(helmet());
 
