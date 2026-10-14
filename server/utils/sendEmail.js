@@ -1,19 +1,16 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendEmail({ to, subject, html, text }) {
-  await transporter.sendMail({
-    from: `"DFM" <${process.env.EMAIL_USER}>`,
+  const { error } = await resend.emails.send({
+    from: "Castwise <noreply@castwise.site>",
     to,
     subject,
     html,
-    text, 
+    text,
   });
+  if (error) {
+    throw new Error(error.message);
+  }
 }
