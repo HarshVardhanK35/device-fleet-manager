@@ -13,15 +13,24 @@ export function AuthProvider({ children }) {
     async function bootstrap() {
       // On every fresh page load there's no access token in memory yet —
       // try to silently mint one from the httpOnly refresh cookie before
-      // assuming the user is logged out.
-      const res = await refreshAccessToken();
-      if (res.token) {
-        setAccessToken(res.token);
-        setToken(res.token);
-        const me = await getMe();
-        if (me && !me.message) {
-          setUser(me);
+      // assuming the user is logged out. Wrapped in try/catch: if the
+      // backend is unreachable (down, network hiccup), this must still
+      // fall through to "not logged in" rather than leaving `loading`
+      // stuck true forever — ProtectedRoute renders null while loading,
+      // so an uncaught failure here hung the whole app blank indefinitely
+      // instead of ever redirecting to /login.
+      try {
+        const res = await refreshAccessToken();
+        if (res.token) {
+          setAccessToken(res.token);
+          setToken(res.token);
+          const me = await getMe();
+          if (me && !me.message) {
+            setUser(me);
+          }
         }
+      } catch {
+        // Backend unreachable — treat as logged out, same as a real 401.
       }
       setLoading(false);
     }

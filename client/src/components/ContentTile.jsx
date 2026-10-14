@@ -1,5 +1,6 @@
 import { getTypeMeta } from "../utils/contentTypeMeta.js";
 import { formatDuration } from "../utils/formatDuration.js";
+import { getOptimizedThumbnail } from "../utils/cloudinaryTransform.js";
 
 function ContentTile({
   item,
@@ -28,9 +29,10 @@ function ContentTile({
           <span className="text-text-muted text-sm">App</span>
         ) : (
           <img
-            src={item.thumbnailUrl || item.mediaUrl}
+            src={getOptimizedThumbnail(item.thumbnailUrl || item.mediaUrl, 400)}
             alt={item.name}
             className="absolute inset-0 w-full h-full object-contain"
+            loading="lazy"
           />
         )}
 
