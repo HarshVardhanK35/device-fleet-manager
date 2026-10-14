@@ -29,14 +29,14 @@ jobs:
       - name: Promote backend image (staging -> prod, no rebuild)
         run: >
           docker buildx imagetools create
-          --tag ghcr.io/${{ github.repository_owner }}/dfm-api:prod
-          ghcr.io/${{ github.repository_owner }}/dfm-api:staging
+          --tag ghcr.io/harshvardhank35/dfm-api:prod
+          ghcr.io/harshvardhank35/dfm-api:staging
 
       - name: Promote MQTT image (staging -> prod, no rebuild)
         run: >
           docker buildx imagetools create
-          --tag ghcr.io/${{ github.repository_owner }}/dfm-mqtt:prod
-          ghcr.io/${{ github.repository_owner }}/dfm-mqtt:staging
+          --tag ghcr.io/harshvardhank35/dfm-mqtt:prod
+          ghcr.io/harshvardhank35/dfm-mqtt:staging
 
       - name: Redeploy backend on Render
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
