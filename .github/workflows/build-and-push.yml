@@ -1,0 +1,41 @@
+name: Build and Push Images
+
+# Runs on every push to master. Builds the backend and MQTT broker into
+# Docker images and uploads them to GitHub's free image registry
+# (ghcr.io), tagged "staging". Render's staging services then pull this
+# exact image — the same build staging just tested is what gets promoted
+# to production later, not a fresh rebuild.
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./server
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/dfm-api:staging
+
+      - name: Build and push MQTT broker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./mosquitto
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/dfm-mqtt:staging
