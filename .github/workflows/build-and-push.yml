@@ -31,11 +31,11 @@ jobs:
         with:
           context: ./server
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/dfm-api:staging
+          tags: ghcr.io/harshvardhank35/dfm-api:staging
 
       - name: Build and push MQTT broker image
         uses: docker/build-push-action@v6
         with:
           context: ./mosquitto
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/dfm-mqtt:staging
+          tags: ghcr.io/harshvardhank35/dfm-mqtt:staging
