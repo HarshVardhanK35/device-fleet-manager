@@ -164,3 +164,15 @@ textarea.dark-scrollbar::-webkit-scrollbar-thumb {
   border-radius: 999px;
   cursor: default;
 }
+
+/* Hides the native scrollbar on touch-swipe horizontal strips (e.g.
+   AppsPickerModal's mobile category rows) — swipe + scroll-snap is the real
+   affordance there, a visible scrollbar just reads as leftover desktop UI.
+   Scrolling itself still works; only the visual bar is removed. */
+.scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}

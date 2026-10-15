@@ -1,0 +1,34 @@
+[
+  {
+    "appId": "a534f4ed-1bf4-4d08-9355-38f7ef820744",
+    "name": "Weather",
+    "category": "Live Data",
+    "thumbnail": null,
+    "stagingZipUrl": null,
+    "prodZipUrl": null
+  },
+  {
+    "appId": "db284dfe-e2b8-4c57-a6d6-1342c7c2ce82",
+    "name": "Clock",
+    "category": "Utility",
+    "thumbnail": null,
+    "stagingZipUrl": null,
+    "prodZipUrl": null
+  },
+  {
+    "appId": "a9ceaa9a-4384-46e7-8bf1-abfaa18bcd93",
+    "name": "RSS",
+    "category": "News",
+    "thumbnail": null,
+    "stagingZipUrl": null,
+    "prodZipUrl": null
+  },
+  {
+    "appId": "4078f574-a953-429c-8b8a-15c0525e8528",
+    "name": "Announcements",
+    "category": "Utility",
+    "thumbnail": null,
+    "stagingZipUrl": null,
+    "prodZipUrl": null
+  }
+]

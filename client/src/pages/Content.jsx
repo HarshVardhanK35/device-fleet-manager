@@ -9,6 +9,7 @@ import {
 } from "../api/content";
 
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
+import AppsPickerModal from "../apps/AppsPickerModal.jsx";
 import ContentToolbar from "../components/ContentToolbar.jsx";
 import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/UploadProgressModal.jsx";
@@ -67,6 +68,7 @@ function Content() {
 
   // delete confirmations
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // bulk
+  const [appsPickerOpen, setAppsPickerOpen] = useState(false);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState(null); // from inspector
 
   useEffect(() => {
@@ -353,7 +355,7 @@ function Content() {
         >
           <UploadSplitButton
             onUploadClick={openFilePicker}
-            onAddAppClick={() => {}} // no route yet
+            onAddAppClick={() => setAppsPickerOpen(true)}
           />
         </ContentToolbar>
       </div>
@@ -367,7 +369,7 @@ function Content() {
             ) : content.length === 0 ? (
               <ContentEmptyState
                 onUploadClick={openFilePicker}
-                onAddAppClick={() => {}} // no route yet
+                onAddAppClick={() => setAppsPickerOpen(true)}
               />
             ) : visibleContent.length === 0 ? (
               <p className="text-text-muted text-sm pt-8 text-center">
@@ -436,6 +438,17 @@ function Content() {
         queueTotal={uploadState?.queueTotal}
         onCancel={handleCancelUpload}
         onClose={() => setUploadState(null)}
+      />
+
+      <AppsPickerModal
+        open={appsPickerOpen}
+        onOpenChange={setAppsPickerOpen}
+        onSelectApp={(app) => {
+          // TODO: next step — navigate to the per-app preview+settings
+          // screen (iframe + config form) instead of just closing.
+          console.log("Selected app:", app);
+          setAppsPickerOpen(false);
+        }}
       />
     </div>
   );
