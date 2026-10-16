@@ -11,6 +11,9 @@ function StyledSelect({
   open,
   onOpenChange,
   roundedSide = "full",
+  portalContainer,
+  bgClassName = "bg-bg-panel",
+  collapseOnMobile = true,
 }) {
   const roundedClass =
     roundedSide === "left"
@@ -18,6 +21,14 @@ function StyledSelect({
       : roundedSide === "right"
         ? "rounded-r-lg rounded-l-none border-l-0"
         : "rounded-lg";
+  const widthClass = collapseOnMobile ? "w-9 md:w-auto md:min-w-[140px]" : "w-full min-w-0";
+  const padClass = collapseOnMobile ? "px-0 md:px-3" : "px-3";
+  const justifyClass = collapseOnMobile
+    ? "justify-center md:justify-between"
+    : "justify-between";
+  const iconHideClass = collapseOnMobile ? "md:hidden" : "hidden";
+  const labelShowClass = collapseOnMobile ? "hidden md:inline" : "inline";
+  const chevronShowClass = collapseOnMobile ? "hidden md:block" : "block";
 
   return (
     <Select.Root
@@ -28,24 +39,24 @@ function StyledSelect({
     >
       <Select.Trigger
         aria-label={label}
-        className={`group inline-flex items-center justify-center md:justify-between gap-2 bg-bg-panel border border-border-muted hover:bg-bg-hover hover:border-border-hover text-text-primary text-sm w-9 md:w-auto md:min-w-[140px] px-0 md:px-3 h-9 outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass}`}
+        className={`group inline-flex items-center ${justifyClass} gap-2 ${bgClassName} border border-border-muted hover:bg-bg-hover hover:border-border-hover text-text-primary text-sm ${widthClass} ${padClass} h-9 outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass}`}
       >
         <Icon
           size={16}
-          className="md:hidden text-text-muted group-hover:text-text-primary transition-colors"
+          className={`${iconHideClass} text-text-muted group-hover:text-text-primary transition-colors`}
         />
-        <span className="hidden md:inline">
+        <span className={`${labelShowClass} truncate`}>
           <Select.Value />
         </span>
-        <Select.Icon className="hidden md:block">
+        <Select.Icon className={chevronShowClass}>
           <ChevronDown
             size={14}
-            className="text-text-muted group-hover:text-text-primary transition-colors"
+            className="text-text-muted group-hover:text-text-primary transition-colors flex-none"
           />
         </Select.Icon>
       </Select.Trigger>
 
-      <Select.Portal>
+      <Select.Portal container={portalContainer}>
         <Select.Content
           position="popper"
           side="bottom"
@@ -92,5 +103,25 @@ export default StyledSelect;
 // left corners/right border square, "right" keeps its right corners square
 // and drops its own left border so the pair reads as one bordered unit
 // instead of two separate boxes with a gap.
+// `portalContainer` (optional) — defaults to `document.body` (Radix's own
+// default). Pass a ref to an ancestor element when this Select is nested
+// inside a Radix Dialog — the Dialog's modal pointer-events lockdown
+// otherwise treats the Select's body-level portal as "outside" content and
+// disables pointer events on it, silently killing hover highlighting (the
+// bug AppsPickerModal.jsx hit: clicking an option still worked, since
+// Radix's own click handling doesn't depend on CSS :hover, but the visual
+// hover/highlight state never appeared). Keeping the portal inside the
+// Dialog's own content subtree avoids that entirely.
+// `bgClassName` (optional, default "bg-bg-panel") — trigger background
+// override, e.g. "bg-bg-primary" to match a darker surrounding input style
+// (used by apps/WeatherSettingsScreen.jsx for its Refresh interval/Font
+// family/Background audio fields, to match the Location text input).
+// `collapseOnMobile` (optional, default true) — the original icon-only
+// 36px-square collapse below `md`, built for the Content page's compact
+// filter/sort row. Pass false for a Select that's a full-width labeled
+// field in its own right (e.g. a settings form) — it stays full-width with
+// its text label visible at every screen size instead of shrinking to a
+// bare icon on mobile.
 // Used by: components/ContentFilterSortBar.jsx,
-// components/DashboardAttentionPanel.jsx.
+// components/DashboardAttentionPanel.jsx, apps/AppsPickerModal.jsx,
+// apps/WeatherSettingsScreen.jsx.

@@ -22,6 +22,7 @@ function ContentFilterSortBar({
   sortValue,
   onSortChange,
   showSort = true,
+  portalContainer,
 }) {
   const [openMenu, setOpenMenu] = useState(null); // "filter" | "sort" | null
 
@@ -37,6 +38,7 @@ function ContentFilterSortBar({
         open={openMenu === "filter"}
         onOpenChange={(open) => setOpenMenu(open ? "filter" : null)}
         roundedSide={showSort ? "left" : "full"}
+        portalContainer={portalContainer}
       />
       {showSort && (
         <StyledSelect
@@ -48,6 +50,7 @@ function ContentFilterSortBar({
           open={openMenu === "sort"}
           onOpenChange={(open) => setOpenMenu(open ? "sort" : null)}
           roundedSide="right"
+          portalContainer={portalContainer}
         />
       )}
     </div>
@@ -74,3 +77,7 @@ export default ContentFilterSortBar;
 // components/ContentToolbar.jsx (pages/Playlists.jsx, showSort={false}).
 // The underlying dropdown is components/StyledSelect.jsx, shared with
 // components/DashboardAttentionPanel.jsx.
+// `portalContainer` (optional) — forwarded straight to StyledSelect; pass
+// the enclosing Dialog's content node when this bar lives inside one (e.g.
+// ContentPickerModal.jsx), otherwise the dropdown's hover highlight breaks —
+// see StyledSelect.jsx's own comment for why.

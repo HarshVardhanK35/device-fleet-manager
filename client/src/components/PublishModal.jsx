@@ -27,6 +27,7 @@ import CancelButton from "./CancelButton.jsx";
 import Button from "./Button.jsx";
 import ScrollBox from "./ScrollBox.jsx";
 import DateTimeField from "./DateTimeField.jsx";
+import ToggleSwitch from "../apps/shared/ToggleSwitch.jsx";
 
 function pad(n) {
   return String(n).padStart(2, "0");
@@ -106,32 +107,6 @@ function PlaylistSelectField({ playlists, value, onChange }) {
         </Select.Content>
       </Select.Portal>
     </Select.Root>
-  );
-}
-
-function ToggleSwitch({ checked, onChange, label }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex items-center gap-2 flex-none"
-    >
-      <span
-        className={`w-9 h-5 rounded-full relative transition-colors ${
-          checked ? "bg-accent-blue" : "bg-border-hover"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${
-            checked ? "bg-white" : "bg-text-primary/90"
-          }`}
-          style={{ transform: `translateX(${checked ? 16 : 0}px)` }}
-        />
-      </span>
-      <span className="text-text-primary text-sm font-medium">{label}</span>
-    </button>
   );
 }
 

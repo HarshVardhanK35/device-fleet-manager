@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Filter, ArrowUpDown, ChevronDown, Check, Lock } from "lucide-react";
+import { Filter, ArrowUpDown, Lock } from "lucide-react";
 
 import CancelButton from "../components/CancelButton.jsx";
 import ScrollBox from "../components/ScrollBox.jsx";
+import StyledSelect from "../components/StyledSelect.jsx";
+import ToggleSwitch from "./shared/ToggleSwitch.jsx";
 import { buildAppSections, getCategoryList, getAppCounts } from "./appCategories.js";
 
 // Font size scales with the CARD's own rendered width (container query
@@ -23,158 +25,65 @@ function appLabelSizeClass(name = "") {
   return "text-[clamp(7px,8cqw,11px)]";
 }
 
-function FilterSortBar({ category, setCategory, availableOnly, setAvailableOnly, sort, setSort }) {
-  const [menu, setMenu] = useState(null); // "filter" | "sort" | null
+// Reuses StyledSelect — the same Filter/Sort dropdown component the Content
+// page uses — instead of a custom dropdown, for visual/behavior consistency
+// across the app. "Available now" is a standalone toggle next to the pill
+// rather than nested inside the Filter dropdown, since StyledSelect (a
+// plain Radix Select item list) can't host an embedded switch.
+function FilterSortBar({
+  category,
+  setCategory,
+  availableOnly,
+  setAvailableOnly,
+  sort,
+  setSort,
+  portalContainer,
+}) {
+  const [openMenu, setOpenMenu] = useState(null); // "filter" | "sort" | null
   const counts = getAppCounts(availableOnly);
-  const categories = getCategoryList();
-  const barRef = useRef(null);
 
-  function stop(e) {
-    e.stopPropagation();
-  }
-
-  // Close on outside click or on any scroll (scroll doesn't bubble, so the
-  // listener needs capture:true to still see it from the modal's scrollable
-  // container — same pattern already used for DateTimeField's popup).
-  useEffect(() => {
-    if (!menu) return;
-    function handleOutside(e) {
-      if (barRef.current && !barRef.current.contains(e.target)) {
-        setMenu(null);
-      }
-    }
-    function handleScroll() {
-      setMenu(null);
-    }
-    document.addEventListener("mousedown", handleOutside);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      document.removeEventListener("mousedown", handleOutside);
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [menu]);
+  const filterOptions = getCategoryList().map((c) => ({
+    value: c,
+    label: c === "All" ? "All apps" : c,
+  }));
+  const sortOptions = [
+    { value: "default", label: "Default order" },
+    { value: "az", label: "Alphabetical (A–Z)" },
+  ];
 
   return (
     <div className="flex flex-wrap items-center gap-2.5">
-      <div ref={barRef} className="relative flex border border-border-muted rounded-lg bg-bg-panel">
-        <div className="relative flex-1">
-          <button
-            type="button"
-            onClick={(e) => {
-              stop(e);
-              setMenu(menu === "filter" ? null : "filter");
-            }}
-            className={`flex items-center gap-2 px-3 h-9 rounded-l-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              menu === "filter" ? "bg-bg-hover" : "hover:bg-bg-hover"
-            }`}
-          >
-            <Filter size={15} className="text-text-muted" />
-            <span className="text-text-muted">Filter</span>
-            <ChevronDown size={12} className="text-text-muted" />
-          </button>
-
-          {menu === "filter" && (
-            <div
-              onClick={stop}
-              className="absolute z-50 top-[calc(100%+6px)] left-0 w-[220px] p-1.5 bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)]"
-            >
-              <div className="px-2 pt-1 pb-1.5 text-[11px] font-semibold tracking-wide uppercase text-text-muted">
-                Category
-              </div>
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCategory(c)}
-                  className="flex items-center justify-between w-full px-2 py-2 rounded-md text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors"
-                >
-                  <span>{c === "All" ? "All apps" : c}</span>
-                  <span className="flex items-center gap-2">
-                    <span className="text-xs text-text-muted">{counts[c] ?? 0}</span>
-                    {category === c && <Check size={14} className="text-accent-blue" />}
-                  </span>
-                </button>
-              ))}
-              <div className="h-px my-1.5 mx-1 bg-border-muted" />
-              <button
-                type="button"
-                role="switch"
-                aria-checked={availableOnly}
-                onClick={() => setAvailableOnly((v) => !v)}
-                className="flex items-center justify-between w-full px-2 py-2 rounded-md text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors"
-              >
-                Available now
-                <span
-                  className={`relative w-[34px] h-5 rounded-full transition-colors ${
-                    availableOnly ? "bg-accent-blue/70" : "bg-bg-hover"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-[3px] w-3.5 h-3.5 rounded-full bg-text-primary transition-all ${
-                      availableOnly ? "left-[17px]" : "left-[3px]"
-                    }`}
-                  />
-                </span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="w-px bg-border-muted" />
-
-        <div className="relative flex-1">
-          <button
-            type="button"
-            onClick={(e) => {
-              stop(e);
-              setMenu(menu === "sort" ? null : "sort");
-            }}
-            className={`flex items-center gap-2 px-3 h-9 rounded-r-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              menu === "sort" ? "bg-bg-hover" : "hover:bg-bg-hover"
-            }`}
-          >
-            <ArrowUpDown size={15} className="text-text-muted" />
-            <span className="text-text-muted">Sort</span>
-            <ChevronDown size={12} className="text-text-muted" />
-          </button>
-
-          {menu === "sort" && (
-            <div
-              onClick={stop}
-              className="absolute z-50 top-[calc(100%+6px)] right-0 w-[180px] p-1.5 bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)]"
-            >
-              {[
-                { value: "default", label: "Default order" },
-                { value: "az", label: "Alphabetical (A–Z)" },
-              ].map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => {
-                    setSort(o.value);
-                    setMenu(null);
-                  }}
-                  className="flex items-center justify-between w-full px-2 py-2 rounded-md text-sm font-medium text-text-primary hover:bg-bg-hover transition-colors"
-                >
-                  <span>{o.label}</span>
-                  {sort === o.value && <Check size={14} className="text-accent-blue" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="flex items-center">
+        <StyledSelect
+          value={category}
+          onChange={setCategory}
+          options={filterOptions}
+          labelFor={(o) => `${o.label} (${counts[o.value] ?? 0})`}
+          icon={Filter}
+          label="Filter apps"
+          open={openMenu === "filter"}
+          onOpenChange={(open) => setOpenMenu(open ? "filter" : null)}
+          roundedSide="left"
+          portalContainer={portalContainer}
+        />
+        <StyledSelect
+          value={sort}
+          onChange={setSort}
+          options={sortOptions}
+          icon={ArrowUpDown}
+          label="Sort apps"
+          open={openMenu === "sort"}
+          onOpenChange={(open) => setOpenMenu(open ? "sort" : null)}
+          roundedSide="right"
+          portalContainer={portalContainer}
+        />
       </div>
 
-      {availableOnly && (
-        <button
-          type="button"
-          onClick={() => setAvailableOnly(false)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-accent-blue/15 text-accent-blue text-xs font-semibold"
-        >
-          Available now
-          <span className="text-[10px]">✕</span>
-        </button>
-      )}
+      <ToggleSwitch
+        checked={availableOnly}
+        onChange={setAvailableOnly}
+        label="Available now"
+      />
     </div>
   );
 }
@@ -184,7 +93,7 @@ function FilterSortBar({ category, setCategory, availableOnly, setAvailableOnly,
 // sort, and availability back to defaults on every reopen instead of
 // carrying over whatever was applied last time. Same pattern as
 // ContentPickerModal.jsx's PickerFormBody.
-function AppsPickerBody({ onSelectApp }) {
+function AppsPickerBody({ onSelectApp, portalContainer }) {
   const [category, setCategory] = useState("All");
   const [availableOnly, setAvailableOnly] = useState(false);
   const [sort, setSort] = useState("default");
@@ -204,6 +113,7 @@ function AppsPickerBody({ onSelectApp }) {
           setAvailableOnly={setAvailableOnly}
           sort={sort}
           setSort={setSort}
+          portalContainer={portalContainer}
         />
       </div>
 
@@ -272,11 +182,22 @@ function AppsPickerBody({ onSelectApp }) {
 }
 
 function AppsPickerModal({ open, onOpenChange, onSelectApp }) {
+  // Radix Select's own Portal defaults to document.body, but Dialog's modal
+  // pointer-events lockdown treats a body-level sibling portal as "outside"
+  // content and disables pointer events on it — silently killing hover
+  // highlighting on the Filter/Sort dropdowns (see StyledSelect.jsx's
+  // `portalContainer` comment). Keeping the Select's portal inside this
+  // Dialog's own content node avoids that.
+  const [contentEl, setContentEl] = useState(null);
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/70 z-40" />
-        <Dialog.Content className="fixed inset-0 bg-bg-primary z-50 flex flex-col overflow-hidden">
+        <Dialog.Content
+          ref={setContentEl}
+          className="fixed inset-0 bg-bg-primary z-50 flex flex-col overflow-hidden"
+        >
           <div className="flex items-start justify-between gap-3 px-4 sm:px-6 md:px-8 pt-6 pb-4">
             <Dialog.Title className="m-0 text-3xl sm:text-4xl font-bold text-text-primary tracking-tight">
               Apps
@@ -285,7 +206,7 @@ function AppsPickerModal({ open, onOpenChange, onSelectApp }) {
           </div>
 
           <ScrollBox className="flex-1 min-h-0">
-            {open && <AppsPickerBody onSelectApp={onSelectApp} />}
+            {open && <AppsPickerBody onSelectApp={onSelectApp} portalContainer={contentEl} />}
           </ScrollBox>
         </Dialog.Content>
       </Dialog.Portal>
@@ -300,8 +221,8 @@ export default AppsPickerModal;
 // Apps-Picker.html). Reads real apps from appsRegistry.json via
 // appCategories.js, grouped into fixed category rows with static
 // "Coming soon" placeholder slots. Real app cards call `onSelectApp(app)`;
-// placeholder cards are inert. Filter (category + "Available now") and Sort
-// (Default/A-Z) are a custom merged pill — not StyledSelect, since the
-// Filter panel needs an embedded toggle switch alongside the category list,
-// which Radix Select's item-list-only content can't host.
+// placeholder cards are inert. Filter (category) and Sort (Default/A-Z)
+// reuse StyledSelect — same dropdown component as the Content page's own
+// Filter/Sort — merged into one pill via roundedSide. "Available now" is a
+// separate standalone toggle next to the pill, not nested inside Filter.
 // Used by: pages/Content.jsx (wired from "Add an App").
