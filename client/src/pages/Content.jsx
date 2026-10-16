@@ -10,6 +10,7 @@ import {
 
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
 import AppsPickerModal from "../apps/AppsPickerModal.jsx";
+import WeatherSettingsScreen from "../apps/appModals/weather-modal.jsx";
 import ContentToolbar from "../components/ContentToolbar.jsx";
 import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/UploadProgressModal.jsx";
@@ -69,6 +70,7 @@ function Content() {
   // delete confirmations
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // bulk
   const [appsPickerOpen, setAppsPickerOpen] = useState(false);
+  const [weatherSettingsOpen, setWeatherSettingsOpen] = useState(false);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState(null); // from inspector
 
   useEffect(() => {
@@ -444,11 +446,20 @@ function Content() {
         open={appsPickerOpen}
         onOpenChange={setAppsPickerOpen}
         onSelectApp={(app) => {
-          // TODO: next step — navigate to the per-app preview+settings
-          // screen (iframe + config form) instead of just closing.
-          console.log("Selected app:", app);
           setAppsPickerOpen(false);
+          if (app.name === "Weather") {
+            setWeatherSettingsOpen(true);
+          } else {
+            // TODO: other apps (Clock/RSS/Announcements) don't have a
+            // settings screen built yet — Weather is first.
+            console.log("No settings screen built yet for:", app.name);
+          }
         }}
+      />
+
+      <WeatherSettingsScreen
+        open={weatherSettingsOpen}
+        onOpenChange={setWeatherSettingsOpen}
       />
     </div>
   );
