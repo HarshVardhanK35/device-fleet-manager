@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, MapPin, Type } from "lucide-react";
+import { Clock, Type } from "lucide-react";
 
 import AppSettingsShell from "../shared/AppSettingsShell.jsx";
 import AppPreviewFrame from "../shared/AppPreviewFrame.jsx";
@@ -8,6 +8,7 @@ import Field from "../shared/Field.jsx";
 import SegmentedControl from "../shared/SegmentedControl.jsx";
 import ToggleSwitch from "../shared/ToggleSwitch.jsx";
 import BackgroundAudioField from "../shared/BackgroundAudioField.jsx";
+import LocationSearchField from "../shared/LocationSearchField.jsx";
 import StyledSelect from "../../components/StyledSelect.jsx";
 
 // Matches the ~10-option font list already agreed for app settings — not
@@ -33,20 +34,28 @@ const REFRESH_OPTIONS = ["5 min", "15 min", "30 min", "1 hour"];
 // built; no fabricated filenames.
 const AUDIO_OPTIONS = ["None"];
 
+// A true constant (module-level, not recreated every render) — needed so
+// the reset effect below can depend on it safely.
+const INITIAL_FORM = {
+  location: null,
+  unit: "F",
+  refresh: "15 min",
+  range: "3-Day",
+  time: "12h",
+  font: "Inter",
+  audio: "None",
+};
+
+// `open`/`onOpenChange` are passed straight through to AppSettingsShell.
+// Fresh form state on every open comes from OUTSIDE this file: Content.jsx
+// gives this component a `key` that changes between open/closed, so React
+// fully remounts it (throwing away all its state) each time instead of
+// this component having to reset itself.
 function WeatherSettingsScreen({ open, onOpenChange }) {
-  const initial = {
-    location: "",
-    unit: "F",
-    refresh: "15 min",
-    range: "3-Day",
-    time: "12h",
-    font: "Inter",
-    audio: "None",
-  };
   // `base` is the last-saved snapshot; comparing `form` against it is what
   // drives the Save button's enabled/disabled state (dirty-check pattern).
-  const [base, setBase] = useState(initial);
-  const [form, setForm] = useState(initial);
+  const [base, setBase] = useState(INITIAL_FORM);
+  const [form, setForm] = useState(INITIAL_FORM);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [appName, setAppName] = useState("Weather");
@@ -55,10 +64,11 @@ function WeatherSettingsScreen({ open, onOpenChange }) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  const dirty = Object.keys(initial).some((k) => form[k] !== base[k]);
+  const dirty = Object.keys(INITIAL_FORM).some((k) => form[k] !== base[k]);
 
   function handleSave() {
     setBase(form);
+    console.log("Weather settings saved:", form);
     // TODO: wire to the real Content API once this screen is reached from
     // a saved Content row (POST/PATCH configBlob).
   }
@@ -85,18 +95,10 @@ function WeatherSettingsScreen({ open, onOpenChange }) {
         <>
           <SettingsCard kicker="Location & data">
             <Field label="Location">
-              <div className="relative">
-                <MapPin
-                  size={14}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
-                />
-                <input
-                  value={form.location}
-                  onChange={(e) => set("location", e.target.value)}
-                  placeholder="e.g. New York"
-                  className="w-full bg-bg-primary border border-border-muted rounded-lg pl-8 pr-3 h-9 text-sm text-text-primary outline-none focus-visible:border-accent-blue"
-                />
-              </div>
+              <LocationSearchField
+                value={form.location}
+                onChange={(loc) => set("location", loc)}
+              />
             </Field>
             <Field label="Refresh interval">
               <StyledSelect
