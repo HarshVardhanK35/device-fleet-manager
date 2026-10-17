@@ -458,6 +458,10 @@ function Content() {
       />
 
       <WeatherSettingsScreen
+        // Remounts fresh every time this opens (key changes closed->open),
+        // so all its internal state resets to defaults instead of carrying
+        // over whatever was left from the last time it was open.
+        key={weatherSettingsOpen ? "open" : "closed"}
         open={weatherSettingsOpen}
         onOpenChange={setWeatherSettingsOpen}
       />

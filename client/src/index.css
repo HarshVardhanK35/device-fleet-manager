@@ -152,14 +152,18 @@ input[type="number"] {
   appearance: textfield;
 }
 
-textarea.dark-scrollbar::-webkit-scrollbar {
+/* Themed vertical scrollbar for a plain overflow-y-auto element (textareas,
+   small dropdown popups) — not scoped to <textarea> anymore, so any element
+   can opt in. Matches ScrollBox.jsx's look for places too small/simple to
+   reach for the full Radix ScrollArea component. */
+.dark-scrollbar::-webkit-scrollbar {
   width: 9px;
 }
-textarea.dark-scrollbar::-webkit-scrollbar-track {
+.dark-scrollbar::-webkit-scrollbar-track {
   background: var(--color-bg-hover);
   cursor: default;
 }
-textarea.dark-scrollbar::-webkit-scrollbar-thumb {
+.dark-scrollbar::-webkit-scrollbar-thumb {
   background: var(--color-text-muted);
   border-radius: 999px;
   cursor: default;

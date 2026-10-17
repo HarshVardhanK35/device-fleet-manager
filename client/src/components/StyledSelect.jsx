@@ -64,7 +64,7 @@ function StyledSelect({
           sideOffset={4}
           className="bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] p-1 z-50 w-[180px] sm:w-[216px]"
         >
-          <Select.Viewport>
+          <Select.Viewport className="dark-scrollbar">
             {options.map((opt) => (
               <Select.Item
                 key={opt.value}
