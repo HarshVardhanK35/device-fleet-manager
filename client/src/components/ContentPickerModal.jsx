@@ -275,7 +275,7 @@ function ContentPickerModal({
                 </p>
               )}
             </div>
-            <CancelButton as={Dialog.Close} />
+            <CancelButton as={Dialog.Close} title="Close" />
           </div>
 
           {open && (

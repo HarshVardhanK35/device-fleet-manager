@@ -1,3 +1,5 @@
+import { Pencil } from "lucide-react";
+
 import { getTypeMeta } from "../utils/contentTypeMeta.js";
 import { formatDuration } from "../utils/formatDuration.js";
 import { getOptimizedThumbnail } from "../utils/cloudinaryTransform.js";
@@ -13,6 +15,7 @@ function ContentTile({
   coloredType = false,
   footerActions,
   onClick,
+  onEditClick,
 }) {
   const width =
     size === "sm" ? "w-[140px]" : size === "fluid" ? "w-full" : "w-[218px]";
@@ -54,6 +57,20 @@ function ContentTile({
           >
             {formatDuration(item.durationInMillis)}
           </span>
+        )}
+
+        {onEditClick && (
+          <button
+            type="button"
+            aria-label="Edit settings"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditClick(item);
+            }}
+            className="absolute right-1.5 top-1.5 w-[26px] h-[26px] rounded-md flex items-center justify-center bg-black/70 border border-white/80 text-white opacity-0 group-hover:opacity-100 hover:bg-black/85 transition-opacity"
+          >
+            <Pencil size={13} />
+          </button>
         )}
 
         {children}

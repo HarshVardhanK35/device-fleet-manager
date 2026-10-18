@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { Trash2, ChevronUp, ChevronDown, Settings2 } from "lucide-react";
 
 import Button from "./Button.jsx";
 import CancelButton from "./CancelButton.jsx";
@@ -11,7 +11,10 @@ const DURATION_PRESETS = [5, 10, 15, 30, 60];
 // truthy — the key forces a remount (fresh initial state) whenever a
 // different item is inspected, instead of syncing props into state via a
 // useEffect (an anti-pattern: see react-hooks/set-state-in-effect).
-function ContentDetailsPanel({ item, onClose, onSave, onDelete }) {
+// `onOpenAppSettings` (app items only) opens that app's own full settings
+// modal (location, refresh interval, etc.) — this panel only ever edits
+// name + duration, the two fields every content type shares.
+function ContentDetailsPanel({ item, onClose, onSave, onDelete, onOpenAppSettings }) {
   const [name, setName] = useState(item.name);
   const [durationSec, setDurationSec] = useState(
     item.durationInMillis ? item.durationInMillis / 1000 : "",
@@ -31,7 +34,7 @@ function ContentDetailsPanel({ item, onClose, onSave, onDelete }) {
     <div className="fixed top-14 left-0 right-0 bottom-0 z-40 md:static md:top-auto md:left-auto md:right-auto md:bottom-auto md:z-auto md:w-[320px] md:flex-shrink-0 md:h-fit bg-bg-panel border-0 md:border md:border-border-muted rounded-none md:rounded-xl flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border-muted">
         <h3 className="text-text-primary font-bold">Details</h3>
-        <CancelButton onClick={onClose} />
+        <CancelButton onClick={onClose} title="Close" />
       </div>
 
       <div className="flex flex-col gap-4 p-5 flex-1 min-h-0 overflow-y-auto md:flex-none md:overflow-visible">
@@ -116,6 +119,17 @@ function ContentDetailsPanel({ item, onClose, onSave, onDelete }) {
             </div>
           </div>
         )}
+
+        {onOpenAppSettings && (
+          <button
+            type="button"
+            onClick={onOpenAppSettings}
+            className="flex items-center justify-center gap-2 text-sm font-semibold text-text-primary bg-bg-primary border border-border-muted hover:border-border-hover hover:bg-bg-hover rounded-lg px-3 py-2 transition-colors"
+          >
+            <Settings2 size={14} />
+            Edit app settings
+          </button>
+        )}
       </div>
 
       <div className="flex items-center justify-between px-5 py-4 border-t border-border-muted">
@@ -147,7 +161,9 @@ export default ContentDetailsPanel;
 // always-visible inspector pattern. Preview, type badge, Name field, and
 // (image/app only, not video) a duration preset button group + custom
 // numeric field. Folder field from the mock is omitted — no folder concept
-// exists in our Content schema.
+// exists in our Content schema. App items get one extra button ("Edit app
+// settings") that hands off to that app's own full settings modal for its
+// app-specific fields — this panel only ever edits name + duration.
 // Below `md`, renders as a full-screen overlay (fixed, below the header)
 // instead of a 320px sidebar, matching the mock's mobile behavior.
 // Used by: pages/Content.jsx.

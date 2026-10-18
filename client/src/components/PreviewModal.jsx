@@ -14,7 +14,7 @@ function PreviewModal({ open, onOpenChange, icon: Icon = Eye, title, subtitle, m
               <div className="text-text-primary text-sm font-semibold">{title}</div>
               {subtitle && <div className="text-text-muted text-xs">{subtitle}</div>}
             </div>
-            <CancelButton as={Dialog.Close} />
+            <CancelButton as={Dialog.Close} title="Close" />
           </div>
           <div className="p-4 flex flex-col gap-3">
             <div className="aspect-video rounded-lg overflow-hidden border border-border-muted">

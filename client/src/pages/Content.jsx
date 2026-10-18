@@ -71,7 +71,38 @@ function Content() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false); // bulk
   const [appsPickerOpen, setAppsPickerOpen] = useState(false);
   const [weatherSettingsOpen, setWeatherSettingsOpen] = useState(false);
+  // The existing Content row being edited (set when the pencil icon is
+  // clicked on an already-saved Weather app tile) — null means the modal
+  // is creating a brand new one instead (opened via "Add an App").
+  const [weatherEditTarget, setWeatherEditTarget] = useState(null);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState(null); // from inspector
+
+  // Pencil icon on any tile (image/video/app) opens the same Details panel
+  // — name + duration are edited there for all types, including apps. The
+  // panel itself shows an extra "Edit app settings" button, app-only, that
+  // calls openAppSettingsModal below for the app-specific fields (location,
+  // refresh interval, etc.) that don't belong in the generic panel.
+  function handleTileEdit(item) {
+    setInspectedId(item._id);
+  }
+
+  function openAppSettingsModal(item) {
+    // Weather is currently the only app with a settings screen — rows
+    // saved before `appType` was added to configBlob don't have it yet, so
+    // fall back to the old "range" field (only Weather's configBlob ever
+    // had one) rather than require every pre-existing row to be re-saved.
+    const isWeather =
+      item.configBlob?.appType === "weather" || item.configBlob?.range !== undefined;
+
+    if (isWeather) {
+      setWeatherEditTarget(item);
+      setWeatherSettingsOpen(true);
+    } else {
+      // Other app types (Clock/RSS/Announcements) don't have a settings
+      // screen built yet — same gap as AppsPickerModal's onSelectApp.
+      console.log("No settings screen built yet for this app:", item.name);
+    }
+  }
 
   useEffect(() => {
     fetchContent();
@@ -386,7 +417,7 @@ function Content() {
                     checked={checkedIds.has(item._id)}
                     inspected={inspectedId === item._id}
                     onToggleSelect={toggleSelect}
-                    onClick={() => setInspectedId(item._id)}
+                    onEdit={handleTileEdit}
                   />
                 ))}
               </div>
@@ -403,6 +434,14 @@ function Content() {
             onClose={() => setInspectedId(null)}
             onSave={handleSaveItem}
             onDelete={(item) => setSingleDeleteTarget(item)}
+            onOpenAppSettings={
+              inspectedItem.type === "app"
+                ? () => {
+                    setInspectedId(null);
+                    openAppSettingsModal(inspectedItem);
+                  }
+                : undefined
+            }
           />
         )}
       </div>
@@ -448,6 +487,7 @@ function Content() {
         onSelectApp={(app) => {
           setAppsPickerOpen(false);
           if (app.name === "Weather") {
+            setWeatherEditTarget(null);
             setWeatherSettingsOpen(true);
           } else {
             // TODO: other apps (Clock/RSS/Announcements) don't have a
@@ -461,9 +501,11 @@ function Content() {
         // Remounts fresh every time this opens (key changes closed->open),
         // so all its internal state resets to defaults instead of carrying
         // over whatever was left from the last time it was open.
-        key={weatherSettingsOpen ? "open" : "closed"}
+        key={weatherSettingsOpen ? weatherEditTarget?._id ?? "new" : "closed"}
         open={weatherSettingsOpen}
         onOpenChange={setWeatherSettingsOpen}
+        existingContent={weatherEditTarget}
+        onSaved={fetchContent}
       />
     </div>
   );

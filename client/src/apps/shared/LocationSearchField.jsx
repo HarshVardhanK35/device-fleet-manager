@@ -3,28 +3,37 @@ import { Loader2, MapPin } from "lucide-react";
 
 import { getCachedResults, setCachedResults } from "./geocodeCache.js";
 
-const MIN_CHARS = 4;
-const DEBOUNCE_MS = 600;
+const MIN_CHARS = 3;
+const DEBOUNCE_MS = 550;
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
-// Open-Meteo's weather API needs real coordinates, not a city name — this
-// turns what the user types into that. Debounced (only searches after they
-// pause typing) and cached (see geocodeCache.js), so typing "New York"
-// doesn't fire a network call on every single keystroke.
+function contextText(context, idPrefix) {
+  return context?.find((c) => c.id.startsWith(idPrefix))?.text ?? null;
+}
+
+// Mapbox's own Geocoding API does real server-side fuzzy/prefix matching
+// (unlike Open-Meteo's geocoding, which only ever matches from the start of
+// a name) — "new y" correctly resolves to New York, and a misspelling like
+// "visha" still gets a reasonable match. That's what lets this field do
+// live-as-you-type search safely, debounced, instead of only searching on
+// Enter.
 async function searchLocations(query) {
   const cached = getCachedResults(query);
   if (cached) return cached;
 
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5`;
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+    query
+  )}.json?access_token=${MAPBOX_TOKEN}&types=place,locality&limit=5`;
   const res = await fetch(url);
   if (!res.ok) throw new Error("Geocoding request failed");
   const data = await res.json();
 
-  const results = (data.results || []).map((r) => ({
-    name: r.name,
-    country: r.country,
-    admin1: r.admin1,
-    lat: r.latitude,
-    lon: r.longitude,
+  const results = (data.features || []).map((f) => ({
+    name: f.text,
+    country: contextText(f.context, "country"),
+    admin1: contextText(f.context, "region"),
+    lat: f.center[1],
+    lon: f.center[0],
   }));
 
   setCachedResults(query, results);
@@ -48,52 +57,11 @@ function LocationSearchField({ value, onChange }) {
   // One ref per result row, so the highlighted one can be scrolled into
   // view when arrow-key navigation moves past what's currently visible.
   const itemRefs = useRef([]);
-
-  useEffect(() => {
-    // All state updates happen inside the timer callback, not the effect
-    // body itself — calling setState synchronously in an effect body can
-    // cascade into extra renders, which React (and our lint rules) flag.
-    // `cancelled` guards against a stale response landing after the user
-    // has already typed something new (the effect re-ran before this one
-    // finished).
-    let cancelled = false;
-    const trimmed = query.trim();
-
-    const timer = setTimeout(async () => {
-      if (trimmed.length < MIN_CHARS) {
-        if (!cancelled) {
-          setResults([]);
-          setError(null);
-        }
-        return;
-      }
-      if (!cancelled) {
-        setLoading(true);
-        setError(null);
-      }
-      try {
-        const matches = await searchLocations(trimmed);
-        if (!cancelled) {
-          setResults(matches);
-          setOpen(true);
-          setHighlighted(-1);
-          setError(matches.length === 0 ? "No matching locations found." : null);
-        }
-      } catch {
-        if (!cancelled) {
-          setResults([]);
-          setError("Couldn't search locations right now — check your connection.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }, DEBOUNCE_MS);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [query]);
+  const debounceRef = useRef(null);
+  // Guards against an OLDER search resolving after a NEWER one (fast
+  // typing can fire requests that don't resolve in the order they were
+  // sent) — only the latest-issued search's result is ever applied.
+  const latestRequestId = useRef(0);
 
   useEffect(() => {
     function handleOutside(e) {
@@ -103,13 +71,18 @@ function LocationSearchField({ value, onChange }) {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  // Keyboard navigation can move the highlight to a row that's scrolled
-  // out of view (clipped by the dropdown's max-height) — this brings it
-  // back into view, same as how a native <select> behaves.
   useEffect(() => {
     if (highlighted < 0) return;
     itemRefs.current[highlighted]?.scrollIntoView({ block: "nearest" });
   }, [highlighted]);
+
+  // Clears any pending debounced search on unmount so it can't call
+  // setState after the component is gone.
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   function pick(result) {
     onChange(result);
@@ -117,36 +90,68 @@ function LocationSearchField({ value, onChange }) {
     setOpen(false);
   }
 
-  // Lets the dropdown be used entirely from the keyboard — Down/Up move a
-  // highlight through the results, Enter picks whatever's highlighted,
-  // Escape closes without picking.
-  function handleKeyDown(e) {
-    if (!open || results.length === 0) return;
+  async function runSearch(text) {
+    const requestId = ++latestRequestId.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const matches = await searchLocations(text);
+      if (requestId !== latestRequestId.current) return; // superseded by a newer search
+      setResults(matches);
+      setOpen(true);
+      setHighlighted(-1);
+      setError(matches.length === 0 ? "No matching locations found." : null);
+    } catch {
+      if (requestId !== latestRequestId.current) return;
+      setResults([]);
+      setError("Couldn't search locations right now — check your connection.");
+    } finally {
+      if (requestId === latestRequestId.current) setLoading(false);
+    }
+  }
 
-    if (e.key === "ArrowDown") {
+  function handleKeyDown(e) {
+    if (e.key === "ArrowDown" && open && results.length > 0) {
       e.preventDefault();
       setHighlighted((i) => (i + 1) % results.length);
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === "ArrowUp" && open && results.length > 0) {
       e.preventDefault();
       setHighlighted((i) => (i - 1 + results.length) % results.length);
-    } else if (e.key === "Enter" && highlighted >= 0) {
+    } else if (e.key === "Enter") {
       e.preventDefault();
-      pick(results[highlighted]);
+      if (highlighted >= 0 && results[highlighted]) pick(results[highlighted]);
     } else if (e.key === "Escape") {
       setOpen(false);
     }
   }
 
+  // Debounced live search — waits for a pause in typing before calling the
+  // API, so a fast typist only triggers one request, not one per
+  // keystroke.
   function handleType(e) {
-    setQuery(e.target.value);
+    const text = e.target.value;
+    setQuery(text);
     setError(null);
     // Typing invalidates whatever was previously picked — the saved
     // location must always be a real geocoded result, never free text.
     if (value) onChange(null);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const trimmed = text.trim();
+    if (trimmed.length < MIN_CHARS) {
+      setResults([]);
+      setOpen(false);
+      setLoading(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(() => runSearch(trimmed), DEBOUNCE_MS);
   }
 
   return (
     <div className="flex flex-col gap-1.5">
+      <p className="text-xs text-text-muted m-0">Start typing to search for a location.</p>
       <div ref={boxRef} className="relative">
         <MapPin
           size={14}

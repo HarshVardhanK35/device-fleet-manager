@@ -85,6 +85,8 @@ function AppSettingsShell({
   onAppNameChange,
   dirty,
   onSave,
+  saving = false,
+  saveError,
   preview,
   children,
 }) {
@@ -103,7 +105,7 @@ function AppSettingsShell({
             <EditableTitle name={appName} onChange={onAppNameChange} />
             <div className="flex-1" />
             <PreviewSizeToggle size={previewSize} onChange={setPreviewSize} />
-            <CancelButton as={Dialog.Close} size="lg" />
+            <CancelButton as={Dialog.Close} size="lg" title="Close" />
           </div>
 
           <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
@@ -120,16 +122,26 @@ function AppSettingsShell({
                 </div>
               </ScrollBox>
 
-              <div className="flex-none flex gap-2 px-4 sm:px-6 md:px-8 py-3 border-t border-border-muted bg-bg-primary">
-                <Dialog.Close
-                  type="button"
-                  className="flex-1 h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg text-sm font-semibold transition-colors"
-                >
-                  Close
-                </Dialog.Close>
-                <Button type="button" disabled={!dirty} onClick={onSave} className="flex-1">
-                  Save
-                </Button>
+              <div className="flex-none px-4 sm:px-6 md:px-8 py-3 border-t border-border-muted bg-bg-primary">
+                {saveError && (
+                  <p className="text-xs text-accent-red font-medium mb-2 m-0">{saveError}</p>
+                )}
+                <div className="flex gap-2">
+                  <Dialog.Close
+                    type="button"
+                    className="flex-1 h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    Close
+                  </Dialog.Close>
+                  <Button
+                    type="button"
+                    disabled={!dirty || saving}
+                    onClick={onSave}
+                    className="flex-1"
+                  >
+                    {saving ? "Saving…" : "Save"}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

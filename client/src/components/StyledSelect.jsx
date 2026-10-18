@@ -14,6 +14,7 @@ function StyledSelect({
   portalContainer,
   bgClassName = "bg-bg-panel",
   collapseOnMobile = true,
+  matchTriggerWidth = false,
 }) {
   const roundedClass =
     roundedSide === "left"
@@ -62,9 +63,27 @@ function StyledSelect({
           side="bottom"
           align="start"
           sideOffset={4}
-          className="bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] p-1 z-50 w-[180px] sm:w-[216px]"
+          // Fixed to the bottom (no auto-flip-to-top on limited space) so it
+          // never ends up covering fields ABOVE the trigger — instead, the
+          // list itself scrolls internally once it runs out of room below.
+          // avoidCollisions also turns off Radix's own automatic height-
+          // capping (both are driven by the same collision system), so
+          // --radix-select-content-available-height is set back manually
+          // below — without it, the list could render taller than the
+          // actual viewport and run off the bottom of the browser.
+          avoidCollisions={false}
+          className={`bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] p-1 z-50 ${
+            matchTriggerWidth ? "" : "w-[180px] sm:w-[216px]"
+          }`}
+          style={{
+            ...(matchTriggerWidth ? { width: "var(--radix-select-trigger-width)" } : {}),
+            maxHeight: "var(--radix-select-content-available-height)",
+          }}
         >
-          <Select.Viewport className="dark-scrollbar">
+          {/* ~3 rows visible (each row is ~40px incl. padding) — the rest
+              scroll, per explicit request not to let a long list (e.g. 10
+              fonts) dominate the screen. */}
+          <Select.Viewport className="dark-scrollbar max-h-[130px] overflow-y-auto">
             {options.map((opt) => (
               <Select.Item
                 key={opt.value}
@@ -122,6 +141,16 @@ export default StyledSelect;
 // field in its own right (e.g. a settings form) — it stays full-width with
 // its text label visible at every screen size instead of shrinking to a
 // bare icon on mobile.
+// `matchTriggerWidth` (optional, default false) — makes the dropdown
+// exactly as wide as its trigger button (via Radix's own
+// --radix-select-trigger-width CSS var) instead of the fixed 180/216px
+// width every other usage keeps. Pass true for a full-width field (e.g.
+// Font family) where the dropdown should visually line up with the input
+// above/below it.
+// The option list itself is capped at max-h-60 and scrolls internally
+// (avoidCollisions={false} keeps it pinned below the trigger rather than
+// flipping above it when there's limited room) — long lists (e.g. 10
+// fonts) scroll instead of covering fields above the trigger.
 // Used by: components/ContentFilterSortBar.jsx,
 // components/DashboardAttentionPanel.jsx, apps/AppsPickerModal.jsx,
-// apps/WeatherSettingsScreen.jsx.
+// apps/appModals/weather-modal.jsx.
