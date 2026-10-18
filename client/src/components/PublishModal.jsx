@@ -565,7 +565,7 @@ function PublishModal({ open, onOpenChange, playlists, devices, assignment, onPu
                 Choose what plays, when, and on which screens.
               </p>
             </div>
-            <CancelButton as={Dialog.Close} />
+            <CancelButton as={Dialog.Close} title="Close" />
           </div>
 
           {open && (

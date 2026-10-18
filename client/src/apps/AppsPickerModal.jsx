@@ -202,7 +202,7 @@ function AppsPickerModal({ open, onOpenChange, onSelectApp }) {
             <Dialog.Title className="m-0 text-3xl sm:text-4xl font-bold text-text-primary tracking-tight">
               Apps
             </Dialog.Title>
-            <CancelButton as={Dialog.Close} size="lg" />
+            <CancelButton as={Dialog.Close} size="lg" title="Close" />
           </div>
 
           <ScrollBox className="flex-1 min-h-0">

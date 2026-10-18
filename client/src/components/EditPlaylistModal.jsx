@@ -95,7 +95,7 @@ function EditPlaylistModal({ open, onOpenChange, playlist, onSave, onRemoveItem 
             <Dialog.Title className="text-text-primary font-bold text-lg m-0">
               Edit Playlist
             </Dialog.Title>
-            <CancelButton as={Dialog.Close} />
+            <CancelButton as={Dialog.Close} title="Close" />
           </div>
 
           {open && playlist && (

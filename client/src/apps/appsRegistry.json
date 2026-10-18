@@ -4,6 +4,7 @@
     "name": "Weather",
     "category": "Live Data",
     "thumbnail": null,
+    "devUrl": "http://localhost:5174",
     "stagingZipUrl": null,
     "prodZipUrl": null
   },
@@ -12,6 +13,7 @@
     "name": "Clock",
     "category": "Utility",
     "thumbnail": null,
+    "devUrl": null,
     "stagingZipUrl": null,
     "prodZipUrl": null
   },
@@ -20,6 +22,7 @@
     "name": "RSS",
     "category": "News",
     "thumbnail": null,
+    "devUrl": null,
     "stagingZipUrl": null,
     "prodZipUrl": null
   },
@@ -28,6 +31,7 @@
     "name": "Announcements",
     "category": "Utility",
     "thumbnail": null,
+    "devUrl": null,
     "stagingZipUrl": null,
     "prodZipUrl": null
   }
