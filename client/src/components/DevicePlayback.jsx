@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "re
 import mqtt from "mqtt";
 
 import { API_BASE } from "../api/apiClient.js";
+import AppRenderer from "../apps/shared/AppRenderer.jsx";
 
 const HEARTBEAT_MS = 10000; // matches services/deviceSimulator.js's interval
 const FALLBACK_ITEM_MS = 8000; // used only if a content item has no/invalid durationInMillis
@@ -308,7 +309,9 @@ function DevicePlayback(
           style={{ maxWidth: "100%", maxHeight: "100vh" }}
         />
       )}
-      {currentContent.type === "app" && <h1>{currentContent.name}</h1>}
+      {currentContent.type === "app" && (
+        <AppRenderer configBlob={currentContent.configBlob} />
+      )}
     </>
   );
 }

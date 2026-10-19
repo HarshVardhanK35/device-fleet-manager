@@ -33,7 +33,12 @@ export function resolveAppUrl(appId) {
 
 // Convenience for call sites that only know the app's name (e.g. a
 // specific app's own settings screen, which only ever deals with itself).
+// Case-insensitive — playback reads this from a saved Content row's
+// configBlob.appType (e.g. "weather", lowercase), not the registry's own
+// display-cased "name" field (e.g. "Weather").
 export function resolveAppUrlByName(name) {
-  const app = appsRegistry.find((a) => a.name === name);
+  const app = appsRegistry.find(
+    (a) => a.name.toLowerCase() === name?.toLowerCase(),
+  );
   return app ? resolveAppUrl(app.appId) : "about:blank";
 }
