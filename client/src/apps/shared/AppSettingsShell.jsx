@@ -1,10 +1,10 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Pencil } from "lucide-react";
+import { Pencil, ChevronDown, Check } from "lucide-react";
 
 import CancelButton from "../../components/CancelButton.jsx";
 import ScrollBox from "../../components/ScrollBox.jsx";
-import Button from "../../components/Button.jsx";
+import ActionMenu from "../../components/ActionMenu.jsx";
 import { PREVIEW_SIZES } from "./previewSizes.js";
 
 // Click the pencil to turn the app name into a text input. Small enough
@@ -84,7 +84,8 @@ function AppSettingsShell({
   appName,
   onAppNameChange,
   dirty,
-  onSave,
+  onSaveAndClose,
+  onSaveOnly,
   saving = false,
   saveError,
   preview,
@@ -133,14 +134,37 @@ function AppSettingsShell({
                   >
                     Close
                   </Dialog.Close>
-                  <Button
-                    type="button"
-                    disabled={!dirty || saving}
-                    onClick={onSave}
-                    className="flex-1"
-                  >
-                    {saving ? "Saving…" : "Save"}
-                  </Button>
+                  <div className="flex-1 flex">
+                    <button
+                      type="button"
+                      disabled={!dirty || saving}
+                      onClick={onSaveAndClose}
+                      className="flex-1 min-h-[40px] px-4 rounded-l-lg text-sm font-semibold bg-[#1f6feb] border border-accent-blue hover:bg-[#1a5fd0] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1f6feb]"
+                    >
+                      {saving ? "Saving…" : "Save & Close"}
+                    </button>
+                    <ActionMenu
+                      label="More save options"
+                      align="end"
+                      items={[
+                        {
+                          label: "Save",
+                          icon: Check,
+                          onClick: onSaveOnly,
+                          disabled: !dirty || saving,
+                        },
+                      ]}
+                      trigger={
+                        <button
+                          type="button"
+                          disabled={!dirty || saving}
+                          className="min-h-[40px] px-2 rounded-r-lg bg-[#1f6feb] border border-accent-blue border-l-0 hover:bg-[#1a5fd0] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1f6feb]"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      }
+                    />
+                  </div>
                 </div>
               </div>
             </div>

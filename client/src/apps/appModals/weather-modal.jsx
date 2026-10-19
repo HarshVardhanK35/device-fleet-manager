@@ -161,11 +161,18 @@ function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent })
       setContentId(saved._id);
       setBase(form);
       onSaved?.();
+      return true;
     } catch {
       setSaveError("Couldn't save — check your connection and try again.");
+      return false;
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleSaveAndClose() {
+    const ok = await handleSave();
+    if (ok) onOpenChange(false);
   }
 
   return (
@@ -175,7 +182,8 @@ function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent })
       appName={appName}
       onAppNameChange={setAppName}
       dirty={dirty}
-      onSave={handleSave}
+      onSaveAndClose={handleSaveAndClose}
+      onSaveOnly={handleSave}
       saving={saving}
       saveError={saveError}
       preview={(previewSize) => (

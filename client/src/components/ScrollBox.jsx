@@ -6,7 +6,7 @@ const ScrollBox = forwardRef(function ScrollBox(
   ref,
 ) {
   return (
-    <ScrollArea.Root className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <ScrollArea.Root className="relative flex flex-col flex-1 min-h-0 overflow-hidden">
       <ScrollArea.Viewport
         ref={ref}
         className={`w-full h-full [&>div]:!block ${className}`}
@@ -30,6 +30,11 @@ export default ScrollBox;
 // work, and the Viewport's `[&>div]:!block` override is required — Radix
 // injects its own `display:table` wrapper that otherwise collapses grid
 // content to near-zero width (a real bug hit and fixed during this build).
+// Root also needs `relative` — Radix's Scrollbar is positioned absolute
+// against the nearest positioned ancestor; without this, it escapes
+// outside Root's own rounded/clipped box instead of sitting inside it
+// (only became visible once this was used inside a narrow bordered panel —
+// ContentDetailsPanel.jsx).
 // Forwards `ref` to the Viewport's scrollable DOM node — optional, only
 // needed by callers that must read/control scroll position themselves
 // (e.g. ScrollToTopButton).

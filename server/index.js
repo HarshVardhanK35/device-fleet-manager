@@ -29,6 +29,7 @@ import deviceRoutes from "./routes/deviceRoutes.js";
 import manifestRoutes from "./routes/manifestRoutes.js";
 import playlistRoutes from "./routes/playlistRoutes.js";
 import pairingRoutes from "./routes/pairingRoutes.js";
+import appBundleRoutes from "./routes/appBundleRoutes.js";
 
 // file upload
 import uploadRoutes from "./routes/uploadRoutes.js";
@@ -57,6 +58,7 @@ app.use("/manifest", manifestRoutes);
 app.use("/playlists", playlistRoutes);
 app.use("/upload", uploadRoutes);
 app.use("/pairing", pairingRoutes);
+app.use("/apps", appBundleRoutes);
 
 // create /health - when somebody sends a GET req to /health - they receive { status: "ok" }
 // req from client and res sent from server

@@ -342,8 +342,11 @@ function Content() {
         className="hidden"
       />
 
-      {/* fixed header: stays put, only the grid below scrolls (nested ScrollBox) */}
-      <div className="flex-shrink-0 pr-4">
+      {/* fixed header: stays put, only the grid below scrolls (nested ScrollBox).
+          pr-4 matches the grid's own scrollbar gutter (ScrollBox below) — but
+          only when the Details panel is closed. With it open, the panel's own
+          border is the row's real right edge, not the grid's scrollbar. */}
+      <div className={`flex-shrink-0 ${inspectedItem ? "" : "pr-4"}`}>
         {/* row 1: title + count + quota (left, two lines), search (right,
             vertically centered against the full left column via items-center) */}
         <div className="flex items-center justify-between gap-4 mb-3">
