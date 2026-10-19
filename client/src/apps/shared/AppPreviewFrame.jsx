@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { PREVIEW_SIZES } from "./previewSizes.js";
+import { loadAppBundle, isAppBundleUrl } from "./loadAppBundle.js";
 
 // The bordered/shadowed preview box every app settings screen shows its
-// live preview inside. Handles the sizing (desktop/tablet/mobile) and a
-// small postMessage handshake with whatever app is loaded in the iframe:
+// live preview inside. Handles the sizing (desktop/tablet/mobile), loading
+// a built app bundle when `src` is one (fetch+unzip, see loadAppBundle.js)
+// vs. loading a dev server URL directly, and a small postMessage handshake
+// with whatever app ends up in the iframe either way:
 //
 //   1. The app sends { type: "APP_READY" } once it's mounted and listening.
 //   2. This replies with { type: "DFM_CONFIG", config } — the app's own
@@ -19,7 +22,41 @@ import { PREVIEW_SIZES } from "./previewSizes.js";
 function AppPreviewFrame({ size = "desktop", src = "about:blank", config }) {
   const [appReady, setAppReady] = useState(false);
   const [appListening, setAppListening] = useState(false);
+  const [bundleHtml, setBundleHtml] = useState(null);
+  const [bundleError, setBundleError] = useState(null);
   const iframeRef = useRef(null);
+
+  const isBundle = isAppBundleUrl(src);
+
+  // A bundle URL (a built .zip) has nothing to show until it's actually
+  // fetched and unzipped — a dev URL (a live server, e.g. localhost:5174)
+  // skips all of this and loads straight via the iframe's `src` below.
+  //
+  // Doesn't reset bundleHtml/bundleError on `src` changing — every current
+  // caller renders one AppPreviewFrame per fixed, never-changing app URL
+  // (e.g. weather-modal.jsx's WEATHER_APP_URL, a module-level constant), so
+  // this never actually runs twice with a different `src` on the same
+  // mounted instance. A future caller that reuses one instance across
+  // different apps should key it by `src` to force a fresh mount instead,
+  // same pattern already used elsewhere in this app (e.g. Content.jsx
+  // keying WeatherSettingsScreen by open/edit-target) rather than
+  // hand-syncing props into state here.
+  useEffect(() => {
+    if (!isBundle) return;
+
+    let cancelled = false;
+    loadAppBundle(src)
+      .then((html) => {
+        if (!cancelled) setBundleHtml(html);
+      })
+      .catch(() => {
+        if (!cancelled) setBundleError("Couldn't load this app's bundle.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [src, isBundle]);
 
   useEffect(() => {
     function handleMessage(e) {
@@ -38,8 +75,9 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config }) {
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-    // Only re-attaches if the iframe itself is swapped out (a new `src`).
-  }, [src]);
+    // Re-attaches if the iframe itself is swapped out (a new `src`, or a
+    // bundle finishing its fetch+unzip and mounting a fresh iframe).
+  }, [src, bundleHtml]);
 
   // Live-update: once the app has confirmed it's listening, push every
   // later config change straight to it — not just the config it got at
@@ -50,6 +88,10 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config }) {
   }, [config, appListening]);
 
   const { aspect, maxWidth } = PREVIEW_SIZES[size];
+
+  // A bundle has nothing to hand the iframe until it's fetched+unzipped; a
+  // dev URL can mount the iframe immediately.
+  const canMountIframe = isBundle ? bundleHtml !== null : true;
 
   return (
     <div
@@ -64,18 +106,25 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config }) {
         className="w-full @container relative overflow-hidden rounded-md border border-border-muted"
         style={{ aspectRatio: aspect }}
       >
-        <iframe
-          ref={iframeRef}
-          title="App preview"
-          src={src}
-          className={`absolute inset-0 w-full h-full transition-opacity ${
-            appReady ? "opacity-100" : "opacity-0"
-          }`}
-          sandbox="allow-scripts allow-same-origin"
-        />
-        {!appReady && (
+        {canMountIframe && (
+          <iframe
+            ref={iframeRef}
+            title="App preview"
+            {...(isBundle ? { srcDoc: bundleHtml } : { src })}
+            className={`absolute inset-0 w-full h-full transition-opacity ${
+              appReady ? "opacity-100" : "opacity-0"
+            }`}
+            sandbox="allow-scripts allow-same-origin"
+          />
+        )}
+        {!appReady && !bundleError && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <Loader2 size={28} className="animate-spin text-text-muted" />
+          </div>
+        )}
+        {bundleError && (
+          <div className="absolute inset-0 flex items-center justify-center text-xs text-accent-red text-center px-6">
+            {bundleError}
           </div>
         )}
       </div>

@@ -274,7 +274,6 @@ function DevicePlayback(
     return takenOverView ?? <h1>This screen was taken over from the app.</h1>;
   }
 
-  // console.log("manifest from screen", manifest);
   if (!manifest) return waitingView ?? <p>Waiting for manifest...</p>;
 
   const currentContent = activeAssignment?.content?.[contentIndex];

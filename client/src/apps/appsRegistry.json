@@ -4,8 +4,8 @@
     "name": "Weather",
     "category": "Live Data",
     "thumbnail": null,
-    "devUrl": "http://localhost:5174",
-    "stagingZipUrl": null,
+    "devUrl": null,
+    "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-weather/releases/download/staging/weather.zip",
     "prodZipUrl": null
   },
   {
