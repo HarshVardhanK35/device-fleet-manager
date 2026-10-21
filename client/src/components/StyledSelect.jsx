@@ -66,24 +66,21 @@ function StyledSelect({
           // Fixed to the bottom (no auto-flip-to-top on limited space) so it
           // never ends up covering fields ABOVE the trigger — instead, the
           // list itself scrolls internally once it runs out of room below.
-          // avoidCollisions also turns off Radix's own automatic height-
-          // capping (both are driven by the same collision system), so
-          // --radix-select-content-available-height is set back manually
-          // below — without it, the list could render taller than the
-          // actual viewport and run off the bottom of the browser.
           avoidCollisions={false}
           className={`bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] p-1 z-50 ${
             matchTriggerWidth ? "" : "w-[180px] sm:w-[216px]"
           }`}
-          style={{
-            ...(matchTriggerWidth ? { width: "var(--radix-select-trigger-width)" } : {}),
-            maxHeight: "var(--radix-select-content-available-height)",
-          }}
+          style={matchTriggerWidth ? { width: "var(--radix-select-trigger-width)" } : undefined}
         >
-          {/* ~3 rows visible (each row is ~40px incl. padding) — the rest
-              scroll, per explicit request not to let a long list (e.g. 10
-              fonts) dominate the screen. */}
-          <Select.Viewport className="dark-scrollbar max-h-[130px] overflow-y-auto">
+          {/* No longer clamped to --radix-select-content-available-height —
+              that var is computed against the nearest scrollable ancestor's
+              fixed on-screen viewport rect (ScrollBox's own box), not how
+              much content is inside it, so it was clipping the list to ~3-4
+              rows regardless of how much real empty space existed below the
+              trigger. max-h-[320px] (~8 rows) is a plain fixed cap instead —
+              still bounded so a long list doesn't run off the browser
+              entirely, just a taller bound than before. */}
+          <Select.Viewport className="dark-scrollbar max-h-[320px] overflow-y-auto">
             {options.map((opt) => (
               <Select.Item
                 key={opt.value}
@@ -147,10 +144,15 @@ export default StyledSelect;
 // width every other usage keeps. Pass true for a full-width field (e.g.
 // Font family) where the dropdown should visually line up with the input
 // above/below it.
-// The option list itself is capped at max-h-60 and scrolls internally
-// (avoidCollisions={false} keeps it pinned below the trigger rather than
-// flipping above it when there's limited room) — long lists (e.g. 10
-// fonts) scroll instead of covering fields above the trigger.
+// The option list itself is capped at max-h-[320px] (~8 rows) and scrolls
+// internally (avoidCollisions={false} keeps it pinned below the trigger
+// rather than flipping above it when there's limited room) — long lists
+// (e.g. 16 fonts) scroll instead of covering fields above the trigger. This
+// is a plain fixed cap, not tied to Radix's own computed available-height
+// (deliberately dropped — that var measures the nearest scrollable
+// ancestor's fixed on-screen viewport, not real empty space below the
+// trigger, and was clipping the list much shorter than the room actually
+// available in a settings panel).
 // Used by: components/ContentFilterSortBar.jsx,
 // components/DashboardAttentionPanel.jsx, apps/AppsPickerModal.jsx,
-// apps/appModals/weather-modal.jsx.
+// apps/appModals/weather-modal.jsx, apps/appModals/clock-modal.jsx.

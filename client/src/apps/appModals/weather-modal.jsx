@@ -6,12 +6,12 @@ import AppPreviewFrame from "../shared/AppPreviewFrame.jsx";
 import SettingsCard from "../shared/SettingsCard.jsx";
 import Field from "../shared/Field.jsx";
 import SegmentedControl from "../shared/SegmentedControl.jsx";
-import ToggleSwitch from "../shared/ToggleSwitch.jsx";
+import ComingSoonToggle from "../shared/ComingSoonToggle.jsx";
 import BackgroundAudioField from "../shared/BackgroundAudioField.jsx";
 import LocationSearchField from "../shared/LocationSearchField.jsx";
 import StyledSelect from "../../components/StyledSelect.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
-import { createContent, updateContent } from "../../api/content.js";
+import { useAppSettingsForm } from "../shared/useAppSettingsForm.js";
 
 // Matches the chosen mock's own font list exactly (variant B's decorative
 // set), per his explicit call to pixel-match it rather than use the
@@ -50,55 +50,33 @@ const INITIAL_FORM = {
 // the app's own DEFAULT_CONFIG.location.
 const NY_FALLBACK = { name: "New York", lat: 40.7128, lon: -74.006 };
 
-// Apps have no duration field in this settings screen yet (unlike
-// image/video, which have one) — backend requires durationInMillis for
-// type "app" with no default, so this is a placeholder until a real
-// duration control is built here.
-const APP_DEFAULT_DURATION_MS = 60000;
-
 // Resolves to Weather's dev/staging/prod URL depending on how this copy of
 // DFM is running — see apps/resolveAppUrl.js. Computed once at module load
 // since the environment doesn't change while the page is open.
 const WEATHER_APP_URL = resolveAppUrlByName("Weather");
 
-// `existingContent` (a Content document) means this screen is editing an
-// already-saved Weather app tile, opened via its tile's pencil icon — form
-// state starts from its configBlob instead of the defaults, and Save
-// updates that same row from the first click. Undefined/null means a fresh
-// app, opened via "Add an App".
-function formFromContent(existingContent) {
-  if (!existingContent) return INITIAL_FORM;
-  const blob = existingContent.configBlob || {};
-  return {
-    location: blob.location ?? INITIAL_FORM.location,
-    unit: blob.unit ?? INITIAL_FORM.unit,
-    refresh: blob.refresh ?? INITIAL_FORM.refresh,
-    range: blob.range ?? INITIAL_FORM.range,
-    time: blob.time ?? INITIAL_FORM.time,
-    font: blob.font ?? INITIAL_FORM.font,
-    audio: blob.audio ?? INITIAL_FORM.audio,
-  };
-}
-
-// `open`/`onOpenChange` are passed straight through to AppSettingsShell.
-// Fresh form state on every open comes from OUTSIDE this file: Content.jsx
-// gives this component a `key` that changes between open/closed/edit-target,
-// so React fully remounts it (throwing away all its state) each time
-// instead of this component having to reset itself.
 function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent }) {
-  // `base` is the last-saved snapshot; comparing `form` against it is what
-  // drives the Save button's enabled/disabled state (dirty-check pattern).
-  const [base, setBase] = useState(() => formFromContent(existingContent));
-  const [form, setForm] = useState(() => formFromContent(existingContent));
+  const {
+    form,
+    set,
+    dirty,
+    appName,
+    setAppName,
+    saving,
+    saveError,
+    handleSave,
+    handleSaveAndClose,
+  } = useAppSettingsForm({
+    appType: "weather",
+    initialForm: INITIAL_FORM,
+    defaultAppName: "Weather",
+    existingContent,
+    onSaved,
+    onOpenChange,
+  });
+
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [appName, setAppName] = useState(existingContent?.name ?? "Weather");
-  // Set from the start when editing an existing row (so the very first
-  // Save updates it) — otherwise set once the first Save succeeds, so a
-  // later Save in the same session updates instead of creating a new one.
-  const [contentId, setContentId] = useState(existingContent?._id ?? null);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(null);
   // Only used before the user picks a real location of their own — a
   // one-time read of the browser's geolocation (the person configuring
   // this in DFM, not the deployed screen) so the preview defaults to
@@ -125,12 +103,6 @@ function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent })
     );
   }, []);
 
-  function set(key, value) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  const dirty = Object.keys(INITIAL_FORM).some((k) => form[k] !== base[k]);
-
   // What actually gets sent to the app over postMessage — same shape as
   // its own config, falling back to a default location so the preview
   // still works before the user has searched/picked one of their own.
@@ -142,38 +114,6 @@ function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent })
     font: form.font,
     refresh: form.refresh,
   };
-
-  async function handleSave() {
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const payload = {
-        name: appName,
-        type: "app",
-        durationInMillis: APP_DEFAULT_DURATION_MS,
-        configBlob: { ...form, appType: "weather" },
-      };
-
-      const saved = contentId
-        ? await updateContent(contentId, payload)
-        : await createContent(payload);
-
-      setContentId(saved._id);
-      setBase(form);
-      onSaved?.();
-      return true;
-    } catch {
-      setSaveError("Couldn't save — check your connection and try again.");
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSaveAndClose() {
-    const ok = await handleSave();
-    if (ok) onOpenChange(false);
-  }
 
   return (
     <AppSettingsShell
@@ -227,14 +167,7 @@ function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent })
           </SettingsCard>
 
           <SettingsCard kicker="Display">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-text-muted/70">Theme (iframe only)</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-bg-hover text-text-muted">
-                Coming soon
-              </span>
-              <div className="flex-1" />
-              <ToggleSwitch checked={false} onChange={() => {}} disabled />
-            </div>
+            <ComingSoonToggle />
             <div className="grid grid-cols-2 gap-3">
               <Field label="Temperature">
                 <SegmentedControl
@@ -290,13 +223,13 @@ function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent })
 
 export default WeatherSettingsScreen;
 
-// Weather app's settings screen — built almost entirely from the shared
+// Weather app's settings screen — built almost entirely from shared pieces:
+// apps/shared/useAppSettingsForm.js (form state, dirty-check, save flow —
+// shared with every app's settings screen, not just this one) plus the UI
 // pieces in apps/shared/ (AppSettingsShell, AppPreviewFrame, SettingsCard,
-// Field, SegmentedControl, ToggleSwitch, BackgroundAudioField). What's left
-// here is just Weather's own: the field values (location/unit/refresh/
-// etc.) and the dirty-check Save logic. The preview itself shows nothing
-// but AppPreviewFrame's own loading spinner until the real Weather app is
-// built and posts back APP_LOAD — no fabricated preview content. Clock/RSS/
-// Announcements will each be their own file shaped like this one, reusing
-// the same shared pieces.
+// Field, SegmentedControl, ComingSoonToggle, BackgroundAudioField). What's
+// left here is just Weather's own: the field values/layout and its
+// previewConfig shape. The preview itself shows nothing but
+// AppPreviewFrame's own loading spinner until the real Weather app is built
+// and posts back APP_LOAD — no fabricated preview content.
 // Used by: pages/Content.jsx (wired from AppsPickerModal's onSelectApp).

@@ -118,7 +118,16 @@ function AppSettingsShell({
             {/* Settings column — its own independent scroll + its own footer */}
             <div className="lg:w-[400px] flex-1 lg:flex-none min-h-0 flex flex-col border-t lg:border-t-0 lg:border-l border-border-muted">
               <ScrollBox className="flex-1 min-h-0">
-                <div className="flex flex-col gap-3 px-4 sm:px-6 md:px-8 py-6">
+                {/* Extra bottom padding (pb-40, well past the usual py-6)
+                    gives a dropdown on the LAST field of the LAST card real
+                    room to open into — Radix sizes a Select's popup against
+                    actual on-screen space below its trigger
+                    (--radix-select-content-available-height), not just this
+                    container's own scrollable height, so a field sitting
+                    right at the bottom edge was clipping its own dropdown
+                    to 1-2 visible rows regardless of the dropdown's own
+                    row-count cap. */}
+                <div className="flex flex-col gap-3 px-4 sm:px-6 md:px-8 pt-6 pb-80">
                   {open && children(contentEl)}
                 </div>
               </ScrollBox>
