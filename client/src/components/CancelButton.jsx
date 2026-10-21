@@ -5,6 +5,7 @@ function CancelButton({
   title = "Cancel",
   size = 18,
   iconSize,
+  icon: Icon = X,
   className = "",
   ...props
 }) {
@@ -18,18 +19,22 @@ function CancelButton({
       } ${className}`}
       {...props}
     >
-      <X size={iconSize ?? (size === "sm" ? 14 : size === "lg" ? 20 : 18)} />
+      <Icon size={iconSize ?? (size === "sm" ? 14 : size === "lg" ? 20 : 18)} />
     </As>
   );
 }
 
 export default CancelButton;
 
-// Shared "cancel/close" icon button — red hover highlight + tooltip, matching
-// the UploadProgressModal's original cancel-upload button. `as` lets it
-// render as a Radix `Dialog.Close` (for modals, where clicking must trigger
-// Radix's own close behavior) or a plain `button` (default, pass `onClick`).
-// `size="sm"` (24px/14px icon) is for tight inline contexts (e.g. inside a
-// text input); default is 36px/18px icon.
+// Shared "cancel/close/remove" icon button — red hover highlight + tooltip,
+// matching the UploadProgressModal's original cancel-upload button. `as`
+// lets it render as a Radix `Dialog.Close` (for modals, where clicking must
+// trigger Radix's own close behavior) or a plain `button` (default, pass
+// `onClick`). `size="sm"` (24px/14px icon) is for tight inline contexts
+// (e.g. inside a text input, or a repeatable field row); default is
+// 36px/18px icon. `icon` (optional, defaults to X) swaps the icon for a
+// different destructive action in the same visual style — e.g. `Trash2`
+// for "remove this row" instead of "close".
 // Used by: ConfirmDeleteModal.jsx, ContentPickerModal.jsx, Playlists.jsx,
-// ContentDetailsPanel.jsx, pages/Content.jsx, UploadProgressModal.jsx.
+// ContentDetailsPanel.jsx, pages/Content.jsx, UploadProgressModal.jsx,
+// apps/appModals/clock-modal.jsx (remove-city row).

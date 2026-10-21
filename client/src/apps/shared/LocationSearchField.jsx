@@ -44,8 +44,21 @@ async function searchLocations(query) {
 // { name, country, admin1, lat, lon }. `onChange` is called with that full
 // object only once the user actually picks a result from the dropdown —
 // typing alone doesn't count as a valid location yet.
-function LocationSearchField({ value, onChange }) {
+// `showHint` (default true) renders the "Start typing to search for a
+// location." line above the field. Set to false when several of these
+// fields are rendered together (e.g. 3 city fields in a row) and the
+// caller shows that same hint once, above the whole group, instead of
+// repeating it per field.
+function LocationSearchField({ value, onChange, showHint = true }) {
   const [query, setQuery] = useState(value ? `${value.name}, ${value.country}` : "");
+  // Tracks the last `value` this component itself produced (via pick() or
+  // the "typing invalidates it" path in handleType) — lets the effect below
+  // tell "value changed because of something I did" apart from "value
+  // changed because the parent reassigned it externally" (e.g. removing a
+  // middle city from a multi-city list reindexes the array, handing this
+  // same mounted instance a different city's data under the same key).
+  // Only the second case should overwrite what's currently in the input.
+  const lastEmittedValue = useRef(value);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -76,6 +89,17 @@ function LocationSearchField({ value, onChange }) {
     itemRefs.current[highlighted]?.scrollIntoView({ block: "nearest" });
   }, [highlighted]);
 
+  // Resyncs the displayed text only when `value` changed externally (see
+  // lastEmittedValue above) — e.g. a sibling city's removal shifted this
+  // slot's data. Never fires for changes this component made itself, so it
+  // can't fight normal typing (which nulls `value` on every keystroke once
+  // something was previously picked).
+  useEffect(() => {
+    if (value === lastEmittedValue.current) return;
+    lastEmittedValue.current = value;
+    setQuery(value ? `${value.name}, ${value.country}` : "");
+  }, [value]);
+
   // Clears any pending debounced search on unmount so it can't call
   // setState after the component is gone.
   useEffect(() => {
@@ -85,6 +109,7 @@ function LocationSearchField({ value, onChange }) {
   }, []);
 
   function pick(result) {
+    lastEmittedValue.current = result;
     onChange(result);
     setQuery(`${result.name}, ${result.country}`);
     setOpen(false);
@@ -134,7 +159,10 @@ function LocationSearchField({ value, onChange }) {
     setError(null);
     // Typing invalidates whatever was previously picked — the saved
     // location must always be a real geocoded result, never free text.
-    if (value) onChange(null);
+    if (value) {
+      lastEmittedValue.current = null;
+      onChange(null);
+    }
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -151,7 +179,9 @@ function LocationSearchField({ value, onChange }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs text-text-muted m-0">Start typing to search for a location.</p>
+      {showHint && (
+        <p className="text-xs text-text-muted m-0">Start typing to search for a location.</p>
+      )}
       <div ref={boxRef} className="relative">
         <MapPin
           size={14}

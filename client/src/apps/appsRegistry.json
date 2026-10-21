@@ -13,8 +13,8 @@
     "name": "Clock",
     "category": "Utility",
     "thumbnail": null,
-    "devUrl": null,
-    "stagingZipUrl": null,
+    "devUrl": "",
+    "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-clock/releases/download/staging/clock.zip",
     "prodZipUrl": null
   },
   {

@@ -133,6 +133,7 @@ function DevicePlayback(
       // control topic the backend's take-over/release actions publish to
       // (POST /devices/:id/take-over | /release -> publishControlMessage).
       mqttClient.on("connect", () => {
+        console.log("MQTT connected:", mqttUrl);
         mqttClient.subscribe(`devices/${resolvedId}/manifest`);
         mqttClient.subscribe(`devices/${resolvedId}/control`);
       });
@@ -310,7 +311,7 @@ function DevicePlayback(
         />
       )}
       {currentContent.type === "app" && (
-        <AppRenderer configBlob={currentContent.configBlob} />
+        <AppRenderer key={itemStartedAt} configBlob={currentContent.configBlob} />
       )}
     </>
   );

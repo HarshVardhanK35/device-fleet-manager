@@ -11,6 +11,7 @@ import {
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
 import AppsPickerModal from "../apps/AppsPickerModal.jsx";
 import WeatherSettingsScreen from "../apps/appModals/weather-modal.jsx";
+import ClockSettingsScreen from "../apps/appModals/clock-modal.jsx";
 import ContentToolbar from "../components/ContentToolbar.jsx";
 import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/UploadProgressModal.jsx";
@@ -75,6 +76,8 @@ function Content() {
   // clicked on an already-saved Weather app tile) — null means the modal
   // is creating a brand new one instead (opened via "Add an App").
   const [weatherEditTarget, setWeatherEditTarget] = useState(null);
+  const [clockSettingsOpen, setClockSettingsOpen] = useState(false);
+  const [clockEditTarget, setClockEditTarget] = useState(null);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState(null); // from inspector
 
   // Pencil icon on any tile (image/video/app) opens the same Details panel
@@ -97,9 +100,12 @@ function Content() {
     if (isWeather) {
       setWeatherEditTarget(item);
       setWeatherSettingsOpen(true);
+    } else if (item.configBlob?.appType === "clock") {
+      setClockEditTarget(item);
+      setClockSettingsOpen(true);
     } else {
-      // Other app types (Clock/RSS/Announcements) don't have a settings
-      // screen built yet — same gap as AppsPickerModal's onSelectApp.
+      // Other app types (RSS/Announcements) don't have a settings screen
+      // built yet — same gap as AppsPickerModal's onSelectApp.
       console.log("No settings screen built yet for this app:", item.name);
     }
   }
@@ -492,9 +498,12 @@ function Content() {
           if (app.name === "Weather") {
             setWeatherEditTarget(null);
             setWeatherSettingsOpen(true);
+          } else if (app.name === "Clock") {
+            setClockEditTarget(null);
+            setClockSettingsOpen(true);
           } else {
-            // TODO: other apps (Clock/RSS/Announcements) don't have a
-            // settings screen built yet — Weather is first.
+            // TODO: other apps (RSS/Announcements) don't have a settings
+            // screen built yet — Weather and Clock are first.
             console.log("No settings screen built yet for:", app.name);
           }
         }}
@@ -504,10 +513,18 @@ function Content() {
         // Remounts fresh every time this opens (key changes closed->open),
         // so all its internal state resets to defaults instead of carrying
         // over whatever was left from the last time it was open.
-        key={weatherSettingsOpen ? weatherEditTarget?._id ?? "new" : "closed"}
+        key={weatherSettingsOpen ? weatherEditTarget?._id ?? "new" : "weather-closed"}
         open={weatherSettingsOpen}
         onOpenChange={setWeatherSettingsOpen}
         existingContent={weatherEditTarget}
+        onSaved={fetchContent}
+      />
+
+      <ClockSettingsScreen
+        key={clockSettingsOpen ? clockEditTarget?._id ?? "new" : "clock-closed"}
+        open={clockSettingsOpen}
+        onOpenChange={setClockSettingsOpen}
+        existingContent={clockEditTarget}
         onSaved={fetchContent}
       />
     </div>

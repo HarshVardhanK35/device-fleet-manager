@@ -95,7 +95,7 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config }) {
 
   return (
     <div
-      className="w-full p-2 sm:p-3 rounded-xl bg-bg-panel shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_8px_24px_rgba(1,4,9,0.5)] transition-[max-width] duration-200"
+      className="w-full p-1 sm:p-1.5 rounded-xl bg-bg-panel shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_8px_24px_rgba(1,4,9,0.5)] transition-[max-width] duration-200"
       style={{ maxWidth }}
     >
       {/* @container lets anything inside use cqw units (sized relative to
