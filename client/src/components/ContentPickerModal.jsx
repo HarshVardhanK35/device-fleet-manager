@@ -18,6 +18,7 @@ function PickerFormBody({
   content,
   submitLabel,
   showNameField,
+  showTypeFilter,
   initialSelectedIds,
   onSubmit,
   portalContainer,
@@ -161,6 +162,7 @@ function PickerFormBody({
                 onFilterChange={setFilterType}
                 sortValue={sortBy}
                 onSortChange={setSortBy}
+                showFilter={showTypeFilter}
                 portalContainer={portalContainer}
               />
             </div>
@@ -247,6 +249,7 @@ function ContentPickerModal({
   subtitle,
   submitLabel = "Save",
   showNameField = true,
+  showTypeFilter = true,
   initialSelectedIds = [],
   onSubmit,
 }) {
@@ -259,10 +262,16 @@ function ContentPickerModal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
+        {/* z-50/z-60 — higher than AppSettingsShell's own Dialog (z-50
+            content), since this modal can now open from inside that one
+            (rss-modal.jsx's brand-logo picker). At the old z-30/z-40, this
+            modal's overlay rendered BEHIND AppSettingsShell's opaque z-50
+            panel — invisible, but still capturing clicks, which looked
+            like the button did nothing and the screen was stuck. */}
+        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
         <Dialog.Content
           ref={setContentEl}
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[760px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40"
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[760px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-[60]"
         >
           <div className="flex items-start gap-3 pl-11 pr-6 pt-5 pb-4">
             <div className="flex-1 min-w-0">
@@ -283,6 +292,7 @@ function ContentPickerModal({
               content={content}
               submitLabel={submitLabel}
               showNameField={showNameField}
+              showTypeFilter={showTypeFilter}
               initialSelectedIds={initialSelectedIds}
               onSubmit={onSubmit}
               portalContainer={contentEl}

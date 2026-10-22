@@ -22,8 +22,8 @@
     "name": "RSS",
     "category": "News",
     "thumbnail": null,
-    "devUrl": null,
-    "stagingZipUrl": null,
+    "devUrl": "http://localhost:5181/",
+    "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-rss/releases/download/staging/rss.zip",
     "prodZipUrl": null
   },
   {
