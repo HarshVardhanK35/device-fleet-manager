@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 
 import { PREVIEW_SIZES } from "./previewSizes.js";
 import { loadAppBundle, isAppBundleUrl } from "./loadAppBundle.js";
+import { API_BASE } from "../../api/apiClient.js";
 
 // The bordered/shadowed preview box every app settings screen shows its
 // live preview inside. Handles the sizing (desktop/tablet/mobile), loading
@@ -84,7 +85,13 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config }) {
   // first handshake.
   useEffect(() => {
     if (!appListening) return;
-    iframeRef.current?.contentWindow?.postMessage({ type: "DFM_CONFIG", config }, "*");
+    // `apiBase` is injected here, not by each app's own settings screen —
+    // any app that needs to call DFM's backend (e.g. RSS's feed-fetch
+    // proxy) gets it automatically, no per-app wiring needed.
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: "DFM_CONFIG", config: { ...config, apiBase: API_BASE } },
+      "*",
+    );
   }, [config, appListening]);
 
   const { aspect, maxWidth } = PREVIEW_SIZES[size];

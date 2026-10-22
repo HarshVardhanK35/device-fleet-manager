@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
 import { loadAppBundle, isAppBundleUrl } from "./loadAppBundle.js";
+import { API_BASE } from "../../api/apiClient.js";
 
 // Full-screen renderer for a `type: "app"` content item at real playback
 // time (DevicePlayback.jsx) — same bundle-loading + postMessage handshake
@@ -46,8 +47,11 @@ function AppRenderer({ configBlob }) {
 
   useEffect(() => {
     if (!appListening) return;
+    // `apiBase` injected here too — same reasoning as AppPreviewFrame.jsx's
+    // own copy of this: any app needing to call DFM's backend gets it
+    // automatically, real playback included, not just the settings preview.
     iframeRef.current?.contentWindow?.postMessage(
-      { type: "DFM_CONFIG", config: configBlob },
+      { type: "DFM_CONFIG", config: { ...configBlob, apiBase: API_BASE } },
       "*",
     );
   }, [appListening, configBlob]);

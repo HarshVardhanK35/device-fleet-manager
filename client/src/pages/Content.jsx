@@ -12,6 +12,7 @@ import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
 import AppsPickerModal from "../apps/AppsPickerModal.jsx";
 import WeatherSettingsScreen from "../apps/appModals/weather-modal.jsx";
 import ClockSettingsScreen from "../apps/appModals/clock-modal.jsx";
+import RssSettingsScreen from "../apps/appModals/rss-modal.jsx";
 import ContentToolbar from "../components/ContentToolbar.jsx";
 import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/UploadProgressModal.jsx";
@@ -78,6 +79,8 @@ function Content() {
   const [weatherEditTarget, setWeatherEditTarget] = useState(null);
   const [clockSettingsOpen, setClockSettingsOpen] = useState(false);
   const [clockEditTarget, setClockEditTarget] = useState(null);
+  const [rssSettingsOpen, setRssSettingsOpen] = useState(false);
+  const [rssEditTarget, setRssEditTarget] = useState(null);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState(null); // from inspector
 
   // Pencil icon on any tile (image/video/app) opens the same Details panel
@@ -103,9 +106,12 @@ function Content() {
     } else if (item.configBlob?.appType === "clock") {
       setClockEditTarget(item);
       setClockSettingsOpen(true);
+    } else if (item.configBlob?.appType === "rss") {
+      setRssEditTarget(item);
+      setRssSettingsOpen(true);
     } else {
-      // Other app types (RSS/Announcements) don't have a settings screen
-      // built yet — same gap as AppsPickerModal's onSelectApp.
+      // Other app types (Announcements) don't have a settings screen built
+      // yet — same gap as AppsPickerModal's onSelectApp.
       console.log("No settings screen built yet for this app:", item.name);
     }
   }
@@ -501,9 +507,12 @@ function Content() {
           } else if (app.name === "Clock") {
             setClockEditTarget(null);
             setClockSettingsOpen(true);
+          } else if (app.name === "RSS") {
+            setRssEditTarget(null);
+            setRssSettingsOpen(true);
           } else {
-            // TODO: other apps (RSS/Announcements) don't have a settings
-            // screen built yet — Weather and Clock are first.
+            // TODO: other apps (Announcements) don't have a settings
+            // screen built yet — Weather, Clock, and RSS are first.
             console.log("No settings screen built yet for:", app.name);
           }
         }}
@@ -526,6 +535,15 @@ function Content() {
         onOpenChange={setClockSettingsOpen}
         existingContent={clockEditTarget}
         onSaved={fetchContent}
+      />
+
+      <RssSettingsScreen
+        key={rssSettingsOpen ? rssEditTarget?._id ?? "new" : "rss-closed"}
+        open={rssSettingsOpen}
+        onOpenChange={setRssSettingsOpen}
+        existingContent={rssEditTarget}
+        onSaved={fetchContent}
+        library={content}
       />
     </div>
   );

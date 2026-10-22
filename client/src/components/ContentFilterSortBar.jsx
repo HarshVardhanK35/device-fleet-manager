@@ -22,24 +22,27 @@ function ContentFilterSortBar({
   sortValue,
   onSortChange,
   showSort = true,
+  showFilter = true,
   portalContainer,
 }) {
   const [openMenu, setOpenMenu] = useState(null); // "filter" | "sort" | null
 
   return (
     <div className="flex items-center">
-      <StyledSelect
-        value={filterValue}
-        onChange={onFilterChange}
-        options={FILTERS}
-        labelFor={(f) => `${f.label} (${counts[f.value] ?? 0})`}
-        icon={Filter}
-        label="Filter content"
-        open={openMenu === "filter"}
-        onOpenChange={(open) => setOpenMenu(open ? "filter" : null)}
-        roundedSide={showSort ? "left" : "full"}
-        portalContainer={portalContainer}
-      />
+      {showFilter && (
+        <StyledSelect
+          value={filterValue}
+          onChange={onFilterChange}
+          options={FILTERS}
+          labelFor={(f) => `${f.label} (${counts[f.value] ?? 0})`}
+          icon={Filter}
+          label="Filter content"
+          open={openMenu === "filter"}
+          onOpenChange={(open) => setOpenMenu(open ? "filter" : null)}
+          roundedSide={showSort ? "left" : "full"}
+          portalContainer={portalContainer}
+        />
+      )}
       {showSort && (
         <StyledSelect
           value={sortValue}
@@ -49,7 +52,7 @@ function ContentFilterSortBar({
           label="Sort content"
           open={openMenu === "sort"}
           onOpenChange={(open) => setOpenMenu(open ? "sort" : null)}
-          roundedSide="right"
+          roundedSide={showFilter ? "right" : "full"}
           portalContainer={portalContainer}
         />
       )}
