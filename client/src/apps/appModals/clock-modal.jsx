@@ -167,8 +167,13 @@ function ClockSettingsScreen({ open, onOpenChange, onSaved, existingContent }) {
       onSaveOnly={handleSave}
       saving={saving}
       saveError={saveError}
-      preview={(previewSize) => (
-        <AppPreviewFrame size={previewSize} src={CLOCK_APP_URL} config={previewConfig} />
+      preview={(previewSize, fullPreview) => (
+        <AppPreviewFrame
+          size={previewSize}
+          src={CLOCK_APP_URL}
+          config={previewConfig}
+          fullscreen={fullPreview}
+        />
       )}
     >
       {(portalContainer) => (

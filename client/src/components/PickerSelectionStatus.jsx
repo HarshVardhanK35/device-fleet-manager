@@ -5,6 +5,7 @@ function PickerSelectionStatus({
   hasName,
   selectedCount,
   selectedDurationMs,
+  showDuration = true,
   onClear,
   alertKey = 0,
 }) {
@@ -33,8 +34,8 @@ function PickerSelectionStatus({
 
   return (
     <span className="text-text-muted text-sm">
-      {selectedCount} item{selectedCount === 1 ? "" : "s"} selected ·{" "}
-      {formatDuration(selectedDurationMs)}{" "}
+      {selectedCount} item{selectedCount === 1 ? "" : "s"} selected
+      {showDuration ? ` · ${formatDuration(selectedDurationMs)}` : ""}{" "}
       <button
         type="button"
         onClick={onClear}

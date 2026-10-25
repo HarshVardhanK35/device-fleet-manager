@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Pencil, ChevronDown, Check } from "lucide-react";
+import { Pencil, ChevronDown, Check, Maximize2, Minimize2 } from "lucide-react";
 
 import CancelButton from "../../components/CancelButton.jsx";
 import ScrollBox from "../../components/ScrollBox.jsx";
@@ -46,7 +46,7 @@ function EditableTitle({ name, onChange }) {
 // AppPreviewFrame renders its preview.
 function PreviewSizeToggle({ size, onChange }) {
   return (
-    <div className="flex items-center border border-border-muted rounded-lg overflow-hidden">
+    <div className="flex items-center bg-bg-primary border border-border-muted rounded-lg overflow-hidden">
       {Object.entries(PREVIEW_SIZES).map(([key, s]) => (
         <button
           key={key}
@@ -72,8 +72,11 @@ function PreviewSizeToggle({ size, onChange }) {
 //
 // `preview` and `children` are both FUNCTIONS (not plain JSX) because they
 // need something only this shell knows about once it's mounted:
-//   `preview(previewSize)` — so the preview content knows which device
-//     size is currently selected (desktop/tablet/mobile).
+//   `preview(previewSize, fullPreview)` — `previewSize` is the selected
+//     device size (desktop/tablet/mobile); `fullPreview` is true while the
+//     full-screen toggle is active, for callers that want to pass it
+//     through to AppPreviewFrame's own `fullscreen` prop (drops its
+//     device-size max-width cap so the iframe actually fills the space).
 //   `children(portalContainer)` — `portalContainer` is this Dialog's own
 //     DOM node. Any StyledSelect dropdown inside the settings panel needs
 //     it, otherwise its hover-highlight silently breaks (a real Radix bug
@@ -93,6 +96,12 @@ function AppSettingsShell({
 }) {
   const [contentEl, setContentEl] = useState(null);
   const [previewSize, setPreviewSize] = useState("desktop");
+  // Full-screen preview: hides the settings column entirely and lets the
+  // iframe take the whole body (still padded, via the preview column's own
+  // existing padding classes). Toggling it back off restores the normal
+  // split view — Save/Close live in the settings column, so they're only
+  // reachable there; the header's own Close (X) always works regardless.
+  const [fullPreview, setFullPreview] = useState(false);
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -100,23 +109,78 @@ function AppSettingsShell({
         <Dialog.Overlay className="fixed inset-0 bg-black/70 z-40" />
         <Dialog.Content
           ref={setContentEl}
-          className="fixed inset-0 bg-bg-primary z-50 flex flex-col overflow-hidden"
+          className="group fixed inset-0 bg-bg-primary z-50 flex flex-col overflow-hidden"
         >
-          <div className="flex items-center gap-2 px-4 sm:px-6 md:px-8 h-[60px] flex-none border-b border-border-muted">
+          {/* Both header variants stay mounted and cross-fade via opacity —
+              conditionally unmounting either one would snap instantly
+              instead of transitioning smoothly. The normal header's own
+              height also animates (60px -> 0) so the preview area grows
+              into the freed space at the same pace as the fade. */}
+          <div
+            className={`flex items-center gap-2 px-4 sm:px-6 md:px-8 flex-none border-b border-border-muted overflow-hidden transition-[height,opacity] duration-300 ease-in-out ${
+              fullPreview ? "h-0 opacity-0 pointer-events-none border-b-0" : "h-[60px] opacity-100"
+            }`}
+          >
             <EditableTitle name={appName} onChange={onAppNameChange} />
             <div className="flex-1" />
             <PreviewSizeToggle size={previewSize} onChange={setPreviewSize} />
+            <button
+              type="button"
+              title="Full-screen preview"
+              onClick={() => setFullPreview(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-muted text-text-muted hover:bg-bg-hover transition-colors"
+            >
+              <Maximize2 size={15} />
+            </button>
             <CancelButton as={Dialog.Close} size="lg" title="Close" />
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+          {/* In full-screen preview, this toolbar is hidden by default and
+              only revealed on hovering the window — stays out of the way of
+              the thing being previewed otherwise. */}
+          <div
+            className={`absolute top-4 right-4 z-10 flex items-center gap-2 transition-opacity duration-300 ease-in-out ${
+              fullPreview
+                ? "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+                : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <PreviewSizeToggle size={previewSize} onChange={setPreviewSize} />
+            <button
+              type="button"
+              title="Exit full-screen preview"
+              onClick={() => setFullPreview(false)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg border bg-bg-primary border-accent-blue text-accent-blue hover:bg-bg-hover transition-colors"
+            >
+              <Minimize2 size={15} />
+            </button>
+            <CancelButton as={Dialog.Close} size="lg" title="Close" />
+          </div>
+
+          <div
+            className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden"
+          >
             {/* Preview column — fixed in place, never scrolls */}
-            <div className="flex-none lg:flex-1 lg:min-w-0 flex flex-col items-center lg:justify-center gap-3.5 px-4 sm:px-6 md:px-8 py-6 lg:overflow-hidden">
-              {open && preview(previewSize)}
+            <div
+              className={`flex flex-col items-center lg:justify-center gap-3.5 px-4 sm:px-6 md:px-8 py-6 lg:overflow-hidden transition-[flex-grow] duration-300 ease-in-out ${
+                fullPreview ? "flex-1 w-full" : "flex-none lg:flex-1 lg:min-w-0"
+              }`}
+            >
+              {open && preview(previewSize, fullPreview)}
             </div>
 
-            {/* Settings column — its own independent scroll + its own footer */}
-            <div className="lg:w-[400px] flex-1 lg:flex-none min-h-0 flex flex-col border-t lg:border-t-0 lg:border-l border-border-muted">
+            {/* Settings column — its own independent scroll + its own footer.
+                Stays mounted even in full-screen preview (width animates to
+                0 instead of unmounting) so the collapse/expand transitions
+                smoothly — Save/Close are only reachable once it's back
+                open, but the header's own Close (X) always works. */}
+            <div
+              className={`flex-1 lg:flex-none min-h-0 flex flex-col border-t lg:border-t-0 lg:border-l border-border-muted overflow-hidden transition-[width,opacity] duration-300 ease-in-out ${
+                fullPreview
+                  ? "w-0 lg:w-0 opacity-0 pointer-events-none border-transparent"
+                  : "w-full lg:w-[400px] opacity-100"
+              }`}
+            >
               <ScrollBox className="flex-1 min-h-0">
                 {/* Extra bottom padding (pb-40, well past the usual py-6)
                     gives a dropdown on the LAST field of the LAST card real

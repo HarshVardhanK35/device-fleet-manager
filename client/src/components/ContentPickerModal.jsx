@@ -19,6 +19,7 @@ function PickerFormBody({
   submitLabel,
   showNameField,
   showTypeFilter,
+  singleSelect,
   initialSelectedIds,
   onSubmit,
   portalContainer,
@@ -63,6 +64,10 @@ function PickerFormBody({
 
   function toggleSelect(id, e) {
     e.stopPropagation();
+    if (singleSelect) {
+      setSelectedIds((prev) => (prev.includes(id) ? [] : [id]));
+      return;
+    }
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
@@ -144,17 +149,21 @@ function PickerFormBody({
 
           <div className="flex flex-col gap-2.5 pr-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <SelectCheckbox
-                  checked={allVisibleSelected}
-                  indeterminate={someVisibleSelected && !allVisibleSelected}
-                  onClick={toggleSelectAllVisible}
-                  alwaysVisible
-                />
-                <span className="text-text-muted text-sm whitespace-nowrap">
-                  Select all
-                </span>
-              </div>
+              {singleSelect ? (
+                <div />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <SelectCheckbox
+                    checked={allVisibleSelected}
+                    indeterminate={someVisibleSelected && !allVisibleSelected}
+                    onClick={toggleSelectAllVisible}
+                    alwaysVisible
+                  />
+                  <span className="text-text-muted text-sm whitespace-nowrap">
+                    Select all
+                  </span>
+                </div>
+              )}
 
               <ContentFilterSortBar
                 counts={counts}
@@ -197,6 +206,7 @@ function PickerFormBody({
                       item={item}
                       size="fluid"
                       coloredType
+                      showDuration={!singleSelect}
                       onClick={(e) => toggleSelect(item._id, e)}
                       className={
                         order !== -1
@@ -225,6 +235,7 @@ function PickerFormBody({
           hasName={name.trim().length > 0}
           selectedCount={selectedIds.length}
           selectedDurationMs={selectedDurationMs}
+          showDuration={!singleSelect}
           onClear={() => setSelectedIds([])}
           alertKey={alertKey}
         />
@@ -250,6 +261,7 @@ function ContentPickerModal({
   submitLabel = "Save",
   showNameField = true,
   showTypeFilter = true,
+  singleSelect = false,
   initialSelectedIds = [],
   onSubmit,
 }) {
@@ -293,6 +305,7 @@ function ContentPickerModal({
               submitLabel={submitLabel}
               showNameField={showNameField}
               showTypeFilter={showTypeFilter}
+              singleSelect={singleSelect}
               initialSelectedIds={initialSelectedIds}
               onSubmit={onSubmit}
               portalContainer={contentEl}

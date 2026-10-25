@@ -40,6 +40,11 @@ export function useAppSettingsForm({
   existingContent,
   onSaved,
   onOpenChange,
+  // Most apps show one static screen, so a flat default duration is fine.
+  // An app whose actual on-screen time varies with its own settings (e.g.
+  // RSS: item count × per-item dwell time) passes this to compute a real
+  // value instead — see rss-modal.jsx.
+  computeDuration,
 }) {
   // `base` is the last-saved snapshot; comparing `form` against it is what
   // drives the Save button's enabled/disabled state (dirty-check pattern).
@@ -69,7 +74,7 @@ export function useAppSettingsForm({
       const payload = {
         name: appName,
         type: "app",
-        durationInMillis: APP_DEFAULT_DURATION_MS,
+        durationInMillis: computeDuration ? computeDuration(form) : APP_DEFAULT_DURATION_MS,
         configBlob: { ...form, appType },
       };
 

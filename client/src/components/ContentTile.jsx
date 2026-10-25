@@ -12,6 +12,7 @@ function ContentTile({
   slotIndexActive = false,
   size = "lg",
   durationPosition = "bottom-right",
+  showDuration = true,
   coloredType = false,
   footerActions,
   onClick,
@@ -51,7 +52,7 @@ function ContentTile({
           </span>
         )}
 
-        {item.durationInMillis && (
+        {showDuration && item.durationInMillis && (
           <span
             className={`absolute ${durationPosition === "top-right" ? "right-1.5 top-1.5" : "right-1.5 bottom-1.5"} bg-black/78 text-white text-[10.5px] font-semibold px-1.5 py-0.5 rounded-[5px] leading-[15px] min-h-[15px]`}
           >
