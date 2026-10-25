@@ -20,7 +20,7 @@ import { API_BASE } from "../../api/apiClient.js";
 // `config` is re-sent automatically whenever it changes AFTER step 1 has
 // already happened — that's what makes editing a setting live-update the
 // preview without needing to click Save first.
-function AppPreviewFrame({ size = "desktop", src = "about:blank", config }) {
+function AppPreviewFrame({ size = "desktop", src = "about:blank", config, fullscreen = false }) {
   const [appReady, setAppReady] = useState(false);
   const [appListening, setAppListening] = useState(false);
   const [bundleHtml, setBundleHtml] = useState(null);
@@ -102,15 +102,24 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config }) {
 
   return (
     <div
-      className="w-full p-1 sm:p-1.5 rounded-xl bg-bg-panel shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_8px_24px_rgba(1,4,9,0.5)] transition-[max-width] duration-200"
-      style={{ maxWidth }}
+      className={`p-1 sm:p-1.5 bg-bg-panel shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_8px_24px_rgba(1,4,9,0.5)] transition-[max-width,height] duration-300 ease-in-out ${
+        fullscreen ? "h-full max-w-full" : "w-full"
+      }`}
+      style={fullscreen ? undefined : { maxWidth }}
     >
       {/* @container lets anything inside use cqw units (sized relative to
           THIS box, not the browser window) — that's how an app's own
           text/icons can stay proportional across desktop/tablet/mobile
-          sizes without needing separate layouts for each. */}
+          sizes without needing separate layouts for each.
+          Fullscreen: sized from HEIGHT (height:100%, width auto via the
+          aspect-ratio) instead of width — otherwise a very wide box just
+          grows even taller at a fixed aspect ratio and pushes its own
+          bottom content (e.g. the RSS ticker strip) below the visible
+          area instead of actually fitting on screen. */}
       <div
-        className="w-full @container relative overflow-hidden rounded-md border border-border-muted"
+        className={`@container relative overflow-hidden border border-border-muted mx-auto transition-[width,height,max-width,aspect-ratio] duration-300 ease-in-out ${
+          fullscreen ? "h-full w-auto max-w-full" : "w-full"
+        }`}
         style={{ aspectRatio: aspect }}
       >
         {canMountIframe && (

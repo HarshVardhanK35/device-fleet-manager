@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Type, Clock, Image as ImageIcon } from "lucide-react";
+import { Type, Clock, Image as ImageIcon, Trash2 } from "lucide-react";
 
 import AppSettingsShell from "../shared/AppSettingsShell.jsx";
 import AppPreviewFrame from "../shared/AppPreviewFrame.jsx";
@@ -41,6 +41,27 @@ const AUDIO_OPTIONS = ["None"];
 
 const REFRESH_OPTIONS = ["5 min", "15 min", "30 min", "1 hour"];
 
+// Per-item dwell time, matching the real values already baked into the
+// widget's own rendering — TickerLayout.vue's SCROLL_DURATION (a Ticker
+// item advances once its headline finishes scrolling, timed per speed) and
+// RssWidget.vue's ROTATION_MS (Split always advances on a flat 8s timer,
+// independent of the speed setting — Split's own settings UI doesn't even
+// expose a speed control). Keep these in sync if either widget file's
+// timing ever changes — there's no shared constant across the two repos.
+const TICKER_SECONDS_PER_ITEM = { slow: 45, medium: 30, fast: 15 };
+const SPLIT_SECONDS_PER_ITEM = 8;
+
+// The RSS app rotates through `itemCount` feed items instead of showing one
+// static screen like Weather/Clock — its real on-screen time is itemCount ×
+// per-item dwell time, not a flat guess. Computed fresh on every Save so it
+// always reflects the current layout/speed/itemCount, not just whatever was
+// true when the tile was first created.
+function computeRssDuration(form) {
+  const perItem =
+    form.layout === "ticker" ? TICKER_SECONDS_PER_ITEM[form.speed] : SPLIT_SECONDS_PER_ITEM;
+  return form.itemCount * perItem * 1000;
+}
+
 const INITIAL_FORM = {
   layout: "ticker",
   imageFit: "crop",
@@ -49,14 +70,13 @@ const INITIAL_FORM = {
   itemCount: 5,
   font: "Inter",
   speed: "medium",
-  accentFrom: "#ff4d1c",
-  accentTo: "#ffffff",
+  tickerTheme: "dark",
   audio: "None",
   brandLogo: {
     enabled: false,
     contentId: null,
     url: "",
-    position: "top-left", // "top-left" | "top-right"
+    position: "top-left", // "top-left" | "top-right" (ticker) | "bottom-left" (split)
     size: 9,
     opacity: 60,
   },
@@ -82,9 +102,13 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
     existingContent,
     onSaved,
     onOpenChange,
+    computeDuration: computeRssDuration,
   });
 
   const [feedUrlError, setFeedUrlError] = useState(null);
+  // Preview only reloads when "Load" is clicked — typing alone shouldn't
+  // trigger a live feed fetch in the iframe.
+  const [loadedFeedUrl, setLoadedFeedUrl] = useState(() => form.feedUrl);
   const [logoPickerOpen, setLogoPickerOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -93,6 +117,27 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
   // ContentPickerModal used for playlists, just handed a pre-filtered list
   // so its own grid never shows video/app tiles to choose from here.
   const imageLibrary = library.filter((c) => c.type === "image");
+  // `contentId` can be stale (saved under an older version of this flow, or
+  // the original item was deleted/re-uploaded with a new `_id`) — the saved
+  // `url` is still a real match against the library's own `mediaUrl` in
+  // that case, so try that before falling back to a parsed filename.
+  const selectedLogoItem =
+    imageLibrary.find((c) => c._id === form.brandLogo.contentId) ||
+    imageLibrary.find((c) => c.mediaUrl === form.brandLogo.url);
+  // Falls back to the uploaded file's own name (pulled from its URL) when
+  // neither lookup above finds a match — still better than a generic
+  // placeholder when a real logo is genuinely selected.
+  const selectedLogoName =
+    selectedLogoItem?.name ||
+    (() => {
+      try {
+        return decodeURIComponent(
+          new URL(form.brandLogo.url).pathname.split("/").pop() || "",
+        );
+      } catch {
+        return "";
+      }
+    })();
 
   function setBrandLogo(key, value) {
     set("brandLogo", { ...form.brandLogo, [key]: value });
@@ -106,6 +151,7 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
     try {
       new URL(form.feedUrl);
       setFeedUrlError(null);
+      setLoadedFeedUrl(form.feedUrl);
     } catch {
       setFeedUrlError("That doesn't look like a valid URL.");
     }
@@ -114,13 +160,12 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
   const previewConfig = {
     layout: form.layout,
     imageFit: form.imageFit,
-    feedUrl: form.feedUrl,
+    feedUrl: loadedFeedUrl,
     refresh: form.refresh,
     itemCount: form.itemCount,
     font: form.font,
     speed: form.speed,
-    accentFrom: form.accentFrom,
-    accentTo: form.accentTo,
+    tickerTheme: form.tickerTheme,
     audio: form.audio,
     brandLogo: form.brandLogo,
   };
@@ -136,8 +181,13 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
       onSaveOnly={handleSave}
       saving={saving}
       saveError={saveError}
-      preview={(previewSize) => (
-        <AppPreviewFrame size={previewSize} src={RSS_APP_URL} config={previewConfig} />
+      preview={(previewSize, fullPreview) => (
+        <AppPreviewFrame
+          size={previewSize}
+          src={RSS_APP_URL}
+          config={previewConfig}
+          fullscreen={fullPreview}
+        />
       )}
     >
       {(portalContainer) => (
@@ -193,7 +243,20 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
               <SegmentedControl
                 options={["ticker", "split"]}
                 value={form.layout}
-                onChange={(v) => set("layout", v)}
+                onChange={(v) => {
+                  set("layout", v);
+                  // Split's own content (the "N hours ago" timestamp) sits
+                  // top-right of the text panel — a logo placed there
+                  // collides with it. "Top right" isn't offered for Split
+                  // (see the Position control below); migrate an existing
+                  // top-right pick to bottom-left instead of leaving a
+                  // choice selected that this layout doesn't even show.
+                  if (v === "split" && form.brandLogo.position === "top-right") {
+                    setBrandLogo("position", "bottom-left");
+                  } else if (v === "ticker" && form.brandLogo.position === "bottom-left") {
+                    setBrandLogo("position", "top-right");
+                  }
+                }}
                 labelFor={(o) => (o === "ticker" ? "Ticker" : "Split")}
               />
             </Field>
@@ -221,6 +284,16 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
                 matchTriggerWidth
               />
             </Field>
+            {form.layout === "ticker" && (
+              <Field label="Ticker colors">
+                <SegmentedControl
+                  options={["dark", "light"]}
+                  value={form.tickerTheme}
+                  onChange={(v) => set("tickerTheme", v)}
+                  labelFor={(o) => (o === "dark" ? "Black / White text" : "White / Black text")}
+                />
+              </Field>
+            )}
             <Field label="Scroll speed">
               <SegmentedControl
                 options={["slow", "medium", "fast"]}
@@ -228,28 +301,6 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
                 onChange={(v) => set("speed", v)}
                 labelFor={(o) => o[0].toUpperCase() + o.slice(1)}
               />
-            </Field>
-            <Field label="Accent colors">
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={form.accentFrom}
-                  onChange={(e) => set("accentFrom", e.target.value)}
-                  className="w-9 h-9 rounded-lg border border-border-muted bg-bg-primary cursor-pointer"
-                />
-                <input
-                  type="color"
-                  value={form.accentTo}
-                  onChange={(e) => set("accentTo", e.target.value)}
-                  className="w-9 h-9 rounded-lg border border-border-muted bg-bg-primary cursor-pointer"
-                />
-                <div
-                  className="flex-1 h-9 rounded-lg"
-                  style={{
-                    background: `linear-gradient(90deg, ${form.accentFrom}, ${form.accentTo})`,
-                  }}
-                />
-              </div>
             </Field>
           </SettingsCard>
 
@@ -265,22 +316,50 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
             {form.brandLogo.enabled && (
               <>
                 <Field label="Logo image">
-                  <button
-                    type="button"
-                    onClick={() => setLogoPickerOpen(true)}
-                    className="flex items-center gap-2 px-3 h-9 rounded-lg border border-border-muted bg-bg-primary text-sm text-text-primary hover:bg-bg-hover transition-colors"
-                  >
-                    <ImageIcon size={14} />
-                    {form.brandLogo.contentId ? "Change image" : "Choose from library"}
-                  </button>
+                  {form.brandLogo.url ? (
+                    <div className="flex items-center gap-2 px-2 h-11 rounded-lg border border-border-muted bg-bg-primary">
+                      <span className="flex-1 min-w-0 truncate text-sm text-text-primary">
+                        {selectedLogoName || "Selected image"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setLogoPickerOpen(true)}
+                        className="px-2.5 h-7 rounded-md border border-border-muted text-xs font-medium text-text-primary hover:bg-bg-hover transition-colors"
+                      >
+                        Replace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBrandLogo("contentId", null);
+                          setBrandLogo("url", "");
+                        }}
+                        className="w-7 h-7 flex items-center justify-center rounded-md border border-border-muted text-text-muted hover:bg-bg-hover hover:text-accent-red transition-colors"
+                        aria-label="Remove logo"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setLogoPickerOpen(true)}
+                      className="flex items-center gap-2 px-3 h-9 rounded-lg border border-border-muted bg-bg-primary text-sm text-text-primary hover:bg-bg-hover transition-colors"
+                    >
+                      <ImageIcon size={14} />
+                      Choose from library
+                    </button>
+                  )}
                 </Field>
 
                 <Field label="Position">
                   <SegmentedControl
-                    options={["top-left", "top-right"]}
+                    options={form.layout === "split" ? ["top-left", "bottom-left"] : ["top-left", "top-right"]}
                     value={form.brandLogo.position}
                     onChange={(v) => setBrandLogo("position", v)}
-                    labelFor={(o) => (o === "top-left" ? "Top left" : "Top right")}
+                    labelFor={(o) =>
+                      o === "top-left" ? "Top left" : o === "bottom-left" ? "Bottom left" : "Top right"
+                    }
                   />
                 </Field>
 
@@ -328,6 +407,8 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
             submitLabel="Use this image"
             showNameField={false}
             showTypeFilter={false}
+            singleSelect
+            initialSelectedIds={form.brandLogo.contentId ? [form.brandLogo.contentId] : []}
             onSubmit={(_name, _description, selectedIds) => {
               const picked = imageLibrary.find((c) => c._id === selectedIds[0]);
               if (picked) {
@@ -358,10 +439,6 @@ export default RssSettingsScreen;
 // NOT a raw file upload or an arbitrary image URL. A direct-upload/URL
 // option was in the first draft and was deliberately removed; logged in
 // future-implementations.md as a possible later addition.
-//
-// Accent colors: two plain color pickers + a live gradient preview of the
-// pair. No preset quick-pick swatches — removed after initial feedback
-// that a row of default gradients wasn't wanted.
 //
 // `library` (the full Content list) is passed in from pages/Content.jsx —
 // this screen filters it down to images itself rather than the caller

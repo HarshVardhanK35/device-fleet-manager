@@ -55,6 +55,10 @@ function pinnedRequest(parsedUrl, address) {
         hostname: parsedUrl.hostname,
         port: parsedUrl.port || (parsedUrl.protocol === "https:" ? 443 : 80),
         path: `${parsedUrl.pathname}${parsedUrl.search}`,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; CastwiseRSS/1.0)",
+          Accept: "application/rss+xml, application/xml, text/xml, */*",
+        },
         lookup: (hostname, options, callback) => {
           if (options.all) {
             callback(null, [{ address, family: 4 }]);
@@ -214,6 +218,11 @@ export const fetchFeed = async (req, res) => {
       parsed2.feed?.logo ??
       null;
 
+    console.log("[feed] sending to frontend:", {
+      itemCount: items.length,
+      sourceImage,
+      firstItem: items[0],
+    });
     res.json({ items, sourceImage });
   } catch (error) {
     console.error("[feed] failed:", error.stack);

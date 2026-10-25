@@ -126,9 +126,14 @@ function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent })
       onSaveOnly={handleSave}
       saving={saving}
       saveError={saveError}
-      preview={(previewSize) => (
+      preview={(previewSize, fullPreview) => (
         <>
-          <AppPreviewFrame size={previewSize} src={WEATHER_APP_URL} config={previewConfig} />
+          <AppPreviewFrame
+            size={previewSize}
+            src={WEATHER_APP_URL}
+            config={previewConfig}
+            fullscreen={fullPreview}
+          />
           <div className="flex items-center gap-2 text-xs text-text-muted">
             <span className="w-1.5 h-1.5 rounded-full bg-accent-blue shadow-[0_0_8px_var(--color-accent-blue)]" />
             Previewing {previewSize} · refreshes every {form.refresh}
