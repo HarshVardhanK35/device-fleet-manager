@@ -16,6 +16,10 @@ import { API_BASE } from "../../api/apiClient.js";
 //      settings (location, unit, etc.), read from `config` below.
 //   3. The app sends { type: "APP_LOAD" } once it's actually rendered
 //      something with that config (success or failure both count).
+//   4. On any LATER config change that triggers its own reload (e.g. a new
+//      feed URL), the app sends { type: "APP_LOADING" } right before that
+//      fetch starts, then { type: "APP_LOAD" } again once it settles — same
+//      spinner as step 3, shown again instead of only ever once.
 //
 // `config` is re-sent automatically whenever it changes AFTER step 1 has
 // already happened — that's what makes editing a setting live-update the
@@ -72,6 +76,8 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config, fullsc
         setAppListening(true);
       } else if (e.data?.type === "APP_LOAD") {
         setAppReady(true);
+      } else if (e.data?.type === "APP_LOADING") {
+        setAppReady(false);
       }
     }
     window.addEventListener("message", handleMessage);
