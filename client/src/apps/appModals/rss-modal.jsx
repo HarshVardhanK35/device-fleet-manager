@@ -284,16 +284,14 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
                 matchTriggerWidth
               />
             </Field>
-            {form.layout === "ticker" && (
-              <Field label="Ticker colors">
-                <SegmentedControl
-                  options={["dark", "light"]}
-                  value={form.tickerTheme}
-                  onChange={(v) => set("tickerTheme", v)}
-                  labelFor={(o) => (o === "dark" ? "Black / White text" : "White / Black text")}
-                />
-              </Field>
-            )}
+            <Field label="Theme">
+              <SegmentedControl
+                options={["dark", "light"]}
+                value={form.tickerTheme}
+                onChange={(v) => set("tickerTheme", v)}
+                labelFor={(o) => (o === "dark" ? "Black / White text" : "White / Black text")}
+              />
+            </Field>
             <Field label="Scroll speed">
               <SegmentedControl
                 options={["slow", "medium", "fast"]}
