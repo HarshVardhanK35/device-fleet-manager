@@ -15,6 +15,11 @@ function BackgroundAudioField({
   muted,
   onToggleMute,
   portalContainer,
+  // Optional — pass these when a sibling dropdown elsewhere in the same
+  // settings panel needs this one to close when it opens (and vice versa).
+  // Omit both to stay uncontrolled, same as every other StyledSelect usage.
+  open,
+  onOpenChange,
 }) {
   const noAudio = value === "None";
 
@@ -31,6 +36,8 @@ function BackgroundAudioField({
             portalContainer={portalContainer}
             bgClassName="bg-bg-primary"
             collapseOnMobile={false}
+            open={open}
+            onOpenChange={onOpenChange}
           />
         </div>
         <button

@@ -13,6 +13,7 @@ import AppsPickerModal from "../apps/AppsPickerModal.jsx";
 import WeatherSettingsScreen from "../apps/appModals/weather-modal.jsx";
 import ClockSettingsScreen from "../apps/appModals/clock-modal.jsx";
 import RssSettingsScreen from "../apps/appModals/rss-modal.jsx";
+import AnnouncementsSettingsScreen from "../apps/appModals/announcements-modal.jsx";
 import ContentToolbar from "../components/ContentToolbar.jsx";
 import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/UploadProgressModal.jsx";
@@ -81,6 +82,14 @@ function Content() {
   const [clockEditTarget, setClockEditTarget] = useState(null);
   const [rssSettingsOpen, setRssSettingsOpen] = useState(false);
   const [rssEditTarget, setRssEditTarget] = useState(null);
+  const [announcementsSettingsOpen, setAnnouncementsSettingsOpen] = useState(false);
+  const [announcementsEditTarget, setAnnouncementsEditTarget] = useState(null);
+  // True only while the currently-open app modal was reached via the Apps
+  // Picker ("Add an App" -> pick one) — closing it should go back to the
+  // picker, not straight to the Content page. Opened via an existing
+  // tile's "Edit app settings" instead, this stays false and closing just
+  // closes, same as before.
+  const [reopenPickerOnClose, setReopenPickerOnClose] = useState(false);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState(null); // from inspector
 
   // Pencil icon on any tile (image/video/app) opens the same Details panel
@@ -100,6 +109,10 @@ function Content() {
     const isWeather =
       item.configBlob?.appType === "weather" || item.configBlob?.range !== undefined;
 
+    // Opened from an existing tile's pencil icon, not the Apps Picker —
+    // closing this one should just close, never reopen the picker.
+    setReopenPickerOnClose(false);
+
     if (isWeather) {
       setWeatherEditTarget(item);
       setWeatherSettingsOpen(true);
@@ -109,11 +122,25 @@ function Content() {
     } else if (item.configBlob?.appType === "rss") {
       setRssEditTarget(item);
       setRssSettingsOpen(true);
+    } else if (item.configBlob?.appType === "announcements") {
+      setAnnouncementsEditTarget(item);
+      setAnnouncementsSettingsOpen(true);
     } else {
-      // Other app types (Announcements) don't have a settings screen built
-      // yet — same gap as AppsPickerModal's onSelectApp.
       console.log("No settings screen built yet for this app:", item.name);
     }
+  }
+
+  // Wraps a modal's own setOpen(bool) setter — on close, reopens the Apps
+  // Picker if this modal was reached through it (reopenPickerOnClose),
+  // instead of just closing down to the Content page.
+  function appModalOpenChange(setOpen) {
+    return (open) => {
+      setOpen(open);
+      if (!open && reopenPickerOnClose) {
+        setReopenPickerOnClose(false);
+        setAppsPickerOpen(true);
+      }
+    };
   }
 
   useEffect(() => {
@@ -501,6 +528,9 @@ function Content() {
         onOpenChange={setAppsPickerOpen}
         onSelectApp={(app) => {
           setAppsPickerOpen(false);
+          // Reached via the picker — closing this modal should return to
+          // it, not drop straight to the Content page.
+          setReopenPickerOnClose(true);
           if (app.name === "Weather") {
             setWeatherEditTarget(null);
             setWeatherSettingsOpen(true);
@@ -510,9 +540,10 @@ function Content() {
           } else if (app.name === "RSS") {
             setRssEditTarget(null);
             setRssSettingsOpen(true);
+          } else if (app.name === "Announcements") {
+            setAnnouncementsEditTarget(null);
+            setAnnouncementsSettingsOpen(true);
           } else {
-            // TODO: other apps (Announcements) don't have a settings
-            // screen built yet — Weather, Clock, and RSS are first.
             console.log("No settings screen built yet for:", app.name);
           }
         }}
@@ -524,7 +555,7 @@ function Content() {
         // over whatever was left from the last time it was open.
         key={weatherSettingsOpen ? weatherEditTarget?._id ?? "new" : "weather-closed"}
         open={weatherSettingsOpen}
-        onOpenChange={setWeatherSettingsOpen}
+        onOpenChange={appModalOpenChange(setWeatherSettingsOpen)}
         existingContent={weatherEditTarget}
         onSaved={fetchContent}
       />
@@ -532,7 +563,7 @@ function Content() {
       <ClockSettingsScreen
         key={clockSettingsOpen ? clockEditTarget?._id ?? "new" : "clock-closed"}
         open={clockSettingsOpen}
-        onOpenChange={setClockSettingsOpen}
+        onOpenChange={appModalOpenChange(setClockSettingsOpen)}
         existingContent={clockEditTarget}
         onSaved={fetchContent}
       />
@@ -540,10 +571,22 @@ function Content() {
       <RssSettingsScreen
         key={rssSettingsOpen ? rssEditTarget?._id ?? "new" : "rss-closed"}
         open={rssSettingsOpen}
-        onOpenChange={setRssSettingsOpen}
+        onOpenChange={appModalOpenChange(setRssSettingsOpen)}
         existingContent={rssEditTarget}
         onSaved={fetchContent}
         library={content}
+      />
+
+      <AnnouncementsSettingsScreen
+        key={
+          announcementsSettingsOpen
+            ? announcementsEditTarget?._id ?? "new"
+            : "announcements-closed"
+        }
+        open={announcementsSettingsOpen}
+        onOpenChange={appModalOpenChange(setAnnouncementsSettingsOpen)}
+        existingContent={announcementsEditTarget}
+        onSaved={fetchContent}
       />
     </div>
   );
