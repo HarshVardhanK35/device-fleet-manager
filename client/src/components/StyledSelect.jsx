@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown, Check } from "lucide-react";
 
@@ -15,6 +16,7 @@ function StyledSelect({
   bgClassName = "bg-bg-panel",
   collapseOnMobile = true,
   matchTriggerWidth = false,
+  disabled = false,
 }) {
   const roundedClass =
     roundedSide === "left"
@@ -31,16 +33,48 @@ function StyledSelect({
   const labelShowClass = collapseOnMobile ? "hidden md:inline" : "inline";
   const chevronShowClass = collapseOnMobile ? "hidden md:block" : "block";
 
+  const triggerRef = useRef(null);
+
+  // avoidCollisions={false} (below) always opens the popup downward, never
+  // flipping above the trigger — fine normally, but a trigger near the
+  // bottom of a scrollable settings panel (e.g. AppSettingsShell's) then
+  // opens the list straight over the panel's own sticky Save/Close footer.
+  // Only scroll the trigger up when there's genuinely not enough room below
+  // it for this list — otherwise a trigger that already has plenty of
+  // space (e.g. near the top of the panel) would still get yanked to the
+  // very top on every open, which reads as broken/unnecessary.
+  function handleOpenChange(isOpen) {
+    if (isOpen && triggerRef.current) {
+      const itemCount = options.length;
+      const estimatedPopupHeight = Math.min(itemCount * 36 + 8, 320 + 8);
+      // Extra margin for AppSettingsShell's sticky Save/Close footer, which
+      // sits below the trigger's own scrollable panel but isn't reflected
+      // in a plain viewport-bottom measurement.
+      const footerSafeMargin = 80;
+      const spaceBelow = window.innerHeight - triggerRef.current.getBoundingClientRect().bottom;
+      if (spaceBelow < estimatedPopupHeight + footerSafeMargin) {
+        triggerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+    onOpenChange?.(isOpen);
+  }
+
   return (
     <Select.Root
       value={value}
       onValueChange={onChange}
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
+      disabled={disabled}
     >
       <Select.Trigger
+        ref={triggerRef}
         aria-label={label}
-        className={`group inline-flex items-center ${justifyClass} gap-2 ${bgClassName} border border-border-muted hover:bg-bg-hover hover:border-border-hover text-text-primary text-sm ${widthClass} ${padClass} h-9 outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass}`}
+        className={`group inline-flex items-center ${justifyClass} gap-2 ${bgClassName} border border-border-muted text-text-primary text-sm ${widthClass} ${padClass} h-9 outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass} ${
+          disabled
+            ? "opacity-45 cursor-not-allowed"
+            : "hover:bg-bg-hover hover:border-border-hover"
+        }`}
       >
         <Icon
           size={16}

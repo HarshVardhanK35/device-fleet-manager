@@ -31,8 +31,8 @@
     "name": "Announcements",
     "category": "Utility",
     "thumbnail": null,
-    "devUrl": null,
-    "stagingZipUrl": null,
+    "devUrl": "",
+    "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-announcements/releases/download/staging/announcements.zip",
     "prodZipUrl": null
   }
 ]
