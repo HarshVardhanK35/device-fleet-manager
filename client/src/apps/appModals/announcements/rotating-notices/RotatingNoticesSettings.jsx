@@ -3,7 +3,7 @@ import { Type } from "lucide-react";
 
 import SettingsCard from "../../../shared/SettingsCard.jsx";
 import Field from "../../../shared/Field.jsx";
-import ComingSoonToggle from "../../../shared/ComingSoonToggle.jsx";
+import ToggleSwitch from "../../../shared/ToggleSwitch.jsx";
 import BackgroundAudioField from "../../../shared/BackgroundAudioField.jsx";
 import StyledSelect from "../../../../components/StyledSelect.jsx";
 import BoardsSection from "./BoardsSection.jsx";
@@ -38,7 +38,15 @@ const AUDIO_OPTIONS = ["None"];
 // local state) — this file now only owns what's genuinely shared across
 // cards: the dropdown-coordination state (openField) and the two small
 // one-off cards (Font, Background audio) not worth their own file.
-function RotatingNoticesFields({ form, setForm, set, portalContainer }) {
+function RotatingNoticesFields({
+  form,
+  setForm,
+  set,
+  portalContainer,
+  layerContainer,
+  onDraftChange,
+  onModalOpenChange,
+}) {
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   // Coordinates every StyledSelect dropdown in this panel (re-alert sweep,
@@ -48,7 +56,25 @@ function RotatingNoticesFields({ form, setForm, set, portalContainer }) {
 
   return (
     <>
-      <BoardsSection form={form} setForm={setForm} />
+      <BoardsSection
+        form={form}
+        setForm={setForm}
+        layerContainer={layerContainer}
+        onDraftChange={onDraftChange}
+        onModalOpenChange={onModalOpenChange}
+      />
+
+      <SettingsCard kicker="Display">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-text-primary text-sm font-medium">Light theme (iframe only)</span>
+            <ToggleSwitch
+              checked={form.theme === "light"}
+              onChange={(v) => set("theme", v ? "light" : "dark")}
+            />
+          </div>
+        </div>
+      </SettingsCard>
 
       <AttentionSection
         form={form}
@@ -57,10 +83,6 @@ function RotatingNoticesFields({ form, setForm, set, portalContainer }) {
         openField={openField}
         onOpenFieldChange={setOpenField}
       />
-
-      <SettingsCard kicker="Display">
-        <ComingSoonToggle />
-      </SettingsCard>
 
       <SettingsCard kicker="Font">
         <Field label="Font family">

@@ -1,35 +1,50 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Pencil, ChevronDown, Check, Maximize2, Minimize2 } from "lucide-react";
+import { Pencil, ChevronDown, Check, Maximize2, Minimize2, TriangleAlert } from "lucide-react";
 
 import CancelButton from "../../components/CancelButton.jsx";
 import ScrollBox from "../../components/ScrollBox.jsx";
 import ActionMenu from "../../components/ActionMenu.jsx";
+import RemoveConfirmModal from "../../components/RemoveConfirmModal.jsx";
 import { PREVIEW_SIZES } from "./previewSizes.js";
 
 // Click the pencil to turn the app name into a text input. Small enough
 // that it doesn't need its own file — it's only ever used here.
+// Cap on an app tile's name — long enough to tell two instances apart,
+// short enough to stay readable on a tile and in this header.
+const APP_NAME_MAX = 60;
+
 function EditableTitle({ name, onChange }) {
   const [editing, setEditing] = useState(false);
 
   if (editing) {
     return (
-      <input
-        autoFocus
-        value={name}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={() => setEditing(false)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === "Escape") setEditing(false);
-        }}
-        className="text-xl font-medium tracking-tight text-text-primary bg-bg-panel border border-accent-blue rounded-md px-2 h-9 outline-none min-w-0 max-w-[260px]"
-      />
+      <>
+        <input
+          autoFocus
+          value={name}
+          maxLength={APP_NAME_MAX}
+          onChange={(e) => onChange(e.target.value.slice(0, APP_NAME_MAX))}
+          onBlur={() => setEditing(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === "Escape") setEditing(false);
+          }}
+          className="text-xl font-medium tracking-tight text-text-primary bg-bg-panel border border-accent-blue rounded-md px-2 h-9 outline-none min-w-0 max-w-[260px]"
+        />
+        <span
+          className={`flex-none text-[11px] tabular-nums ${
+            name.length >= APP_NAME_MAX ? "text-accent-amber" : "text-text-muted"
+          }`}
+        >
+          {name.length}/{APP_NAME_MAX}
+        </span>
+      </>
     );
   }
 
   return (
     <>
-      <span className="text-xl font-medium tracking-tight text-text-primary">{name}</span>
+      <span className="text-xl font-medium tracking-tight text-text-primary truncate min-w-0">{name}</span>
       <button
         type="button"
         aria-label="Rename app"
@@ -95,6 +110,24 @@ function AppSettingsShell({
   children,
 }) {
   const [contentEl, setContentEl] = useState(null);
+  // Layer over the settings column only (above the footer, never over the
+  // preview) — a settings screen can portal a column-anchored modal into it
+  // via `children`'s second argument.
+  const [layerEl, setLayerEl] = useState(null);
+  // True while a column modal is open — the footer Close/Save buttons are
+  // disabled meanwhile so they can't be hit by mistake right after editing.
+  const [columnModalOpen, setColumnModalOpen] = useState(false);
+  // Closing with unsaved edits (X, Close, Esc) asks first — Save & Close
+  // calls onOpenChange directly, so it never goes through this.
+  const [confirmClose, setConfirmClose] = useState(false);
+
+  function handleOpenChange(next) {
+    if (!next && dirty && !saving) {
+      setConfirmClose(true);
+      return;
+    }
+    onOpenChange(next);
+  }
   const [previewSize, setPreviewSize] = useState("desktop");
   // Full-screen preview: hides the settings column entirely and lets the
   // iframe take the whole body (still padded, via the preview column's own
@@ -104,11 +137,29 @@ function AppSettingsShell({
   const [fullPreview, setFullPreview] = useState(false);
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+      <RemoveConfirmModal
+        elevated
+        open={confirmClose}
+        onOpenChange={setConfirmClose}
+        icon={TriangleAlert}
+        title="Discard unsaved changes?"
+        description="You have changes that haven't been saved. If you close now, they'll be lost."
+        confirmLabel="Discard and close"
+        onConfirm={() => {
+          setConfirmClose(false);
+          onOpenChange(false);
+        }}
+      />
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/70 z-40" />
         <Dialog.Content
           ref={setContentEl}
+          // Esc belongs to a column modal first (it handles its own Esc) —
+          // only close the whole screen when no modal is mounted in the layer.
+          onEscapeKeyDown={(e) => {
+            if (layerEl?.childElementCount) e.preventDefault();
+          }}
           className="group fixed inset-0 bg-bg-primary z-50 flex flex-col overflow-hidden"
         >
           {/* Both header variants stay mounted and cross-fade via opacity —
@@ -181,6 +232,7 @@ function AppSettingsShell({
                   : "w-full lg:w-[400px] opacity-100"
               }`}
             >
+              <div className="relative flex-1 min-h-0 flex flex-col">
               <ScrollBox className="flex-1 min-h-0">
                 {/* Extra bottom padding (pb-40, well past the usual py-6)
                     gives a dropdown on the LAST field of the LAST card real
@@ -192,9 +244,14 @@ function AppSettingsShell({
                     to 1-2 visible rows regardless of the dropdown's own
                     row-count cap. */}
                 <div className="flex flex-col gap-3 px-4 sm:px-6 md:px-8 pt-6 pb-80">
-                  {open && children(contentEl)}
+                  {open && children(contentEl, layerEl, setColumnModalOpen)}
                 </div>
               </ScrollBox>
+              <div
+                ref={setLayerEl}
+                className="absolute inset-0 z-10 pointer-events-none [&>*]:pointer-events-auto"
+              />
+              </div>
 
               <div className="flex-none px-4 sm:px-6 md:px-8 py-3 border-t border-border-muted bg-bg-primary">
                 {saveError && (
@@ -203,14 +260,15 @@ function AppSettingsShell({
                 <div className="flex gap-2">
                   <Dialog.Close
                     type="button"
-                    className="flex-1 h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg text-sm font-semibold transition-colors"
+                    disabled={columnModalOpen}
+                    className="flex-1 h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-border-muted disabled:hover:text-text-muted"
                   >
                     Close
                   </Dialog.Close>
                   <div className="flex-1 flex">
                     <button
                       type="button"
-                      disabled={!dirty || saving}
+                      disabled={!dirty || saving || columnModalOpen}
                       onClick={onSaveAndClose}
                       className="flex-1 min-h-[40px] px-4 rounded-l-lg text-sm font-semibold bg-[#1f6feb] border border-accent-blue hover:bg-[#1a5fd0] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1f6feb]"
                     >
@@ -224,13 +282,13 @@ function AppSettingsShell({
                           label: "Save",
                           icon: Check,
                           onClick: onSaveOnly,
-                          disabled: !dirty || saving,
+                          disabled: !dirty || saving || columnModalOpen,
                         },
                       ]}
                       trigger={
                         <button
                           type="button"
-                          disabled={!dirty || saving}
+                          disabled={!dirty || saving || columnModalOpen}
                           className="min-h-[40px] px-2 rounded-r-lg bg-[#1f6feb] border border-accent-blue border-l-0 hover:bg-[#1a5fd0] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1f6feb]"
                         >
                           <ChevronDown size={14} />

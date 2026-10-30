@@ -10,8 +10,13 @@ import {
   ROTATING_NOTICES_INITIAL_FORM,
   computeRotatingNoticesDuration,
 } from "./announcements/rotating-notices/rotatingNoticesConfig.js";
-// StatusListFields / EventCardsFields: scaffolded, not integrated yet — add
-// to TEMPLATES below once each one's own integration pass happens.
+import StatusListFields from "./announcements/status-list/StatusListSettings.jsx";
+import {
+  STATUS_LIST_INITIAL_FORM,
+  computeStatusListDuration,
+} from "./announcements/status-list/statusListConfig.js";
+// EventCardsFields: scaffolded, not integrated yet — add to TEMPLATES below
+// once its own integration pass happens.
 
 const ANNOUNCEMENTS_APP_URL = resolveAppUrlByName("Announcements");
 
@@ -24,7 +29,14 @@ const TEMPLATES = {
     computeDuration: computeRotatingNoticesDuration,
     Fields: RotatingNoticesFields,
   },
-  "status-list": { name: "Status List", icon: List, available: false },
+  "status-list": {
+    name: "Status List",
+    icon: List,
+    available: true,
+    initialForm: STATUS_LIST_INITIAL_FORM,
+    computeDuration: computeStatusListDuration,
+    Fields: StatusListFields,
+  },
   "event-cards": { name: "Event/Celebration Cards", icon: PartyPopper, available: false },
 };
 const TEMPLATE_ORDER = ["rotating-notices", "status-list", "event-cards"];
@@ -35,7 +47,7 @@ const TEMPLATE_ORDER = ["rotating-notices", "status-list", "event-cards"];
 // full-screen "Choose a template" picker, then an earlier header-row
 // placement, both dropped per the 2026-10-29 design correction (Harsha:
 // no separate selection screen, and it belongs inside the settings panel).
-function TemplateSelector({ template, onChange }) {
+function TemplateSelector({ template, onChange, locked }) {
   return (
     <div className="flex flex-col gap-1.5">
       {TEMPLATE_ORDER.map((id) => {
@@ -45,10 +57,18 @@ function TemplateSelector({ template, onChange }) {
           <button
             key={id}
             type="button"
-            disabled={!t.available}
-            title={t.available ? t.name : `${t.name} — coming soon`}
+            disabled={!t.available || (locked && !selected)}
+            title={
+              locked && !selected
+                ? "Locked once saved — create a new tile to use another template."
+                : t.available
+                  ? t.name
+                  : `${t.name} — coming soon`
+            }
             onClick={() => t.available && onChange(id)}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              locked && !selected ? "opacity-45 cursor-not-allowed " : ""
+            }${
               selected
                 ? "border-accent-blue bg-accent-blue/15 text-accent-blue"
                 : t.available
@@ -71,7 +91,7 @@ function TemplateSelector({ template, onChange }) {
 // template list once a pick is made — matching the kicker label with the
 // selected template's own name instead of a flat "Template" label while
 // collapsed, so it's clear at a glance what's active.
-function TemplateCard({ open, onToggle, template, onChange }) {
+function TemplateCard({ open, onToggle, template, onChange, locked }) {
   return (
     <div className="flex flex-col bg-bg-panel border border-border-muted rounded-lg overflow-hidden">
       <div
@@ -81,7 +101,7 @@ function TemplateCard({ open, onToggle, template, onChange }) {
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") onToggle();
         }}
-        className="flex items-center gap-2 p-2 text-left cursor-pointer"
+        className="flex items-center gap-2 px-3.5 py-2 text-left cursor-pointer"
       >
         <span className="flex-1 text-[11px] font-semibold tracking-wide uppercase text-accent-blue">
           {open ? "Template" : TEMPLATES[template].name}
@@ -92,7 +112,7 @@ function TemplateCard({ open, onToggle, template, onChange }) {
       </div>
       {open && (
         <div className="px-3.5 pb-3.5">
-          <TemplateSelector template={template} onChange={onChange} />
+          <TemplateSelector template={template} onChange={onChange} locked={locked} />
         </div>
       )}
     </div>
@@ -109,12 +129,17 @@ function AnnouncementsBody({
   onTemplateChange,
   templateOpen,
   onToggleTemplateOpen,
+  templateLocked,
   open,
   onOpenChange,
   onSaved,
   existingContent,
 }) {
   const { name: defaultAppName, initialForm, computeDuration, Fields } = TEMPLATES[template];
+
+  // Transient "what's being typed/edited" from Status List's Manage products
+  // modal — shown in the preview only (draft/editing cues), never saved.
+  const [editorDraft, setEditorDraft] = useState(null);
 
   const {
     form,
@@ -127,6 +152,7 @@ function AnnouncementsBody({
     saveError,
     handleSave,
     handleSaveAndClose,
+    contentId,
   } = useAppSettingsForm({
     appType: "announcements",
     initialForm,
@@ -152,20 +178,30 @@ function AnnouncementsBody({
         <AppPreviewFrame
           size={previewSize}
           src={ANNOUNCEMENTS_APP_URL}
-          config={form}
+          config={editorDraft ? { ...form, editorDraft } : form}
           fullscreen={fullPreview}
         />
       )}
     >
-      {(portalContainer) => (
+      {(portalContainer, layerContainer, onModalOpenChange) => (
         <>
           <TemplateCard
             open={templateOpen}
             onToggle={onToggleTemplateOpen}
             template={template}
             onChange={onTemplateChange}
+            locked={templateLocked}
           />
-          <Fields form={form} setForm={setForm} set={set} portalContainer={portalContainer} />
+          <Fields
+            form={form}
+            setForm={setForm}
+            set={set}
+            portalContainer={portalContainer}
+            layerContainer={layerContainer}
+            onDraftChange={setEditorDraft}
+            onModalOpenChange={onModalOpenChange}
+            purposeLocked={Boolean(contentId)}
+          />
         </>
       )}
     </AppSettingsShell>
@@ -185,7 +221,13 @@ function AnnouncementsSettingsScreen({ open, onOpenChange, onSaved, existingCont
   // every template switch (see its `key` below), which would otherwise
   // reset this back to its initial value on every pick instead of staying
   // collapsed after one.
-  const [templateOpen, setTemplateOpen] = useState(true);
+  // An already-saved tile has made its template choice — start folded.
+  const [templateOpen, setTemplateOpen] = useState(!existingContent);
+  // Locked once the tile exists (opened to edit, or saved in this session):
+  // switching template remounts the form, which would reset it — and before
+  // a first save would even create a second Content row.
+  const [savedHere, setSavedHere] = useState(false);
+  const templateLocked = Boolean(existingContent) || savedHere;
 
   function handleTemplateChange(id) {
     setTemplate(id);
@@ -206,10 +248,14 @@ function AnnouncementsSettingsScreen({ open, onOpenChange, onSaved, existingCont
       onTemplateChange={handleTemplateChange}
       templateOpen={templateOpen}
       onToggleTemplateOpen={() => setTemplateOpen((v) => !v)}
+      templateLocked={templateLocked}
       open={open}
       onOpenChange={onOpenChange}
       existingContent={existingContent}
-      onSaved={onSaved}
+      onSaved={() => {
+        setSavedHere(true);
+        onSaved?.();
+      }}
     />
   );
 }

@@ -40,6 +40,9 @@ export const getDeviceById = async (req, res) => {
     if (!device) {
       return res.status(404).json({ message: "Device not found" });
     }
+    if (req.user.role !== "admin" && device.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not your device" });
+    }
     res.status(200).json(device);
   } catch (error) {
     res.status(500).json({ message: error.message });

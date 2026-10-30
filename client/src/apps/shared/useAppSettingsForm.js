@@ -110,5 +110,6 @@ export function useAppSettingsForm({
     saveError,
     handleSave,
     handleSaveAndClose,
+    contentId,
   };
 }
