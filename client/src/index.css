@@ -169,6 +169,11 @@ input[type="number"] {
   cursor: default;
 }
 
+/* Thinner variant (use together with .dark-scrollbar) — Manage boards modal only. */
+.dark-scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+}
+
 /* Hides the native scrollbar on touch-swipe horizontal strips (e.g.
    AppsPickerModal's mobile category rows) — swipe + scroll-snap is the real
    affordance there, a visible scrollbar just reads as leftover desktop UI.
@@ -179,4 +184,16 @@ input[type="number"] {
 }
 .scrollbar-hidden::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
+}
+
+/* Column-anchored modal entrance (Status List's Manage products) */
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-modal-in {
+  animation: modal-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-modal-in { animation-duration: 1ms; }
 }

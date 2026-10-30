@@ -15,12 +15,15 @@ function RemoveConfirmModal({
   confirmLabel,
   onConfirm,
   error,
+  // Raises the dialog above a full-screen Dialog (z-40/z-50) it's opened from
+  // — e.g. the app settings shell's unsaved-changes confirm.
+  elevated = false,
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[440px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40">
+        <Dialog.Overlay className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${elevated ? "z-[60]" : "z-30"}`} />
+        <Dialog.Content className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[440px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col ${elevated ? "z-[70]" : "z-40"}`}>
           <div className="flex flex-col gap-4 px-6 pt-6 pb-5 min-h-0 overflow-auto">
             <div className="flex items-start gap-3">
               <span className="w-9 h-9 flex-none rounded-[10px] bg-accent-red/15 text-accent-red flex items-center justify-center">

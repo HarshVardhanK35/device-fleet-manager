@@ -26,6 +26,14 @@ function SliderField({ label, value, onChange, min = 0, max = 100, step = 1, suf
             max={max}
             step={step}
             defaultValue={value}
+            // The slider follows what's typed, live — the field itself stays
+            // as typed until Enter / blur commits (and clamps) it.
+            onChange={(e) => {
+              const num = Number(e.target.value);
+              if (e.target.value !== "" && !Number.isNaN(num)) {
+                onChange(Math.min(max, Math.max(min, num)));
+              }
+            }}
             onBlur={(e) => commit(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") commit(e.target.value);
