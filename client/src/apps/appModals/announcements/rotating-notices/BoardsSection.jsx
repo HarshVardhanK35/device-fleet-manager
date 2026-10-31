@@ -32,7 +32,7 @@ function BoardsSection({ form, setForm, layerContainer, onDraftChange, onModalOp
           className="flex items-center justify-center gap-2 h-10 text-sm font-semibold text-text-primary bg-bg-primary border border-border-muted hover:border-border-hover hover:bg-bg-hover rounded-lg px-3 transition-colors"
         >
           <LayoutList size={16} />
-          Manage boards
+          {boards.length === 0 ? "Add board" : "Manage boards"}
         </button>
       </SettingsCard>
 

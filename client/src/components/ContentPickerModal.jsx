@@ -107,9 +107,9 @@ function PickerFormBody({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-      <div className="flex flex-col gap-5 pl-11 pr-6 pb-5 flex-1 min-h-0">
+      <div className="flex flex-col gap-5 pl-4 pr-4 sm:pl-11 sm:pr-6 pb-5 flex-1 min-h-0">
         {showNameField && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:pr-5">
             <label className="flex flex-col gap-1.5">
               <span className="text-text-muted text-xs font-semibold">
                 Name
@@ -147,23 +147,35 @@ function PickerFormBody({
             </span>
           )}
 
-          <div className="flex flex-col gap-2.5 pr-5">
-            <div className="flex items-center justify-between gap-2">
-              {singleSelect ? (
-                <div />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <SelectCheckbox
-                    checked={allVisibleSelected}
-                    indeterminate={someVisibleSelected && !allVisibleSelected}
-                    onClick={toggleSelectAllVisible}
-                    alwaysVisible
-                  />
-                  <span className="text-text-muted text-sm whitespace-nowrap">
-                    Select all
-                  </span>
-                </div>
-              )}
+          <div className="flex flex-col gap-2.5 sm:pr-5">
+            {!singleSelect && (
+              <div className="flex items-center gap-2">
+                <SelectCheckbox
+                  checked={allVisibleSelected}
+                  indeterminate={someVisibleSelected && !allVisibleSelected}
+                  onClick={toggleSelectAllVisible}
+                  alwaysVisible
+                />
+                <span className="text-text-muted text-sm whitespace-nowrap">
+                  Select all
+                </span>
+              </div>
+            )}
+
+            {/* search and filter / sort share one line */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Search
+                  size={14}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+                />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search library"
+                  className="w-full bg-bg-primary border border-border-muted rounded-lg pl-8 pr-3 h-9 text-sm text-text-primary outline-none focus-visible:border-accent-blue"
+                />
+              </div>
 
               <ContentFilterSortBar
                 counts={counts}
@@ -175,22 +187,9 @@ function PickerFormBody({
                 portalContainer={portalContainer}
               />
             </div>
-
-            <div className="relative">
-              <Search
-                size={14}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search library"
-                className="w-full bg-bg-primary border border-border-muted rounded-lg pl-8 pr-3 h-[38px] text-sm text-text-primary outline-none focus-visible:border-accent-blue"
-              />
-            </div>
           </div>
 
-          <ScrollBox className="pr-5 pt-2">
+          <ScrollBox className="sm:pr-5 pt-2">
             {visibleContent.length === 0 ? (
               <p className="text-text-muted text-sm text-center py-8">
                 Nothing in your library matches
@@ -229,7 +228,8 @@ function PickerFormBody({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pl-11 pr-6 py-4 border-t border-border-muted">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-3 pl-4 pr-4 sm:pl-11 sm:pr-6 py-4 border-t border-border-muted">
+        <div className="w-full sm:w-auto">
         <PickerSelectionStatus
           nameRequired={showNameField}
           hasName={name.trim().length > 0}
@@ -239,14 +239,17 @@ function PickerFormBody({
           onClear={() => setSelectedIds([])}
           alertKey={alertKey}
         />
-        <div className="flex-1" />
+        </div>
+        <div className="flex-1 hidden sm:block" />
         <Dialog.Close
           type="button"
-          className="h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-4 text-sm font-semibold transition-colors"
+          className="flex-1 sm:flex-none h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-4 text-sm font-semibold transition-colors"
         >
           Cancel
         </Dialog.Close>
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" className="flex-1 sm:flex-none whitespace-nowrap">
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );
@@ -283,15 +286,15 @@ function ContentPickerModal({
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
         <Dialog.Content
           ref={setContentEl}
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[760px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-[60]"
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[760px] max-w-[calc(100vw-32px)] max-h-[85dvh] flex flex-col z-[60]"
         >
-          <div className="flex items-start gap-3 pl-11 pr-6 pt-5 pb-4">
+          <div className="flex items-start gap-3 pl-4 pr-4 sm:pl-11 sm:pr-6 pt-5 pb-4">
             <div className="flex-1 min-w-0">
               <Dialog.Title className="text-text-primary font-bold text-lg m-0">
                 {title}
               </Dialog.Title>
               {subtitle && (
-                <p className="text-text-muted text-sm mt-1 truncate">
+                <p className="text-text-muted text-sm mt-1 sm:truncate">
                   {subtitle}
                 </p>
               )}

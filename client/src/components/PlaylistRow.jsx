@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Pencil, Trash2, ListVideo, Repeat } from "lucide-react";
 
 import ActionMenu from "./ActionMenu.jsx";
@@ -23,11 +24,60 @@ function PlaylistRow({
   onDelete,
   menuOpen,
   onMenuOpenChange,
+  selectionMode = false,
+  onLongPress,
 }) {
+  // Long press (touch only) ticks the row — touch screens have no hover to
+  // reveal the checkbox. The press cancels if the finger moves (scrolling),
+  // and the click that follows a long press is swallowed.
+  const pressTimer = useRef(null);
+  const pressStart = useRef(null);
+  const longPressed = useRef(false);
+
+  function clearPress() {
+    clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+  }
+
+  function handlePointerDown(e) {
+    if (!onLongPress || e.pointerType === "mouse") return;
+    longPressed.current = false;
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    clearPress();
+    pressTimer.current = setTimeout(() => {
+      longPressed.current = true;
+      navigator.vibrate?.(15);
+      onLongPress();
+    }, 500);
+  }
+
+  function handlePointerMove(e) {
+    if (!pressTimer.current || !pressStart.current) return;
+    if (Math.hypot(e.clientX - pressStart.current.x, e.clientY - pressStart.current.y) > 10) {
+      clearPress();
+    }
+  }
+
+  function handleClick() {
+    if (longPressed.current) {
+      longPressed.current = false;
+      return;
+    }
+    onSelect();
+  }
+
   return (
     <SelectableRow
-      onClick={onSelect}
-      className={`group relative overflow-hidden flex flex-col gap-2.5 p-3 pl-4 rounded-[10px] border ${
+      onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={clearPress}
+      onPointerCancel={clearPress}
+      onPointerLeave={clearPress}
+      onContextMenu={(e) => {
+        if (onLongPress) e.preventDefault();
+      }}
+      className={`group relative overflow-hidden select-none [-webkit-touch-callout:none] flex flex-col gap-2.5 p-3 pl-4 rounded-[10px] border ${
         active
           ? "border-accent-blue bg-bg-panel"
           : "border-border-muted bg-bg-panel hover:border-border-hover"
@@ -39,6 +89,7 @@ function PlaylistRow({
       <div className="flex items-center gap-2.5 min-w-0">
         <SelectCheckbox
           checked={checked}
+          alwaysVisible={selectionMode}
           onClick={(e) => {
             e.stopPropagation();
             onToggleCheck();
@@ -48,18 +99,29 @@ function PlaylistRow({
           <ListVideo size={16} />
         </span>
         <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-          <span className="text-sm font-semibold text-text-primary whitespace-nowrap overflow-hidden text-ellipsis">
-            {playlist.name}
-          </span>
-          <span className="text-xs text-text-muted tabular-nums flex items-center gap-1">
-            {pluralizeCount(playlist.contentItems.length, "item")}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="min-w-0 text-sm font-semibold text-text-primary whitespace-nowrap overflow-hidden text-ellipsis">
+              {playlist.name}
+            </span>
+            {playlist.contentItems.length > 0 && (
+              <span className="flex-none inline-flex items-center gap-1 text-xs text-text-muted">
+                loop
+                <Repeat size={11} />
+              </span>
+            )}
+          </div>
+          {/* Each part is its own nowrap item, so a narrow row breaks between
+              parts ("6 items" stays together) instead of inside one. */}
+          <span className="text-xs text-text-muted tabular-nums flex flex-wrap items-center gap-x-1">
+            <span className="whitespace-nowrap">
+              {pluralizeCount(playlist.contentItems.length, "item")}
+            </span>
             {playlist.contentItems.length > 0 && (
               <>
                 <span>·</span>
-                {formatDuration(getPlaylistRuntimeMs(playlist))}
-                <span>·</span>
-                loop
-                <Repeat size={11} />
+                <span className="whitespace-nowrap">
+                  {formatDuration(getPlaylistRuntimeMs(playlist))}
+                </span>
               </>
             )}
           </span>
@@ -95,6 +157,8 @@ export default PlaylistRow;
 // select checkbox (for bulk delete, paired with a SelectAllBar above the
 // list) — hidden at rest, shows on hover or once checked (e.g. via Select
 // all), rather than cluttering every row with an empty box by default.
+// Long press (touch) ticks the row via `onLongPress`; `selectionMode` keeps
+// every checkbox visible while any row is ticked.
 // Also: icon, name, item-count/runtime/loop meta line, blue left-edge
 // accent strip + border while this is the active (selected) playlist, and
 // a "⋮" ActionMenu (Edit / Delete) for single-item actions. The ActionMenu

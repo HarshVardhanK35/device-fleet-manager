@@ -3,12 +3,13 @@ import { Search } from "lucide-react";
 
 import CancelButton from "./CancelButton.jsx";
 
-function ContentSearchInput({ value, onChange, placeholder = "Search content" }) {
+function ContentSearchInput({ value, onChange, placeholder = "Search content", only }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
       {/* desktop: always-visible full bar */}
+      {only !== "mobile" && (
       <div className="relative hidden md:block flex-1 max-w-md">
         <Search
           size={16}
@@ -21,11 +22,13 @@ function ContentSearchInput({ value, onChange, placeholder = "Search content" })
           className="w-full bg-bg-panel border border-border-muted rounded-lg pl-9 pr-3 h-9 text-sm text-text-primary outline-none focus-visible:border-accent-blue"
         />
       </div>
+      )}
 
       {/* mobile: icon that expands in place into a full search bar */}
+      {only !== "desktop" && (
       <div
         className={`relative md:hidden overflow-hidden transition-all duration-300 ease-out flex-shrink-0 ${
-          mobileOpen ? "w-40" : "w-9"
+          mobileOpen ? "w-full" : "w-9"
         }`}
       >
         {!mobileOpen ? (
@@ -64,6 +67,7 @@ function ContentSearchInput({ value, onChange, placeholder = "Search content" })
           </div>
         )}
       </div>
+      )}
     </>
   );
 }
@@ -73,6 +77,8 @@ export default ContentSearchInput;
 // Search input with responsive behavior: a normal full-width bar at `md`+,
 // collapsing to a 36px icon below `md` that expands in place (width
 // transition) into a small bar on click, closing again on blur if empty or
-// via its own clear button. Manages its own expand/collapse state —
+// via its own clear button. `only` ("desktop" | "mobile") renders just one
+// of the two — Content puts the desktop bar in the title row and the mobile
+// icon in the toolbar row. Manages its own expand/collapse state —
 // `value`/`onChange` behave like a plain controlled <input>.
 // Used by: pages/Content.jsx.

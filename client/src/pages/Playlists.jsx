@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { Plus, Repeat, CircleMinus } from "lucide-react";
+import { Plus, Repeat, CircleMinus, Check, X } from "lucide-react";
 
 import {
   getPlaylists,
@@ -61,26 +61,37 @@ function Playlists() {
 
   const selectedPlaylist = playlists.find((p) => p._id === selectedPlaylistId);
 
+  // Reordering only changes this local draft; nothing is saved until the user
+  // clicks Save order. `shownItems` is what the grid shows (draft, else saved).
+  const [draftItems, setDraftItems] = useState(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [orderError, setOrderError] = useState(false);
+  const shownItems = draftItems ?? selectedPlaylist?.contentItems ?? [];
+  const orderDirty =
+    draftItems !== null &&
+    draftItems.map((i) => i._id).join() !==
+      (selectedPlaylist?.contentItems ?? []).map((i) => i._id).join();
+
   const removeSlotItems = selectedPlaylist
-    ? selectedPlaylist.contentItems
+    ? shownItems
         .filter((item, index) => checkedSlotIds.has(`${item._id}-${index}`))
         .map((item) => ({ id: item._id, name: item.name, type: item.type }))
     : [];
 
   const slotFilterCounts = selectedPlaylist
     ? {
-        all: selectedPlaylist.contentItems.length,
-        image: selectedPlaylist.contentItems.filter((c) => c.type === "image")
+        all: shownItems.length,
+        image: shownItems.filter((c) => c.type === "image")
           .length,
-        video: selectedPlaylist.contentItems.filter((c) => c.type === "video")
+        video: shownItems.filter((c) => c.type === "video")
           .length,
-        app: selectedPlaylist.contentItems.filter((c) => c.type === "app")
+        app: shownItems.filter((c) => c.type === "app")
           .length,
       }
     : { all: 0, image: 0, video: 0, app: 0 };
 
   const visibleSlots = selectedPlaylist
-    ? selectedPlaylist.contentItems
+    ? shownItems
         .map((item, index) => ({ item, index }))
         .filter(
           ({ item }) => slotFilterType === "all" || item.type === slotFilterType,
@@ -103,6 +114,7 @@ function Playlists() {
   }, []);
 
   function selectPlaylist(id) {
+    setDraftItems(null);
     clearCheckedSlots();
     setSlotFilterType("all");
     setSelectedPlaylistId(id);
@@ -111,7 +123,7 @@ function Playlists() {
   }
 
   async function handleDeleteSlots() {
-    const remaining = selectedPlaylist.contentItems
+    const remaining = shownItems
       .filter((item, index) => !checkedSlotIds.has(`${item._id}-${index}`))
       .map((item) => item._id);
 
@@ -120,6 +132,7 @@ function Playlists() {
     });
 
     setPlaylists(playlists.map((p) => (p._id === updated._id ? updated : p)));
+    setDraftItems(null);
     clearCheckedSlots();
   }
 
@@ -175,12 +188,13 @@ function Playlists() {
   }
 
   async function handleAddContentSave(ids) {
-    const existingIds = selectedPlaylist.contentItems.map((item) => item._id);
+    const existingIds = shownItems.map((item) => item._id);
     const updated = await updatePlaylist(selectedPlaylistId, {
       contentItems: [...existingIds, ...ids],
     });
 
     setPlaylists(playlists.map((p) => (p._id === updated._id ? updated : p)));
+    setDraftItems(null);
     setAddContentOpen(false);
   }
 
@@ -204,20 +218,33 @@ function Playlists() {
     setEditPlaylistId(null);
   }
 
-  async function handleReorder(fromIndex, toIndex) {
-    const reordered = [...selectedPlaylist.contentItems];
+  function handleReorder(fromIndex, toIndex) {
+    const reordered = [...shownItems];
     const [moved] = reordered.splice(fromIndex, 1);
     reordered.splice(toIndex, 0, moved);
+    setOrderError(false);
+    setDraftItems(reordered);
+  }
 
-    // optimistic: update local state immediately, persist in the background
-    setPlaylists((prev) =>
-      prev.map((p) =>
-        p._id === selectedPlaylistId ? { ...p, contentItems: reordered } : p,
-      ),
-    );
-    await updatePlaylist(selectedPlaylistId, {
-      contentItems: reordered.map((item) => item._id),
-    });
+  async function handleSaveOrder() {
+    setSavingOrder(true);
+    setOrderError(false);
+    try {
+      const updated = await updatePlaylist(selectedPlaylistId, {
+        contentItems: draftItems.map((item) => item._id),
+      });
+      setPlaylists((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+      setDraftItems(null);
+    } catch {
+      setOrderError(true);
+    } finally {
+      setSavingOrder(false);
+    }
+  }
+
+  function handleDiscardOrder() {
+    setDraftItems(null);
+    setOrderError(false);
   }
 
   function handleDrop(toIndex) {
@@ -229,7 +256,7 @@ function Playlists() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-88px)] flex gap-4 ">
+    <div className="max-w-7xl mx-auto h-[calc(100dvh-88px)] flex gap-4 ">
       {/* left pane */}
       <div
         className={`w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
@@ -251,11 +278,11 @@ function Playlists() {
             totalCount={playlists.length}
             onToggleAll={toggleAllPlaylists}
             onAction={() => setBulkDeletePlaylistsOpen(true)}
-            className="pb-3 pr-4 flex-shrink-0"
+            className="pb-3 lg:pr-4 flex-shrink-0"
           />
         )}
 
-        <ScrollBox className="pr-4 pt-1">
+        <ScrollBox className="lg:pr-4 pt-1">
           {loading ? (
             <SkeletonPlaylistList count={4} />
           ) : (
@@ -266,7 +293,17 @@ function Playlists() {
                 playlist={playlist}
                 active={playlist._id === selectedPlaylistId}
                 checked={checkedPlaylistIds.has(playlist._id)}
-                onSelect={() => selectPlaylist(playlist._id)}
+                selectionMode={checkedPlaylistIds.size > 0}
+                onLongPress={() => toggleCheckPlaylist(playlist._id)}
+                onSelect={() => {
+                  // Once something is ticked, a tap on a phone ticks / unticks
+                  // instead of opening the playlist.
+                  if (checkedPlaylistIds.size > 0 && window.matchMedia("(max-width: 1023px)").matches) {
+                    toggleCheckPlaylist(playlist._id);
+                  } else {
+                    selectPlaylist(playlist._id);
+                  }
+                }}
                 onToggleCheck={() => toggleCheckPlaylist(playlist._id)}
                 onEdit={() => setEditPlaylistId(playlist._id)}
                 onDelete={() => setDeleteConfirmId(playlist._id)}
@@ -280,7 +317,7 @@ function Playlists() {
           )}
         </ScrollBox>
 
-        <div className="flex-shrink-0 pt-3 pr-4">
+        <div className="flex-shrink-0 pt-3 lg:pr-4">
           <Button icon={Plus} onClick={() => setCreateOpen(true)} className="w-full">
             Create playlist
           </Button>
@@ -300,30 +337,89 @@ function Playlists() {
             <DetailPane
               className="flex-1 min-h-0"
               bodyClassName="flex-1 min-h-0 flex flex-col"
-              headerClassName="pr-4"
+              headerClassName="lg:pr-4"
               backLabel="Playlists"
               onBack={() => setMobileView("list")}
               title={selectedPlaylist.name}
               badge={
-                <span className="inline-flex items-center gap-1 h-6 px-2 rounded-full border border-border-muted text-text-muted text-xs font-semibold">
-                  loop
+                <span
+                  title="Plays in a loop"
+                  className="inline-flex flex-none items-center gap-1 h-6 px-2 rounded-full border border-border-muted text-text-muted text-xs font-semibold"
+                >
+                  <span className="hidden md:inline">loop</span>
                   <Repeat size={12} />
                 </span>
               }
               meta={selectedPlaylist.description}
-              actionLabel="Add from library"
+              actionLabel="Add content"
               actionIcon={Plus}
               onAction={() => setAddContentOpen(true)}
-              sectionLabel="Content"
-              sectionMeta={
-                selectedPlaylist.contentItems.length > 0
-                  ? `${pluralizeCount(visibleSlots.length, "item")}${
-                      slotFilterType === "all" ? " · drag to reorder" : ""
-                    }`
-                  : null
+              headerDivider
+              actionInToolbar={shownItems.length > 0}
+              titleExtra={
+                shownItems.length > 0 &&
+                (orderDirty ? (
+                  <>
+                    <span
+                      className={`hidden md:inline ml-2 whitespace-nowrap text-xs ${orderError ? "text-accent-red" : "text-accent-amber"}`}
+                    >
+                      {orderError ? "Couldn't save the order" : "Unsaved order"}
+                    </span>
+                    {/* mobile: compact Discard / Save at the right end of the title row */}
+                    <div className="md:hidden ml-auto flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={handleDiscardOrder}
+                        disabled={savingOrder}
+                        title="Discard order changes"
+                        aria-label="Discard order changes"
+                        className="w-8 h-8 rounded-lg border border-border-muted text-text-muted hover:bg-bg-hover flex items-center justify-center disabled:opacity-40"
+                      >
+                        <X size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveOrder}
+                        disabled={savingOrder}
+                        title="Save order"
+                        className="h-8 px-3 rounded-lg bg-[#1f6feb] border border-accent-blue text-white text-sm font-semibold flex items-center gap-1.5 disabled:opacity-40"
+                      >
+                        <Check size={14} />
+                        Save
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <span className="ml-auto md:ml-2 whitespace-nowrap text-text-muted text-xs">
+                    {pluralizeCount(visibleSlots.length, "item")}
+                    {slotFilterType === "all" && (
+                      <>
+                        <span className="hidden md:inline"> · drag to reorder</span>
+                        <span className="md:hidden"> · use ‹ › to reorder</span>
+                      </>
+                    )}
+                  </span>
+                ))
+              }
+              headerExtra={
+                orderDirty && (
+                  <div className="hidden md:flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDiscardOrder}
+                      disabled={savingOrder}
+                      className="h-10 px-4 rounded-lg border border-border-muted text-text-muted hover:text-text-primary hover:bg-bg-hover text-sm font-semibold transition-colors disabled:opacity-40"
+                    >
+                      Discard
+                    </button>
+                    <Button icon={Check} onClick={handleSaveOrder} disabled={savingOrder}>
+                      {savingOrder ? "Saving…" : "Save order"}
+                    </Button>
+                  </div>
+                )
               }
             >
-              {selectedPlaylist.contentItems.length > 0 && (
+              {shownItems.length > 0 && (
                 <ContentToolbar
                   checkedCount={checkedSlotIds.size}
                   totalCount={visibleSlots.length}
@@ -336,12 +432,20 @@ function Playlists() {
                   onFilterChange={setSlotFilterType}
                   showSort={false}
                   divider={false}
-                  className="pr-4"
-                />
+                  className="lg:pr-4"
+                >
+                  {/* From md up the Add content action lives here, right of the
+                      filter; below md it's DetailPane's bottom bar. */}
+                  <div className="hidden md:block">
+                    <Button icon={Plus} onClick={() => setAddContentOpen(true)}>
+                      Add content
+                    </Button>
+                  </div>
+                </ContentToolbar>
               )}
 
-              <ScrollBox className="flex-1 pr-4 pt-2">
-                {selectedPlaylist.contentItems.length === 0 ? (
+              <ScrollBox className="flex-1 lg:pr-4 pt-2">
+                {shownItems.length === 0 ? (
                   <EmptyState
                     title="This playlist has no content yet"
                     description="Add items from your library. They play in the order you add them, and you can drag them into a new order later."
@@ -371,6 +475,14 @@ function Playlists() {
                             e.preventDefault();
                             setDragOverIndex(index);
                           }}
+                          onMoveEarlier={
+                            canDrag && index > 0 ? () => handleReorder(index, index - 1) : undefined
+                          }
+                          onMoveLater={
+                            canDrag && index < shownItems.length - 1
+                              ? () => handleReorder(index, index + 1)
+                              : undefined
+                          }
                           onDrop={() => canDrag && handleDrop(index)}
                           onDragEnd={() => {
                             setDragIndex(null);
@@ -459,7 +571,14 @@ function Playlists() {
           </>
         }
         items={removeSlotItems}
-        confirmLabel={`Remove ${removeSlotItems.length} item${removeSlotItems.length === 1 ? "" : "s"}`}
+        confirmLabel={
+          <>
+            Remove
+            <span className="hidden sm:inline">
+              {` ${removeSlotItems.length} item${removeSlotItems.length === 1 ? "" : "s"}`}
+            </span>
+          </>
+        }
         onConfirm={() => {
           handleDeleteSlots();
           setSlotDeleteConfirmOpen(false);

@@ -15,6 +15,7 @@ function ContentTile({
   showDuration = true,
   coloredType = false,
   footerActions,
+  footerBar,
   onClick,
   onEditClick,
 }) {
@@ -95,6 +96,7 @@ function ContentTile({
         </span>
         {footerActions && <div className="flex-none">{footerActions}</div>}
       </div>
+      {footerBar}
     </div>
   );
 }
@@ -111,7 +113,8 @@ export default ContentTile;
 // don't collide. `slotIndexActive` turns that badge blue (e.g. while the
 // tile is checked for bulk selection). `footerActions` (optional) renders a node (e.g. an
 // ActionMenu) pinned top-right of the name/type-badge footer, for
-// per-item actions. `onClick` (optional) fires for a click anywhere on
+// per-item actions. `footerBar` (optional) renders a full-width node under
+// the footer row (e.g. PlaylistSlotTile's mobile move buttons). `onClick` (optional) fires for a click anywhere on
 // the tile (thumbnail or footer).
 // Used by: pages/Content.jsx (via SelectableContentTile), and
 // pages/Playlists.jsx indirectly via components/ContentPickerModal.jsx,

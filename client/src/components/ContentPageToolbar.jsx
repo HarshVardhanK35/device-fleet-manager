@@ -21,7 +21,7 @@ const plural = (n) => (n === 1 ? "item" : "items");
 // Destructive button that stays readable when disabled (about 5:1 label
 // contrast) so users can see the action exists before selecting anything.
 const DELETE_CLASS =
-  "inline-flex items-center justify-center gap-2 h-11 md:h-9 px-3.5 rounded-md border border-[#b62324] text-[#ff7b72] text-sm font-semibold whitespace-nowrap transition-colors hover:bg-[#2a1418] hover:border-[#f85149] active:bg-[#3d1a1f] disabled:text-[#c26d68] disabled:border-[#5c2629] disabled:cursor-not-allowed disabled:hover:bg-transparent";
+  "inline-flex items-center justify-center gap-2 flex-none h-11 w-11 md:w-auto md:h-9 md:px-3.5 rounded-md border border-[#b62324] text-[#ff7b72] text-sm font-semibold whitespace-nowrap transition-colors hover:bg-[#2a1418] hover:border-[#f85149] active:bg-[#3d1a1f] disabled:text-[#c26d68] disabled:border-[#5c2629] disabled:cursor-not-allowed disabled:hover:bg-transparent";
 
 function TypeChips({ counts, value, disabled, onChange }) {
   return (
@@ -83,6 +83,7 @@ function ContentPageToolbar({
   onFilterChange,
   sortValue,
   onSortChange,
+  mobileSearch,
   children,
 }) {
   const [sortOpen, setSortOpen] = useState(false);
@@ -126,11 +127,18 @@ function ContentPageToolbar({
           onClick={onDelete}
           disabled={checkedCount === 0}
           title={checkedCount ? `Delete ${checkedCount} selected ${plural(checkedCount)}` : "Select items to delete"}
+          aria-label="Delete"
           className={DELETE_CLASS}
         >
           <Trash2 size={16} />
-          {checkedCount ? `Delete (${checkedCount})` : "Delete"}
+          {/* icon-only below md (the tooltip names it); text from md up */}
+          <span className="hidden md:inline">
+            {checkedCount ? `Delete (${checkedCount})` : "Delete"}
+          </span>
         </button>
+        {mobileSearch && (
+          <div className="md:hidden flex-1 min-w-0 flex justify-end">{mobileSearch}</div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 min-w-0 md:col-span-2 md:row-start-2 lg:col-auto lg:row-auto">
@@ -151,6 +159,7 @@ function ContentPageToolbar({
           onOpenChange={setSortOpen}
           disabled={empty}
           touchSize
+          align="end"
         />
       </div>
 

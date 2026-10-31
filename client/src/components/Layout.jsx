@@ -39,8 +39,8 @@ function Layout({ children }) {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <header className="bg-bg-panel border-b border-border-muted w-full flex items-center gap-6 pl-5 pr-4 md:pr-5 h-14 flex-shrink-0">
+    <div className="fixed inset-0 flex flex-col overflow-hidden">
+      <header className="relative bg-bg-panel border-b border-border-muted w-full flex items-center gap-6 pl-5 pr-4 md:pr-5 h-14 flex-shrink-0">
         <button
           type="button"
           onClick={() => setMobileMenuOpen((open) => !open)}
@@ -68,7 +68,7 @@ function Layout({ children }) {
           </span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex items-center gap-2">
           <span className="w-8 h-8 rounded-lg bg-accent-blue flex items-center justify-center">
             <Monitor size={18} className="text-white" />
           </span>

@@ -18,6 +18,7 @@ function StyledSelect({
   matchTriggerWidth = false,
   disabled = false,
   touchSize = false,
+  align = "start",
 }) {
   const roundedClass =
     roundedSide === "left"
@@ -103,7 +104,7 @@ function StyledSelect({
         <Select.Content
           position="popper"
           side="bottom"
-          align="start"
+          align={align}
           sideOffset={4}
           // Fixed to the bottom (no auto-flip-to-top on limited space) so it
           // never ends up covering fields ABOVE the trigger — instead, the
@@ -195,6 +196,8 @@ export default StyledSelect;
 // ancestor's fixed on-screen viewport, not real empty space below the
 // trigger, and was clipping the list much shorter than the room actually
 // available in a settings panel).
+// `align` (optional, "start" default | "end") — which trigger edge the
+// dropdown lines up with; "end" for a trigger at the right edge of the screen.
 // Used by: components/ContentFilterSortBar.jsx,
 // components/DashboardAttentionPanel.jsx, apps/AppsPickerModal.jsx,
 // apps/appModals/weather-modal.jsx, apps/appModals/clock-modal.jsx.

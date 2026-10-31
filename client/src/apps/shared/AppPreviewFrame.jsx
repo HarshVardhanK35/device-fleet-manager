@@ -101,6 +101,7 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config, fullsc
   }, [config, appListening]);
 
   const { aspect, maxWidth } = PREVIEW_SIZES[size];
+  const [aw, ah] = aspect.split("/").map(Number);
 
   // A bundle has nothing to hand the iframe until it's fetched+unzipped; a
   // dev URL can mount the iframe immediately.
@@ -121,12 +122,16 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config, fullsc
           aspect-ratio) instead of width — otherwise a very wide box just
           grows even taller at a fixed aspect ratio and pushes its own
           bottom content (e.g. the RSS ticker strip) below the visible
-          area instead of actually fitting on screen. */}
+          area instead of actually fitting on screen.
+          Below lg the settings stack UNDER the preview, so its height is
+          capped (36% of the screen height, width follows the aspect ratio) —
+          otherwise a tall Mobile preview or a wide Desktop one fills the
+          screen and pushes every setting out of reach. */}
       <div
         className={`@container relative overflow-hidden border border-border-muted mx-auto transition-[width,height,max-width,aspect-ratio] duration-300 ease-in-out ${
-          fullscreen ? "h-full w-auto max-w-full" : "w-full"
+          fullscreen ? "h-full w-auto max-w-full" : "w-[min(100%,calc(36dvh*var(--ratio)))] lg:w-full"
         }`}
-        style={{ aspectRatio: aspect }}
+        style={{ aspectRatio: aspect, "--ratio": aw / ah }}
       >
         {canMountIframe && (
           <iframe
