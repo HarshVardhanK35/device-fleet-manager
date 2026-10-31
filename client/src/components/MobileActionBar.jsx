@@ -16,5 +16,5 @@ export default MobileActionBar;
 // DetailPane-only. Pass whatever trigger you need as `children` (a plain
 // Button, or an ActionMenu trigger button for a tap-to-open-options case
 // like the Content page's upload button).
-// Used by: components/DetailPane.jsx, components/UploadSplitButton.jsx,
+// Used by: components/DetailPane.jsx, components/ContentActionButtons.jsx,
 // pages/Playlists.jsx (left pane's "Create" action).

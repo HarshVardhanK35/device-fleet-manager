@@ -14,11 +14,11 @@ import WeatherSettingsScreen from "../apps/appModals/weather-modal.jsx";
 import ClockSettingsScreen from "../apps/appModals/clock-modal.jsx";
 import RssSettingsScreen from "../apps/appModals/rss-modal.jsx";
 import AnnouncementsSettingsScreen from "../apps/appModals/announcements-modal.jsx";
-import ContentToolbar from "../components/ContentToolbar.jsx";
+import ContentPageToolbar from "../components/ContentPageToolbar.jsx";
 import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/UploadProgressModal.jsx";
 import ContentSearchInput from "../components/ContentSearchInput.jsx";
-import UploadSplitButton from "../components/UploadSplitButton.jsx";
+import ContentActionButtons from "../components/ContentActionButtons.jsx";
 import ContentEmptyState from "../components/ContentEmptyState.jsx";
 import SelectableContentTile from "../components/SelectableContentTile.jsx";
 import SkeletonGrid from "../components/SkeletonGrid.jsx";
@@ -417,22 +417,22 @@ function Content() {
         </div>
 
         {/* row 2: select all / delete (left), upload / filter / sort (right) */}
-        <ContentToolbar
+        <ContentPageToolbar
           checkedCount={checkedIds.size}
           totalCount={visibleContent.length}
           onToggleAll={toggleSelectAll}
-          onAction={() => setDeleteConfirmOpen(true)}
-          filterCounts={counts}
+          onDelete={() => setDeleteConfirmOpen(true)}
+          counts={counts}
           filterValue={filterType}
           onFilterChange={setFilterType}
           sortValue={sortBy}
           onSortChange={setSortBy}
         >
-          <UploadSplitButton
+          <ContentActionButtons
             onUploadClick={openFilePicker}
-            onAddAppClick={() => setAppsPickerOpen(true)}
+            onCreateAppClick={() => setAppsPickerOpen(true)}
           />
-        </ContentToolbar>
+        </ContentPageToolbar>
       </div>
 
       <div className="flex gap-4 flex-1 min-h-0">
@@ -451,7 +451,9 @@ function Content() {
                 No content matches your search or filter.
               </p>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div
+                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 ${inspectedItem ? "" : "xl:grid-cols-7"}`}
+              >
                 {visibleContent.map((item) => (
                   <SelectableContentTile
                     key={item._id}
@@ -587,6 +589,7 @@ function Content() {
         onOpenChange={appModalOpenChange(setAnnouncementsSettingsOpen)}
         existingContent={announcementsEditTarget}
         onSaved={fetchContent}
+        library={content}
       />
     </div>
   );

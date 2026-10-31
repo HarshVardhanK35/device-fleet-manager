@@ -18,6 +18,10 @@ const DURATION_PRESETS = [5, 10, 15, 30, 60];
 // width for the number input + unit badge instead of cramming all 6 items
 // into one row.
 const DURATION_PRESETS_COMPACT = [10, 15, 30];
+// App types whose duration is derived from their own settings, not edited here.
+const AUTO_DURATION_APPS = ["rss", "announcements"];
+// ...except Status List, a static board whose duration is user-set.
+const MANUAL_DURATION_TEMPLATES = ["status-list"];
 const CUSTOM_UNIT_LABELS = { s: "sec", min: "min", h: "hrs" };
 
 // Nicest unit to show an existing saved value in on open — whole hours if
@@ -92,12 +96,17 @@ function ContentDetailsPanel({ item, onClose, onSave, onDelete, onOpenAppSetting
   }, [customMode]);
 
   const meta = getTypeMeta(item.type);
-  // Media RSS computes its own duration from its own settings (item count ×
-  // per-item dwell time, see rss-modal.jsx's computeRssDuration) — editing
-  // it here would just get silently overwritten the next time that app's
-  // settings are saved, so this panel shows it read-only instead of letting
-  // it drift out of sync with the real rotation time.
-  const isAutoDuration = item.type === "app" && item.configBlob?.appType === "rss";
+  // Media RSS, Rotating Notices and Event Cards compute their own duration
+  // from their own settings (RSS: item count × dwell time; the other two: the
+  // sum of their boards / cards). Status List is a static board, so its
+  // duration is the user's to set here. Editing a computed one here
+  // would just get silently overwritten the next time that app's settings
+  // are saved, so this panel shows it read-only instead of letting it drift
+  // out of sync with the real rotation time.
+  const isAutoDuration =
+    item.type === "app" &&
+    AUTO_DURATION_APPS.includes(item.configBlob?.appType) &&
+    !MANUAL_DURATION_TEMPLATES.includes(item.configBlob?.template);
   const showDuration = item.type !== "video" && !isAutoDuration;
 
   function handleSave() {
@@ -259,7 +268,7 @@ function ContentDetailsPanel({ item, onClose, onSave, onDelete, onOpenAppSetting
                   {formatDurationHuman(Math.round((item.durationInMillis || 0) / 1000))}
                 </span>
                 <p className="text-text-muted text-xs mt-1 mb-0">
-                  Auto-calculated from this app&apos;s layout/speed/item count.
+                  Auto-calculated from this app&apos;s settings.
                 </p>
               </div>
             </div>

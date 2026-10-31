@@ -77,17 +77,15 @@ function ContentTile({
         {children}
       </div>
 
-      <div className="relative flex flex-col gap-1.5 px-2.5 pt-2 pb-2.5">
-        {footerActions && (
-          <div className="absolute top-1 right-1.5">{footerActions}</div>
-        )}
+      <div className="flex items-center gap-2 px-2.5 py-2.5">
         <p
-          className={`font-bold ${textSize} leading-[1.35] ${footerActions ? "pr-6" : ""} text-text-primary whitespace-nowrap overflow-hidden text-ellipsis`}
+          title={item.name}
+          className={`flex-1 min-w-0 font-bold ${textSize} leading-[1.35] text-text-primary whitespace-nowrap overflow-hidden text-ellipsis`}
         >
           {item.name}
         </p>
         <span
-          className={`inline-flex items-center justify-center w-fit text-[10px] font-bold px-[6px] py-[2px] rounded-[5px] ${
+          className={`flex-none inline-flex items-center justify-center text-[10px] font-bold px-[6px] py-[2px] rounded-[5px] ${
             coloredType
               ? `${meta.textClass} ${meta.bgClass}`
               : "text-[rgb(214,220,227)] bg-[rgb(39,45,55)]"
@@ -95,6 +93,7 @@ function ContentTile({
         >
           {item.type.toUpperCase()}
         </span>
+        {footerActions && <div className="flex-none">{footerActions}</div>}
       </div>
     </div>
   );
@@ -103,7 +102,8 @@ function ContentTile({
 export default ContentTile;
 
 // The reusable content-item tile: thumbnail/app placeholder, duration
-// badge, name, and type badge. `size` is "lg" (218px, default), "sm"
+// badge, and a footer row with the name (left, tooltip when truncated) and
+// the type badge (right). `size` is "lg" (218px, default), "sm"
 // (140px), or "fluid" (fills parent width — used in grids/modals).
 // `slotIndex` (optional) renders a position-number badge top-left on the
 // thumbnail (e.g. "3"), for playlist-slot context — pair with a

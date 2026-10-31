@@ -43,7 +43,8 @@ export function useAppSettingsForm({
   // Most apps show one static screen, so a flat default duration is fine.
   // An app whose actual on-screen time varies with its own settings (e.g.
   // RSS: item count × per-item dwell time) passes this to compute a real
-  // value instead — see rss-modal.jsx.
+  // value instead — see rss-modal.jsx. It also receives the saved tile, so an
+  // app whose duration the user edits in the Content pane can keep it.
   computeDuration,
 }) {
   // `base` is the last-saved snapshot; comparing `form` against it is what
@@ -74,7 +75,7 @@ export function useAppSettingsForm({
       const payload = {
         name: appName,
         type: "app",
-        durationInMillis: computeDuration ? computeDuration(form) : APP_DEFAULT_DURATION_MS,
+        durationInMillis: computeDuration ? computeDuration(form, existingContent) : APP_DEFAULT_DURATION_MS,
         configBlob: { ...form, appType },
       };
 

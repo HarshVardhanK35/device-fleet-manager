@@ -15,8 +15,11 @@ import {
   STATUS_LIST_INITIAL_FORM,
   computeStatusListDuration,
 } from "./announcements/status-list/statusListConfig.js";
-// EventCardsFields: scaffolded, not integrated yet — add to TEMPLATES below
-// once its own integration pass happens.
+import EventCardsFields from "./announcements/event-cards/EventCardsSettings.jsx";
+import {
+  EVENT_CARDS_INITIAL_FORM,
+  computeEventCardsDuration,
+} from "./announcements/event-cards/eventCardsConfig.js";
 
 const ANNOUNCEMENTS_APP_URL = resolveAppUrlByName("Announcements");
 
@@ -37,7 +40,14 @@ const TEMPLATES = {
     computeDuration: computeStatusListDuration,
     Fields: StatusListFields,
   },
-  "event-cards": { name: "Event/Celebration Cards", icon: PartyPopper, available: false },
+  "event-cards": {
+    name: "Event/Celebration Cards",
+    icon: PartyPopper,
+    available: true,
+    initialForm: EVENT_CARDS_INITIAL_FORM,
+    computeDuration: computeEventCardsDuration,
+    Fields: EventCardsFields,
+  },
 };
 const TEMPLATE_ORDER = ["rotating-notices", "status-list", "event-cards"];
 
@@ -134,6 +144,7 @@ function AnnouncementsBody({
   onOpenChange,
   onSaved,
   existingContent,
+  library,
 }) {
   const { name: defaultAppName, initialForm, computeDuration, Fields } = TEMPLATES[template];
 
@@ -201,6 +212,7 @@ function AnnouncementsBody({
             onDraftChange={setEditorDraft}
             onModalOpenChange={onModalOpenChange}
             purposeLocked={Boolean(contentId)}
+            library={library}
           />
         </>
       )}
@@ -213,7 +225,7 @@ function AnnouncementsBody({
 // template is picked underneath. An already-saved tile reopens straight to
 // its saved template (configBlob.template); a new tile defaults to
 // Rotating Notices, the only template integrated so far.
-function AnnouncementsSettingsScreen({ open, onOpenChange, onSaved, existingContent }) {
+function AnnouncementsSettingsScreen({ open, onOpenChange, onSaved, existingContent, library = [] }) {
   const [template, setTemplate] = useState(
     existingContent?.configBlob?.template ?? "rotating-notices",
   );
@@ -252,6 +264,7 @@ function AnnouncementsSettingsScreen({ open, onOpenChange, onSaved, existingCont
       open={open}
       onOpenChange={onOpenChange}
       existingContent={existingContent}
+      library={library}
       onSaved={() => {
         setSavedHere(true);
         onSaved?.();

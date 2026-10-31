@@ -29,7 +29,7 @@ const CHIP_CLASS = {
 // only the product fields and row contents. `items`/`setForm` are the real
 // form; `onDraftChange` reports what's being typed so the preview can show it.
 function ProductsModal({ layerEl, items, setForm, onClose, onDraftChange, onModalOpenChange, discountsOn }) {
-  const list = useManagedList({
+  const managed = useManagedList({
     listKey: "items",
     items,
     setForm,
@@ -55,6 +55,8 @@ function ProductsModal({ layerEl, items, setForm, onClose, onDraftChange, onModa
     },
     onDraftChange,
   });
+  // The form's Cancel button closes the modal too — back to the settings panel.
+  const list = { ...managed, cancelEdit: () => { managed.cancelEdit(); onClose(); } };
 
   const { draft, patch, focusRef } = list;
   const out = draft.status === "out";

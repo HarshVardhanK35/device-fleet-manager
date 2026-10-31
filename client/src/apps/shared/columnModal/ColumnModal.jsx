@@ -167,10 +167,34 @@ export function ManagedForm({ list, addLabel, editTitle, limitText, collapsible 
   );
 }
 
+// "Clear all", turning into an inline "Delete all N? Yes / No" — used in a
+// list header and in a settings card's header.
+export function ClearAllControl({ list, count }) {
+  const { confirmClear, setConfirmClear, askClear, clearAll } = list;
+  return confirmClear ? (
+    <span className="flex items-center gap-2">
+      <b className="text-[13px] font-semibold text-accent-red">Delete all {count}?</b>
+      <button type="button" autoFocus onClick={clearAll} className={CONFIRM_YES}>
+        Yes
+      </button>
+      <button type="button" onClick={() => setConfirmClear(false)} className={CONFIRM_NO}>
+        No
+      </button>
+    </span>
+  ) : (
+    <button
+      type="button"
+      onClick={askClear}
+      className="h-10 lg:h-7 px-2 rounded-md text-[13px] font-semibold normal-case tracking-normal text-text-muted hover:bg-accent-red/10 hover:text-accent-red transition-colors"
+    >
+      Clear all
+    </button>
+  );
+}
+
 // Divider + "Added …" header (count, or Clear all with its inline confirm) +
 // either the empty state or the list of rows (`children`).
 export function ListSection({ list, title, count, EmptyIcon, emptyText, children }) {
-  const { confirmClear, setConfirmClear, askClear, clearAll } = list;
   return (
     <>
       <div className="flex-none h-px mx-3 min-[480px]:mx-4 bg-border-muted" />
@@ -179,29 +203,7 @@ export function ListSection({ list, title, count, EmptyIcon, emptyText, children
           {title} ({count})
         </span>
         <span className="flex items-center gap-2 normal-case tracking-normal">
-          {confirmClear ? (
-            <>
-              <b className="text-[13px] font-semibold text-accent-red">Delete all {count}?</b>
-              <button type="button" autoFocus onClick={clearAll} className={CONFIRM_YES}>
-                Yes
-              </button>
-              <button type="button" onClick={() => setConfirmClear(false)} className={CONFIRM_NO}>
-                No
-              </button>
-            </>
-          ) : (
-            <>
-              {count > 0 && (
-                <button
-                  type="button"
-                  onClick={askClear}
-                  className="h-10 lg:h-7 px-2 rounded-md text-[13px] font-semibold text-text-muted hover:bg-accent-red/10 hover:text-accent-red transition-colors"
-                >
-                  Clear all
-                </button>
-              )}
-            </>
-          )}
+          {count > 0 && <ClearAllControl list={list} count={count} />}
         </span>
       </div>
 

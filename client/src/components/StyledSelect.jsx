@@ -17,6 +17,7 @@ function StyledSelect({
   collapseOnMobile = true,
   matchTriggerWidth = false,
   disabled = false,
+  touchSize = false,
 }) {
   const roundedClass =
     roundedSide === "left"
@@ -24,7 +25,14 @@ function StyledSelect({
       : roundedSide === "right"
         ? "rounded-r-lg rounded-l-none border-l-0"
         : "rounded-lg";
-  const widthClass = collapseOnMobile ? "w-9 md:w-auto md:min-w-[140px]" : "w-full min-w-0";
+  // touchSize: 44px tall (and a 44px square when collapsed) below md, 36px
+  // from md up — the Content toolbar matches its sort to the chips beside it.
+  const heightClass = touchSize ? "h-11 md:h-9" : "h-9";
+  const widthClass = collapseOnMobile
+    ? touchSize
+      ? "w-11 md:w-auto md:min-w-[170px]"
+      : "w-9 md:w-auto md:min-w-[140px]"
+    : "w-full min-w-0";
   const padClass = collapseOnMobile ? "px-0 md:px-3" : "px-3";
   const justifyClass = collapseOnMobile
     ? "justify-center md:justify-between"
@@ -70,7 +78,7 @@ function StyledSelect({
       <Select.Trigger
         ref={triggerRef}
         aria-label={label}
-        className={`group inline-flex items-center ${justifyClass} gap-2 ${bgClassName} border border-border-muted text-text-primary text-sm ${widthClass} ${padClass} h-9 outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass} ${
+        className={`group inline-flex items-center ${justifyClass} gap-2 ${bgClassName} border border-border-muted text-text-primary text-sm ${widthClass} ${padClass} ${heightClass} outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass} ${
           disabled
             ? "opacity-45 cursor-not-allowed"
             : "hover:bg-bg-hover hover:border-border-hover"
@@ -140,7 +148,7 @@ export default StyledSelect;
 
 // Shared dark-themed Radix Select dropdown — NOT a native <select>, since a
 // native select's expanded option list can't be restyled across browsers.
-// Collapses to an icon-only 36px square below `md`; the dropdown content
+// Collapses to an icon-only 36px square below `md` (44px with `touchSize`); the dropdown content
 // itself is unaffected, still showing full option labels. `options` is
 // [{ value, label }]; `labelFor(opt)` (optional) overrides the displayed
 // label per-item (e.g. to append a count). `open`/`onOpenChange` (optional)

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 import ScrollBox from "./ScrollBox.jsx";
-import ActionMenu from "./ActionMenu.jsx";
 
 import { useAuth } from "../context/useAuth.js";
 import { getInitials } from "../utils/getInitials.js";
@@ -16,8 +15,6 @@ import {
   PlaySquare,
   User,
   LogOut,
-  Menu,
-  X,
 } from "lucide-react";
 
 const navItems = [
@@ -43,14 +40,32 @@ function Layout({ children }) {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <header className="bg-bg-panel border-b border-border-muted w-full flex items-center gap-6 px-5 h-14 flex-shrink-0">
+      <header className="bg-bg-panel border-b border-border-muted w-full flex items-center gap-6 pl-5 pr-4 md:pr-5 h-14 flex-shrink-0">
         <button
           type="button"
-          onClick={() => setMobileMenuOpen(true)}
-          aria-label="Open navigation menu"
-          className="md:hidden w-9 h-9 rounded-md flex items-center justify-center text-text-muted hover:bg-bg-hover hover:text-text-primary transition-colors"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileMenuOpen}
+          title={mobileMenuOpen ? "Close" : "Menu"}
+          className={`md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-muted border border-transparent transition-colors ${
+            mobileMenuOpen
+              ? "hover:text-accent-red hover:bg-accent-red/10 hover:border-accent-red/40"
+              : "hover:bg-bg-hover hover:text-text-primary"
+          }`}
         >
-          <Menu size={22} />
+          {/* Three bars that morph into an X while the menu is open. */}
+          <span className="relative block w-[18px] h-[14px]">
+            {[
+              mobileMenuOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-0",
+              mobileMenuOpen ? "top-1/2 -translate-y-1/2 opacity-0" : "top-1/2 -translate-y-1/2",
+              mobileMenuOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "top-full -translate-y-full",
+            ].map((pos, i) => (
+              <span
+                key={i}
+                className={`absolute left-0 w-full h-[2px] rounded-full bg-current transition-all duration-300 ease-in-out ${pos}`}
+              />
+            ))}
+          </span>
         </button>
 
         <div className="flex items-center gap-2">
@@ -67,10 +82,10 @@ function Layout({ children }) {
               to={item.to}
               end={item.to === "/"}
               className={({ isActive }) =>
-                `flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                `flex items-center gap-1.5 text-sm font-medium origin-center transition-all duration-200 hover:scale-110 ${
                   isActive
-                    ? "text-text-primary"
-                    : "text-text-muted hover:text-text-primary"
+                    ? "text-accent-blue scale-110"
+                    : "text-text-muted hover:text-accent-blue"
                 }`
               }
             >
@@ -80,47 +95,31 @@ function Layout({ children }) {
           ))}
         </nav>
 
-        <ActionMenu
-          label="User menu"
-          align="end"
-          trigger={
-            <button
-              type="button"
-              className="ml-auto w-9 h-9 rounded-full bg-bg-hover border border-border-muted flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border-hover transition-colors outline-none focus-visible:outline-2 focus-visible:outline-accent-blue focus-visible:outline-offset-2"
-            >
-              {initials ? (
-                <span className="text-xs font-bold text-text-primary">
-                  {initials}
-                </span>
-              ) : (
-                <User size={16} />
-              )}
-            </button>
-          }
-          items={[
-            {
-              label: "Logout",
-              icon: LogOut,
-              variant: "danger",
-              onClick: handleLogout,
-            },
-          ]}
-        />
+        <div className="ml-auto flex items-center gap-2">
+          <span
+            title={userName}
+            className="w-9 h-9 rounded-full bg-bg-hover border border-border-muted flex items-center justify-center text-text-muted cursor-default"
+          >
+            {initials ? (
+              <span className="text-xs font-bold text-text-primary">{initials}</span>
+            ) : (
+              <User size={16} />
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Logout"
+            aria-label="Logout"
+            className="hidden md:flex w-9 h-9 rounded-lg items-center justify-center text-accent-red hover:bg-accent-red/10 transition-colors"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </header>
 
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 top-14 z-50 bg-bg-primary flex flex-col">
-          <div className="flex justify-end p-4 pb-0">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(false)}
-              title="Close menu"
-              aria-label="Close navigation menu"
-              className="w-9 h-9 rounded-md flex items-center justify-center text-text-muted hover:bg-bg-hover hover:text-text-primary transition-colors"
-            >
-              <X size={22} />
-            </button>
-          </div>
           <nav className="flex flex-col p-4 gap-1">
             {navItems.map((item) => (
               <NavLink
@@ -129,15 +128,23 @@ function Layout({ children }) {
                 end={item.to === "/"}
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-3 rounded-lg text-base font-medium transition-colors ${
+                  `group flex items-center px-3 py-3 rounded-lg text-base font-medium transition-colors ${
                     isActive
-                      ? "bg-bg-hover text-text-primary"
-                      : "text-text-muted hover:text-text-primary hover:bg-bg-hover"
+                      ? "bg-bg-hover text-accent-blue"
+                      : "text-text-muted hover:text-accent-blue hover:bg-bg-hover"
                   }`
                 }
               >
-                <item.icon size={18} />
-                {item.label}
+                {({ isActive }) => (
+                  <span
+                    className={`flex items-center gap-3 origin-center transition-transform duration-200 group-hover:scale-110 ${
+                      isActive ? "scale-110" : ""
+                    }`}
+                  >
+                    <item.icon size={18} />
+                    {item.label}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -182,7 +189,7 @@ function Layout({ children }) {
 export default Layout;
 
 // App shell wrapping every authenticated page: top navbar (logo + nav
-// links + user-avatar dropdown with Logout) instead of the earlier
+// links + user avatar with a name tooltip and a Logout button) instead of the earlier
 // collapsible sidebar — matches the Content Library mock's top-nav
 // pattern. No search bar here — pages that need search (e.g. Content) have
 // their own, scoped to what they're actually searching. Page content

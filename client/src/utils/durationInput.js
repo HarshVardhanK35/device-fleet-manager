@@ -44,8 +44,8 @@ export function isDurationInRange(seconds) {
   );
 }
 
-// "90" -> "1 min 30 s (90 s)". Drops zero-value components (e.g. 60 ->
-// "1 min (60 s)", not "1 min 0 s (60 s)").
+// "90" -> "1 min 30 s". Drops zero-value components (e.g. 60 -> "1 min",
+// not "1 min 0 s").
 export function formatDurationHuman(totalSeconds) {
   const whole = Math.round(totalSeconds);
   const h = Math.floor(whole / 3600);
@@ -57,7 +57,7 @@ export function formatDurationHuman(totalSeconds) {
   if (m) parts.push(`${m} min`);
   if (s || parts.length === 0) parts.push(`${s} s`);
 
-  return `${parts.join(" ")} (${whole} s)`;
+  return parts.join(" ");
 }
 
 // Seconds -> the display string for a given unit, e.g. (90, "min") -> "1.5".
