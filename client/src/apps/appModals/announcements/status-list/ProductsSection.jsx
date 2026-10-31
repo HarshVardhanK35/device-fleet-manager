@@ -63,7 +63,7 @@ function ProductsSection({ form, setForm, layerContainer, onDraftChange, onModal
           className="flex items-center justify-center gap-2 h-10 text-sm font-semibold text-text-primary bg-bg-primary border border-border-muted hover:border-border-hover hover:bg-bg-hover rounded-lg px-3 transition-colors"
         >
           <List size={16} />
-          Manage products
+          {items.length === 0 ? "Add product" : "Manage products"}
         </button>
 
         <div className="flex flex-col gap-1.5">

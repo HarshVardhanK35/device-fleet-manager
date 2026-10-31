@@ -138,7 +138,9 @@ export const EVENT_CARDS_INITIAL_FORM = {
   template: "event-cards",
   theme: "dark",
   cards: [],
-  effects: Object.fromEntries(ALL_EFFECT_KEYS.map((k) => [k, true])),
+  // Everything on except Larger headline — it makes a headline 15% bigger, which
+  // wraps even a two-word name on a phone (the design ships it off by default).
+  effects: Object.fromEntries(ALL_EFFECT_KEYS.map((k) => [k, k !== "bigHead"])),
   // Explicit setting, never read from the OS (see Rotating Notices).
   reduceMotion: false,
 };

@@ -40,6 +40,8 @@ function ContentFilterSortBar({
           open={openMenu === "filter"}
           onOpenChange={(open) => setOpenMenu(open ? "filter" : null)}
           roundedSide={showSort ? "left" : "full"}
+          // The last control sits at the right edge — open its list leftward.
+          align={showSort ? "start" : "end"}
           portalContainer={portalContainer}
         />
       )}
@@ -53,6 +55,7 @@ function ContentFilterSortBar({
           open={openMenu === "sort"}
           onOpenChange={(open) => setOpenMenu(open ? "sort" : null)}
           roundedSide={showFilter ? "right" : "full"}
+          align="end"
           portalContainer={portalContainer}
         />
       )}

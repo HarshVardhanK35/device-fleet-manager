@@ -82,13 +82,13 @@ function AssignmentCard({
         {assignment.playlistId?.name ?? "Unknown playlist"}
       </p>
 
-      <div className="flex items-center gap-4 mb-3">
+      <div className="flex items-center gap-2 sm:gap-4 mb-3">
         <div>
           <p className="text-text-muted text-[10px] font-semibold uppercase tracking-wide">
             Begins
           </p>
           <p className="text-text-primary font-bold">{formatClock(begin)}</p>
-          <p className="text-text-muted text-xs">{formatDateLabel(begin)}</p>
+          <p className="text-text-muted text-xs whitespace-nowrap">{formatDateLabel(begin)}</p>
         </div>
         <ArrowRight size={16} className="text-text-muted mt-3 shrink-0" />
         <div>
@@ -96,7 +96,7 @@ function AssignmentCard({
             Ends
           </p>
           <p className="text-text-primary font-bold">{formatClock(end)}</p>
-          <p className="text-text-muted text-xs">{formatDateLabel(end)}</p>
+          <p className="text-text-muted text-xs whitespace-nowrap">{formatDateLabel(end)}</p>
         </div>
       </div>
 

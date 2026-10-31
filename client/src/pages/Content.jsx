@@ -371,7 +371,7 @@ function Content() {
     // ScrollArea viewport doesn't stretch its content to 100% height, so a
     // percentage height on this root wouldn't resolve — needed so the nested
     // ScrollBox below can scroll just the grid, not the whole page.
-    <div className="max-w-7xl mx-auto h-[calc(100vh-88px)] flex flex-col">
+    <div className="max-w-7xl mx-auto h-[calc(100dvh-88px)] flex flex-col">
       <input
         ref={fileInputRef}
         type="file"
@@ -411,6 +411,7 @@ function Content() {
           </div>
 
           <ContentSearchInput
+            only="desktop"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -427,6 +428,13 @@ function Content() {
           onFilterChange={setFilterType}
           sortValue={sortBy}
           onSortChange={setSortBy}
+          mobileSearch={
+            <ContentSearchInput
+              only="mobile"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          }
         >
           <ContentActionButtons
             onUploadClick={openFilePicker}

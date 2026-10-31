@@ -74,16 +74,16 @@ function RemoveConfirmModal({
             {error && <p className="text-accent-red text-xs m-0">{error}</p>}
           </div>
 
-          <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
+          <div className="flex items-center justify-center sm:justify-end gap-2 px-6 py-4 border-t border-border-muted">
             <GhostButton as={Dialog.Close} size="lg">
               Cancel
             </GhostButton>
             <button
               type="button"
               onClick={onConfirm}
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold transition-[filter]"
+              className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter]"
             >
-              <Icon size={16} />
+              <Icon size={16} className="hidden sm:block" />
               {confirmLabel}
             </button>
           </div>
@@ -105,5 +105,8 @@ export default RemoveConfirmModal;
 // "removed from this list/pairing, but the underlying thing still exists
 // elsewhere" actions. `error` (optional) shows a backend failure message
 // above the footer instead of silently closing on a failed confirm.
+// The confirm button never wraps; the icon hides below `sm` so a long label
+// stays on one centred line (callers can also pass a JSX label that shortens
+// itself on mobile).
 // Used by: pages/Playlists.jsx (remove content from a playlist, bulk),
 // pages/PlayerSlots.jsx (unpair/remove a screen, single).

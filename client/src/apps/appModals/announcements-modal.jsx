@@ -189,7 +189,7 @@ function AnnouncementsBody({
         <AppPreviewFrame
           size={previewSize}
           src={ANNOUNCEMENTS_APP_URL}
-          config={editorDraft ? { ...form, editorDraft } : form}
+          config={editorDraft ? { ...form, editorPreview: true, editorDraft } : { ...form, editorPreview: true }}
           fullscreen={fullPreview}
         />
       )}

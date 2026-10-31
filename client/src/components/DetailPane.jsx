@@ -13,6 +13,9 @@ function DetailPane({
   onBack,
   title,
   badge,
+  titleExtra,
+  headerDivider = false,
+  actionInToolbar = false,
   meta,
   actionLabel,
   actionIcon,
@@ -36,17 +39,18 @@ function DetailPane({
 
       <div className={headerClassName}>
         <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex flex-col gap-1.5">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-text-primary text-lg font-bold m-0">
+          <div className="min-w-0 flex-1 md:flex-none flex flex-col gap-1.5">
+            <div className="flex items-center gap-2.5 flex-nowrap md:flex-wrap">
+              <h2 className="min-w-0 truncate md:overflow-visible md:whitespace-normal text-text-primary text-lg font-bold m-0">
                 {title}
               </h2>
               {badge}
+              {titleExtra}
             </div>
             {meta && <p className="text-text-muted text-sm m-0">{meta}</p>}
           </div>
 
-          {actionLabel && (
+          {actionLabel && !actionInToolbar && (
             <div className="hidden md:block flex-shrink-0">
               <Button icon={actionIcon} onClick={onAction} disabled={actionDisabled}>
                 {actionLabel}
@@ -55,6 +59,10 @@ function DetailPane({
           )}
           {headerExtra && <div className="flex-shrink-0">{headerExtra}</div>}
         </div>
+
+        {headerDivider && !sectionLabel && !sectionMeta && (
+          <div className="mt-4 border-b border-border-muted" />
+        )}
 
         {(sectionLabel || sectionMeta) && (
           <div className="flex items-baseline justify-between gap-3 flex-wrap mt-4 pb-3 border-b border-border-muted">
@@ -99,6 +107,14 @@ export default DetailPane;
 // Design review, the card-wrapped-vs-not split between them was an
 // inconsistency, not a deliberate choice, so all now sit unframed on the
 // page background.
+// `titleExtra` (optional) renders on the title row itself, after the badge —
+// right-aligned on mobile, left (beside the title/badge) from md up, so the
+// action Button stays at the right end. Playlists puts its item count there.
+// `actionInToolbar` (optional) drops the header Button from md up because the
+// page renders the same action inside its toolbar row; the mobile bottom bar
+// still shows it.
+// `headerDivider` (optional) draws the separating line under the header when
+// there is no section-label row to draw it.
 // `headerClassName` (optional) extends the wrapper around BOTH the title/
 // action row and the section-label/meta row — Playlists passes `pr-4`
 // there to match its grid's own scrollbar-gutter inset, so the "Add from

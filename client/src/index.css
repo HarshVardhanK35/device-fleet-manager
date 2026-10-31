@@ -2,6 +2,9 @@
 
 body {
   background-color: var(--color-bg-primary);
+  /* The app shell is fixed to the screen; the page itself should never
+     scroll or rubber-band (that is what dragged the header away on phones). */
+  overscroll-behavior: none;
 }
 
 :root {
