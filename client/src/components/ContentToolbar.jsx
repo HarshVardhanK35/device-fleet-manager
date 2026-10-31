@@ -60,8 +60,7 @@ export default ContentToolbar;
 // bar above a content grid. Left side is a SelectAllBar (bulk-select +
 // destructive action); middle is a ContentFilterSortBar (Filter always,
 // Sort optional via `showSort`); `children` is the right-side action
-// (e.g. UploadSplitButton on the Content page, a plain "Add content"
-// Button on Playlists — these differ enough in shape that they're left as
+// (e.g. a plain "Add content" Button on Playlists — these differ enough in shape that they're left as
 // a slot rather than forced into one rigid prop API).
 // `divider` (default true) controls the bottom border/spacing — Playlists'
 // right pane passes `divider={false}` since DetailPane's own section-label
@@ -70,6 +69,6 @@ export default ContentToolbar;
 // row — Playlists passes `pr-4` there to match the grid's own `pr-4`
 // scrollbar-clearance inset, so the filter button lines up with the tiles
 // below it instead of sitting further right (past the scrollbar gutter).
-// Used by: pages/Content.jsx (full toolbar, showSort default true),
-// pages/Playlists.jsx (right pane, showSort={false} — play order matters
-// there and Sort would conflict with drag-reorder; only Filter applies).
+// Used by: pages/Playlists.jsx (right pane, showSort={false} — play order
+// matters there and Sort would conflict with drag-reorder; only Filter
+// applies). The Content page has its own ContentPageToolbar.jsx.

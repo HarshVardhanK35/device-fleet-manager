@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from "react";
 //                 what to report to the live preview (or null)
 //   normalize(d)  optional rule applied after every field change
 //   collapseOnSubmit  close the (collapsible) form after Add / Save changes
+//   onSubmitted       called after a successful Add / Save changes
 export function useManagedList({
   listKey,
   items,
@@ -31,6 +32,7 @@ export function useManagedList({
   previewDraft,
   normalize = (d) => d,
   collapseOnSubmit = false,
+  onSubmitted,
   onDraftChange,
 }) {
   const [draft, setDraft] = useState(emptyForm);
@@ -121,6 +123,7 @@ export function useManagedList({
     setDraft(emptyForm);
     if (collapseOnSubmit) setFormOpen(false);
     else focusRef.current?.focus();
+    onSubmitted?.();
   }
 
   // Esc: clear-confirm -> delete-confirm -> edit mode. Returns true when it

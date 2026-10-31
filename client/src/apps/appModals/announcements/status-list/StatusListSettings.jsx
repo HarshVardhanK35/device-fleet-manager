@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Type } from "lucide-react";
 
 import SettingsCard from "../../../shared/SettingsCard.jsx";
 import Field from "../../../shared/Field.jsx";
 import SegmentedControl from "../../../shared/SegmentedControl.jsx";
 import ToggleSwitch from "../../../shared/ToggleSwitch.jsx";
-import BackgroundAudioField from "../../../shared/BackgroundAudioField.jsx";
-import StyledSelect from "../../../../components/StyledSelect.jsx";
+import FontCard from "../common/FontCard.jsx";
+import AudioCard from "../common/AudioCard.jsx";
 import ProductsSection from "./ProductsSection.jsx";
 import { PURPOSES, PURPOSE_LABELS, PURPOSE_DEFAULTS } from "./statusListConfig.js";
 import AttentionSection from "./AttentionSection.jsx";
@@ -38,9 +37,6 @@ const PURPOSE_TIPS = {
 
 const LAYOUTS = ["List", "Grid"];
 
-// No audio Content support exists yet (see future-implementations.md).
-const AUDIO_OPTIONS = ["None"];
-
 const TITLE_CAP = 30;
 
 // Just the field layout — no shell, no hook, no preview. Rendered by
@@ -55,8 +51,6 @@ function StatusListFields({
   onModalOpenChange,
   purposeLocked,
 }) {
-  const [audioPlaying, setAudioPlaying] = useState(false);
-  const [audioMuted, setAudioMuted] = useState(false);
   // Coordinates the dropdowns in this panel (font, background audio) —
   // opening one closes the other.
   const [openField, setOpenField] = useState(null);
@@ -153,41 +147,22 @@ function StatusListFields({
 
       <AttentionSection form={form} set={set} />
 
-      <SettingsCard kicker="Font">
-        <Field label="Font family">
-          <StyledSelect
-            value={form.font}
-            onChange={(v) => set("font", v)}
-            options={FONTS.map((f) => ({ value: f, label: f }))}
-            icon={Type}
-            label="Font family"
-            portalContainer={portalContainer}
-            bgClassName="bg-bg-primary"
-            collapseOnMobile={false}
-            matchTriggerWidth
-            open={openField === "font"}
-            onOpenChange={(o) => setOpenField(o ? "font" : null)}
-          />
-        </Field>
-      </SettingsCard>
+      <FontCard
+        fonts={FONTS}
+        value={form.font}
+        onChange={(v) => set("font", v)}
+        portalContainer={portalContainer}
+        open={openField === "font"}
+        onOpenChange={(o) => setOpenField(o ? "font" : null)}
+      />
 
-      <SettingsCard kicker="Background audio">
-        <BackgroundAudioField
-          options={AUDIO_OPTIONS}
-          value={form.audio}
-          onChange={(v) => {
-            set("audio", v);
-            setAudioPlaying(false);
-          }}
-          playing={audioPlaying}
-          onTogglePlay={() => setAudioPlaying((p) => !p)}
-          muted={audioMuted}
-          onToggleMute={() => setAudioMuted((m) => !m)}
-          portalContainer={portalContainer}
-          open={openField === "audio"}
-          onOpenChange={(o) => setOpenField(o ? "audio" : null)}
-        />
-      </SettingsCard>
+      <AudioCard
+        value={form.audio}
+        onChange={(v) => set("audio", v)}
+        portalContainer={portalContainer}
+        open={openField === "audio"}
+        onOpenChange={(o) => setOpenField(o ? "audio" : null)}
+      />
     </>
   );
 }

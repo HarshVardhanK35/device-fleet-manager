@@ -26,7 +26,7 @@ const MESSAGE_FIELDS = [
 // `boards`/`setForm` are the real form; `onDraftChange` reports what's being
 // typed so the preview can pin to that board.
 function BoardsModal({ layerEl, boards, setForm, onClose, onDraftChange, onModalOpenChange }) {
-  const list = useManagedList({
+  const managed = useManagedList({
     listKey: "boards",
     items: boards,
     setForm,
@@ -52,6 +52,8 @@ function BoardsModal({ layerEl, boards, setForm, onClose, onDraftChange, onModal
     collapseOnSubmit: true,
     onDraftChange,
   });
+  // The form's Cancel button closes the modal too — back to the settings panel.
+  const list = { ...managed, cancelEdit: () => { managed.cancelEdit(); onClose(); } };
 
   const { draft, patch, focusRef } = list;
 

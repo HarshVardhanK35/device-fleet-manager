@@ -96,5 +96,4 @@ export default ActionMenu;
 // every other usage.
 // Dropdown content is a fixed 160px wide, regardless of screen size.
 // Used by: components/AssignmentCard.jsx, components/PlaylistRow.jsx
-// (default trigger), components/Layout.jsx (custom avatar trigger, for the
-// Logout menu), components/UploadSplitButton.jsx.
+// (default trigger).

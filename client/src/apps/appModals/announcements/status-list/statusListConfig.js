@@ -18,8 +18,6 @@ export const PURPOSE_DEFAULTS = {
   customers: { title: "Menu Board", priority: "Deals first" },
 };
 
-export const STATUS_OPTIONS = ["in", "low", "out"];
-export const STATUS_LABELS = { in: "In Stock", low: "Low Stock", out: "Out of Stock" };
 
 // Discount tier from a percentage (spec §3.3): Small 1-15, Medium 16-35,
 // Big 36+. 0 / blank means no discount, so no tier.
@@ -58,7 +56,8 @@ export const STATUS_LIST_INITIAL_FORM = {
 };
 
 // Status Lists are static boards, not rotations — a flat on-screen time,
-// same as Weather/Clock.
-export function computeStatusListDuration() {
-  return 30000;
+// same as Weather/Clock. 30 s for a new tile; after that the user owns it
+// (Content pane → Display duration), so saving settings keeps the saved value.
+export function computeStatusListDuration(_form, existingContent) {
+  return existingContent?.durationInMillis || 30000;
 }
