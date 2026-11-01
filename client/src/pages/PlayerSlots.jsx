@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Hourglass,
@@ -15,6 +15,8 @@ import {
 import ScreenThumb from "../components/ScreenThumb.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import Button from "../components/Button.jsx";
+import RefreshButton from "../components/RefreshButton.jsx";
+import { MAX_SCREENS } from "../utils/limits.js";
 import GhostButton from "../components/GhostButton.jsx";
 import ReleaseScreenButton from "../components/ReleaseScreenButton.jsx";
 import DetailPane from "../components/DetailPane.jsx";
@@ -39,7 +41,6 @@ import {
 import { getAssignments } from "../api/assignments.js";
 import { timeAgo } from "../utils/timeAgo.js";
 
-const MAX_SCREENS = 3;
 // Must match the backend's code length (server/controllers/pairingController.js's
 // ALPHABET loop) — both sides of the same pairing flow have to agree on the
 // code shape.
@@ -99,6 +100,7 @@ function PlayerSlots() {
   const [selectedId, setSelectedId] = useState(null);
   const [mobileView, setMobileView] = useState("list");
   const [editingId, setEditingId] = useState(null);
+  const nameInputRef = useRef(null);
   const [draft, setDraft] = useState({ name: "", type: "" });
   const [editError, setEditError] = useState("");
   const [codes, setCodes] = useState({});
@@ -112,20 +114,34 @@ function PlayerSlots() {
   const [takeOverError, setTakeOverError] = useState("");
   const [releaseError, setReleaseError] = useState("");
 
+  async function fetchMappedScreens() {
+    const [devicesData, assignmentsData] = await Promise.all([
+      getDevices(),
+      getAssignments(),
+    ]);
+    const assignments = Array.isArray(assignmentsData) ? assignmentsData : [];
+    return Array.isArray(devicesData)
+      ? devicesData.map((d) => mapDevice(d, computePlaying(assignments, d._id)))
+      : [];
+  }
+
+  // Manual refresh: fresh data from the server, keeping the selection (and any
+  // slot still waiting to be paired, which only exists locally).
+  async function refreshScreens() {
+    const mapped = await fetchMappedScreens();
+    setScreens((prev) => [...mapped, ...prev.filter((s) => s.pending)]);
+    setSelectedId((id) =>
+      mapped.some((s) => s.id === id) || screens.some((s) => s.id === id && s.pending)
+        ? id
+        : (mapped[0]?.id ?? null),
+    );
+  }
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [devicesData, assignmentsData] = await Promise.all([
-        getDevices(),
-        getAssignments(),
-      ]);
+      const mapped = await fetchMappedScreens();
       if (cancelled) return;
-      const assignments = Array.isArray(assignmentsData) ? assignmentsData : [];
-      const mapped = Array.isArray(devicesData)
-        ? devicesData.map((d) =>
-            mapDevice(d, computePlaying(assignments, d._id)),
-          )
-        : [];
       setScreens(mapped);
       if (mapped.length) setSelectedId(mapped[0].id);
       setLoading(false);
@@ -203,6 +219,16 @@ function PlayerSlots() {
     setEditingId(screen.id);
     setDraft({ name: screen.name, type: screen.type || "" });
     setEditError("");
+    // The Name field is far below the fold on a phone, so bring it into view
+    // and put the cursor there. A short delay lets the actions menu finish
+    // closing first — it hands focus back to its own button when it does.
+    setTimeout(() => {
+      const el = nameInputRef.current;
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.focus({ preventScroll: true });
+      el.select();
+    }, 150);
   }
 
   async function saveEdit(id) {
@@ -561,6 +587,7 @@ function PlayerSlots() {
               title={selected.name}
               badge={<StatusPill screen={selected} dot />}
               meta={`Slot ${selectedSlot} · ${selected.type || "No type set"}`}
+              refresh={<RefreshButton onRefresh={refreshScreens} />}
               headerExtra={
                 <ActionMenu
                   label="Screen actions"
@@ -660,6 +687,7 @@ function PlayerSlots() {
                     <label className="flex flex-col gap-1 text-xs font-medium text-text-muted">
                       Name
                       <input
+                        ref={nameInputRef}
                         value={
                           editingId === selected.id ? draft.name : selected.name
                         }

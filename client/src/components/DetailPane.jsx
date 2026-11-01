@@ -14,6 +14,7 @@ function DetailPane({
   title,
   badge,
   titleExtra,
+  refresh,
   headerDivider = false,
   actionInToolbar = false,
   meta,
@@ -32,9 +33,12 @@ function DetailPane({
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       {onBack && (
-        <MobileBackButton onClick={onBack} className="self-start">
-          {backLabel}
-        </MobileBackButton>
+        <div className="flex items-center justify-between gap-3">
+          <MobileBackButton onClick={onBack} className="self-start">
+            {backLabel}
+          </MobileBackButton>
+          {refresh && <div className="md:hidden">{refresh}</div>}
+        </div>
       )}
 
       <div className={headerClassName}>
@@ -57,7 +61,14 @@ function DetailPane({
               </Button>
             </div>
           )}
-          {headerExtra && <div className="flex-shrink-0">{headerExtra}</div>}
+          {/* h-7 = the title's own line height, so the buttons centre on the title
+              row (equal space above and below) however tall the buttons are. */}
+          {(refresh || headerExtra) && (
+            <div className="flex-shrink-0 self-start h-7 flex items-center gap-2">
+              {refresh && <div className="hidden md:block">{refresh}</div>}
+              {headerExtra}
+            </div>
+          )}
         </div>
 
         {headerDivider && !sectionLabel && !sectionMeta && (
@@ -107,6 +118,9 @@ export default DetailPane;
 // Design review, the card-wrapped-vs-not split between them was an
 // inconsistency, not a deliberate choice, so all now sit unframed on the
 // page background.
+// `refresh` (optional, a node — e.g. <RefreshButton/>): shown at the right end
+// of the back-button row on mobile, and at the right end of the header from
+// md up.
 // `titleExtra` (optional) renders on the title row itself, after the badge —
 // right-aligned on mobile, left (beside the title/badge) from md up, so the
 // action Button stays at the right end. Playlists puts its item count there.

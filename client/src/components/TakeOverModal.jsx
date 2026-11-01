@@ -1,11 +1,14 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plug, StopCircle, Info, Check } from "lucide-react";
+import { Plug, StopCircle, Info, Check, Loader2 } from "lucide-react";
 
 import GhostButton from "./GhostButton.jsx";
+import { useAsyncAction } from "../hooks/useAsyncAction.js";
 
 function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm, error }) {
+  const [confirm, busy] = useAsyncAction(onConfirm);
+
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[440px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40">
@@ -73,17 +76,17 @@ function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm
               </div>
 
               <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
-                <GhostButton as={Dialog.Close} size="lg">
+                <GhostButton as={Dialog.Close} size="lg" disabled={busy} className="disabled:opacity-40 disabled:pointer-events-none">
                   Cancel
                 </GhostButton>
                 <button
                   type="button"
-                  onClick={onConfirm}
-                  disabled={!ack}
-                  className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold transition-[filter] disabled:opacity-40 disabled:pointer-events-none"
+                  onClick={confirm}
+                  disabled={!ack || busy}
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter] disabled:opacity-40 disabled:pointer-events-none"
                 >
-                  <Plug size={16} />
-                  Disconnect &amp; take over
+                  {busy ? <Loader2 size={16} className="animate-spin" /> : <Plug size={16} />}
+                  {busy ? "Taking over…" : "Disconnect & take over"}
                 </button>
               </div>
             </>

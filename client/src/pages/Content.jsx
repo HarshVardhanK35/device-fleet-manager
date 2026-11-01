@@ -19,6 +19,7 @@ import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/UploadProgressModal.jsx";
 import ContentSearchInput from "../components/ContentSearchInput.jsx";
 import ContentActionButtons from "../components/ContentActionButtons.jsx";
+import RefreshButton from "../components/RefreshButton.jsx";
 import ContentEmptyState from "../components/ContentEmptyState.jsx";
 import SelectableContentTile from "../components/SelectableContentTile.jsx";
 import SkeletonGrid from "../components/SkeletonGrid.jsx";
@@ -27,17 +28,11 @@ import ScrollToTopButton from "../components/ScrollToTopButton.jsx";
 import { getVideoDurationMs } from "../utils/getVideoDuration.js";
 import { pluralizeCount } from "../utils/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
+import { MAX_IMAGES, MAX_VIDEO_BYTES, formatMB } from "../utils/limits.js";
 
-// Mirrors the server-side quota in contentController.js's createContent —
-// this is purely a pre-upload UX check (avoid wasting a Cloudinary upload
-// on something already known to be rejected). The real enforcement is the
-// backend check; these numbers must stay in sync with it, not replace it.
-const MAX_IMAGES = 30;
-const MAX_VIDEO_BYTES = 150 * 1024 * 1024; // 150MB
-
-function formatMB(bytes) {
-  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-}
+// The quota numbers (utils/limits.js) are a pre-upload UX check only — avoid
+// wasting a Cloudinary upload on something already known to be rejected. The
+// real enforcement is the backend.
 
 // Bottom third of the cap = normal, middle third = amber, top third = red —
 // same banding applied to images (count-based, max 30) and video
@@ -322,7 +317,7 @@ function Content() {
   }
 
   function toggleSelect(id, e) {
-    e.stopPropagation();
+    e?.stopPropagation();
     toggleChecked(id);
   }
 
@@ -388,8 +383,8 @@ function Content() {
       <div className={`flex-shrink-0 ${inspectedItem ? "" : "pr-4"}`}>
         {/* row 1: title + count + quota (left, two lines), search (right,
             vertically centered against the full left column via items-center) */}
-        <div className="flex items-center justify-between gap-4 mb-3">
-          <div className="flex flex-col gap-1 min-w-0 flex-shrink-0">
+        <div className="flex items-start md:items-center justify-between gap-4 mb-3">
+          <div className="flex flex-col gap-1 min-w-0 md:flex-shrink-0">
             <div className="flex items-baseline gap-2 min-w-0">
               <h1 className="text-text-primary text-xl font-bold whitespace-nowrap">
                 All content
@@ -398,23 +393,36 @@ function Content() {
                 {pluralizeCount(visibleContent.length, "item")}
               </span>
             </div>
-            <p className="text-text-muted text-xs whitespace-nowrap">
-              <span className={quotaColorClass(counts.image, MAX_IMAGES)}>
-                {counts.image}
+            {/* Each part stays whole; on a phone the line breaks between parts. */}
+            <p className="text-text-muted text-xs m-0 flex flex-wrap gap-x-1.5">
+              <span className="whitespace-nowrap">
+                <span className={quotaColorClass(counts.image, MAX_IMAGES)}>
+                  {counts.image}
+                </span>
+                /{MAX_IMAGES} images
               </span>
-              /{MAX_IMAGES} images ·{" "}
-              <span className={quotaColorClass(counts.videoBytes, MAX_VIDEO_BYTES)}>
-                {formatMB(counts.videoBytes)}
+              <span className="whitespace-nowrap">
+                <span className="mr-1.5">·</span>
+                <span className={quotaColorClass(counts.videoBytes, MAX_VIDEO_BYTES)}>
+                  {formatMB(counts.videoBytes)}
+                </span>
+                /{formatMB(MAX_VIDEO_BYTES)} video
               </span>
-              /{formatMB(MAX_VIDEO_BYTES)} video · {counts.app} apps
+              <span className="whitespace-nowrap">
+                <span className="mr-1.5">·</span>
+                {counts.app} apps
+              </span>
             </p>
           </div>
 
-          <ContentSearchInput
-            only="desktop"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="flex items-center justify-end gap-2 flex-1 min-w-0">
+            <ContentSearchInput
+              only="desktop"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <RefreshButton onRefresh={fetchContent} />
+          </div>
         </div>
 
         {/* row 2: select all / delete (left), upload / filter / sort (right) */}
@@ -468,8 +476,9 @@ function Content() {
                     item={item}
                     checked={checkedIds.has(item._id)}
                     inspected={inspectedId === item._id}
+                    selectionMode={checkedIds.size > 0}
                     onToggleSelect={toggleSelect}
-                    onEdit={handleTileEdit}
+                    onOpen={handleTileEdit}
                   />
                 ))}
               </div>

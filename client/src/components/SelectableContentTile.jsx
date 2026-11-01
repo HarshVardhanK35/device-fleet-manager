@@ -1,23 +1,47 @@
 import ContentTile from "./ContentTile.jsx";
 import SelectCheckbox from "./SelectCheckbox.jsx";
+import { useLongPress } from "../hooks/useLongPress.js";
 
-function SelectableContentTile({ item, checked, inspected, onToggleSelect, onEdit }) {
+function SelectableContentTile({
+  item,
+  checked,
+  inspected,
+  selectionMode,
+  onToggleSelect,
+  onOpen,
+}) {
+  // Touch: a long press selects the tile (there is no hover to reveal the
+  // checkbox). Once anything is selected, a tap selects / unselects instead of
+  // opening the details panel.
+  const { handlers, consumeClick } = useLongPress(() => onToggleSelect(item._id));
+
+  function handleClick() {
+    if (consumeClick()) return;
+    if (selectionMode && window.matchMedia("(pointer: coarse)").matches) {
+      onToggleSelect(item._id);
+    } else {
+      onOpen(item);
+    }
+  }
+
   return (
     <ContentTile
       item={item}
       size="fluid"
       coloredType
-      onEditClick={onEdit}
-      className={
+      onClick={handleClick}
+      rootProps={handlers}
+      className={`select-none [-webkit-touch-callout:none] ${
         checked
           ? "!border-2 !border-accent-blue -translate-y-0.5"
           : inspected
             ? "!border-2 !border-[#8b949e] -translate-y-0.5"
             : ""
-      }
+      }`}
     >
       <SelectCheckbox
         checked={checked}
+        alwaysVisible={selectionMode}
         onClick={(e) => {
           e.stopPropagation();
           onToggleSelect(item._id, e);
@@ -30,11 +54,9 @@ function SelectableContentTile({ item, checked, inspected, onToggleSelect, onEdi
 
 export default SelectableContentTile;
 
-// A ContentTile wired up for the Content library grid's bulk-selection +
-// inspector-open states: blue border when checked, gray border when it's the
-// item currently open in the inspector, hover-reveal square checkbox
-// top-left and hover-reveal edit (pencil) button top-right — the pencil is
-// the only way to open the settings/inspector panel now, not a tile-wide
-// click. `onToggleSelect(id, event)` and `onEdit(item)` are passed straight
-// from the parent's selection/inspector state handlers.
-// Used by: pages/Content.jsx.
+// A ContentTile wired up for the Content library grid: click opens the
+// details panel (gray border while it is the open one); the hover-reveal
+// checkbox top-left selects (blue border). On touch, a long press selects and
+// — while anything is selected — a tap toggles instead of opening, and every
+// checkbox stays visible. `onToggleSelect(id, event?)` and `onOpen(item)` come
+// from the parent. Used by: pages/Content.jsx.

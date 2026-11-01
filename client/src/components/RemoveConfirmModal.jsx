@@ -1,8 +1,9 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { CircleMinus } from "lucide-react";
+import { CircleMinus, Loader2 } from "lucide-react";
 
 import ScrollBox from "./ScrollBox.jsx";
 import GhostButton from "./GhostButton.jsx";
+import { useAsyncAction } from "../hooks/useAsyncAction.js";
 import { getTypeMeta } from "../utils/contentTypeMeta.js";
 
 function RemoveConfirmModal({
@@ -18,9 +19,13 @@ function RemoveConfirmModal({
   // Raises the dialog above a full-screen Dialog (z-40/z-50) it's opened from
   // — e.g. the app settings shell's unsaved-changes confirm.
   elevated = false,
+  // Shown on the confirm button while `onConfirm` (if async) is running.
+  busyLabel = "Removing…",
 }) {
+  const [confirm, busy] = useAsyncAction(onConfirm);
+
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <Dialog.Portal>
         <Dialog.Overlay className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${elevated ? "z-[60]" : "z-30"}`} />
         <Dialog.Content className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[440px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col ${elevated ? "z-[70]" : "z-40"}`}>
@@ -75,16 +80,21 @@ function RemoveConfirmModal({
           </div>
 
           <div className="flex items-center justify-center sm:justify-end gap-2 px-6 py-4 border-t border-border-muted">
-            <GhostButton as={Dialog.Close} size="lg">
+            <GhostButton as={Dialog.Close} size="lg" disabled={busy} className="disabled:opacity-40 disabled:pointer-events-none">
               Cancel
             </GhostButton>
             <button
               type="button"
-              onClick={onConfirm}
-              className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter]"
+              onClick={confirm}
+              disabled={busy}
+              className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter] disabled:opacity-70 disabled:pointer-events-none"
             >
-              <Icon size={16} className="hidden sm:block" />
-              {confirmLabel}
+              {busy ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Icon size={16} className="hidden sm:block" />
+              )}
+              {busy ? busyLabel : confirmLabel}
             </button>
           </div>
         </Dialog.Content>

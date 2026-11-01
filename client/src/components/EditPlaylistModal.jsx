@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 import ScrollBox from "./ScrollBox.jsx";
 import CancelButton from "./CancelButton.jsx";
 import Button from "./Button.jsx";
 import RemovableContentTile from "./RemovableContentTile.jsx";
+import { useAsyncAction } from "../hooks/useAsyncAction.js";
 
 // Owns name/description/contentItems state. Rendered only while `open` is
 // true, so it mounts fresh off `playlist` every time the modal opens —
@@ -14,6 +16,8 @@ function EditPlaylistBody({ playlist, onSave, onRemoveItem }) {
   const [name, setName] = useState(playlist.name);
   const [description, setDescription] = useState(playlist.description || "");
   const [contentItems, setContentItems] = useState(playlist.contentItems);
+
+  const [save, saving] = useAsyncAction(onSave);
 
   async function handleRemove(itemId) {
     const updatedItems = await onRemoveItem(itemId, contentItems);
@@ -75,11 +79,15 @@ function EditPlaylistBody({ playlist, onSave, onRemoveItem }) {
       <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
         <Dialog.Close
           type="button"
-          className="text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-3 py-1.5 text-sm transition-colors"
+          disabled={saving}
+          className="disabled:opacity-40 disabled:pointer-events-none text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-3 py-1.5 text-sm transition-colors"
         >
           Close
         </Dialog.Close>
-        <Button onClick={() => onSave(name, description)}>Save</Button>
+        <Button onClick={() => save(name, description)} disabled={saving}>
+          {saving && <Loader2 size={14} className="animate-spin" />}
+          {saving ? "Saving…" : "Save"}
+        </Button>
       </div>
     </>
   );

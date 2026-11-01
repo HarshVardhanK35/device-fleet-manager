@@ -1,13 +1,15 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 
 import ScrollBox from "./ScrollBox.jsx";
+import { useAsyncAction } from "../hooks/useAsyncAction.js";
 
-function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm }) {
+function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm, busyLabel = "Deleting…" }) {
+  const [confirm, busy] = useAsyncAction(onConfirm);
   const itemLabel = `${items.length} item${items.length === 1 ? "" : "s"}`;
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[440px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40">
@@ -51,16 +53,18 @@ function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm }) {
           <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
             <Dialog.Close
               type="button"
-              className="h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-4 text-sm font-semibold transition-colors"
+              disabled={busy}
+              className="h-10 disabled:opacity-40 disabled:pointer-events-none text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-4 text-sm font-semibold transition-colors"
             >
               Cancel
             </Dialog.Close>
             <button
-              onClick={onConfirm}
-              className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold transition-[filter]"
+              onClick={confirm}
+              disabled={busy}
+              className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter] disabled:opacity-70 disabled:pointer-events-none"
             >
-              <Trash2 size={16} />
-              Delete {itemLabel}
+              {busy ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+              {busy ? busyLabel : `Delete ${itemLabel}`}
             </button>
           </div>
         </Dialog.Content>

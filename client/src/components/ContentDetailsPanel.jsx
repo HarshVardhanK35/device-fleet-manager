@@ -148,7 +148,7 @@ function ContentDetailsPanel({ item, onClose, onSave, onDelete, onOpenAppSetting
             )}
 
             <span
-              className={`absolute left-1.5 bottom-1.5 inline-flex items-center justify-center w-fit text-[10px] font-bold px-[6px] py-[2px] rounded-[5px] ${meta.textClass} ${meta.bgClass}`}
+              className={`absolute left-1.5 bottom-1.5 inline-flex items-center justify-center w-fit text-[10px] font-bold px-[6px] py-[2px] rounded-[5px] ${meta.textClass} ${meta.solidBgClass}`}
             >
               {meta.label}
             </span>

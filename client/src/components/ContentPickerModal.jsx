@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Search } from "lucide-react";
+import { LayoutGrid, List, Loader2, Search } from "lucide-react";
 
 import ContentTile from "./ContentTile.jsx";
 import ScrollBox from "./ScrollBox.jsx";
@@ -9,6 +9,66 @@ import CancelButton from "./CancelButton.jsx";
 import SelectCheckbox from "./SelectCheckbox.jsx";
 import ContentFilterSortBar from "./ContentFilterSortBar.jsx";
 import PickerSelectionStatus from "./PickerSelectionStatus.jsx";
+import { useAsyncAction } from "../hooks/useAsyncAction.js";
+import { getTypeMeta } from "../utils/contentTypeMeta.js";
+import { formatDuration } from "../utils/formatDuration.js";
+import { getOptimizedThumbnail } from "../utils/cloudinaryTransform.js";
+
+// One library item as a compact row (the picker's List view) — about three
+// times more items per screen than tiles, for big libraries.
+function PickerRow({ item, selected, showDuration, onToggle }) {
+  const meta = getTypeMeta(item.type);
+  return (
+    <div
+      onClick={onToggle}
+      className={`flex items-center gap-3 px-2.5 py-1.5 rounded-lg border cursor-pointer transition-colors ${
+        selected
+          ? "border-accent-blue bg-accent-blue/10"
+          : "border-border-muted hover:border-border-hover hover:bg-bg-hover"
+      }`}
+    >
+      <SelectCheckbox
+        shape="square"
+        checked={selected}
+        onClick={onToggle}
+        alwaysVisible
+      />
+      <span className="w-14 aspect-video flex-none rounded bg-[#201e1e] overflow-hidden flex items-center justify-center text-[10px] text-text-muted">
+        {item.type === "app" ? (
+          "App"
+        ) : (
+          <img
+            src={getOptimizedThumbnail(item.thumbnailUrl || item.mediaUrl, 200)}
+            alt=""
+            className="w-full h-full object-contain"
+            loading="lazy"
+          />
+        )}
+      </span>
+      <div className="flex-1 min-w-0 flex flex-col gap-1">
+        <span
+          title={item.name}
+          className="text-sm font-semibold text-text-primary leading-snug line-clamp-2"
+        >
+          {item.name}
+        </span>
+        <span className="flex items-center gap-2">
+          <span
+            className={`flex-none text-[10px] font-bold px-[6px] py-[2px] rounded-[5px] ${meta.textClass} ${meta.bgClass}`}
+          >
+            <span className="sm:hidden">{meta.short}</span>
+            <span className="hidden sm:inline">{meta.label}</span>
+          </span>
+          {showDuration && item.durationInMillis ? (
+            <span className="text-xs text-text-muted tabular-nums">
+              {formatDuration(item.durationInMillis)}
+            </span>
+          ) : null}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 // Owns all the form/selection state. Rendered only while `open` is true, so
 // it mounts fresh (and gets fresh initial state) every time the modal opens
@@ -17,6 +77,7 @@ import PickerSelectionStatus from "./PickerSelectionStatus.jsx";
 function PickerFormBody({
   content,
   submitLabel,
+  busyLabel,
   showNameField,
   showTypeFilter,
   singleSelect,
@@ -31,6 +92,9 @@ function PickerFormBody({
   const [sortBy, setSortBy] = useState("recent");
   const [search, setSearch] = useState("");
   const [alertKey, setAlertKey] = useState(0);
+  // Grid (tiles) or List (rows); and "Selected" shows only what is ticked.
+  const [view, setView] = useState("grid");
+  const [selectedOnly, setSelectedOnly] = useState(false);
 
   const counts = useMemo(
     () => ({
@@ -51,6 +115,9 @@ function PickerFormBody({
       const q = search.trim().toLowerCase();
       list = list.filter((c) => c.name.toLowerCase().includes(q));
     }
+    if (selectedOnly) {
+      list = list.filter((c) => selectedIds.includes(c._id));
+    }
     list = [...list];
     if (sortBy === "name") {
       list.sort((a, b) => a.name.localeCompare(b.name));
@@ -60,7 +127,7 @@ function PickerFormBody({
       );
     }
     return list;
-  }, [content, filterType, search, sortBy]);
+  }, [content, filterType, search, sortBy, selectedOnly, selectedIds]);
 
   function toggleSelect(id, e) {
     e.stopPropagation();
@@ -96,18 +163,69 @@ function PickerFormBody({
   const canSubmit =
     (!showNameField || name.trim().length > 0) && selectedIds.length > 0;
 
+  // While an async onSubmit (create / add) runs, the button shows `busyLabel`.
+  const [submit, busy] = useAsyncAction(onSubmit);
+
   function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) {
       setAlertKey((k) => k + 1);
       return;
     }
-    onSubmit(name, description, selectedIds);
+    submit(name, description, selectedIds);
   }
+
+  const libraryGrid = visibleContent.length === 0 ? (
+              <p className="text-text-muted text-sm text-center py-8">
+                {selectedOnly
+                  ? "Nothing selected yet."
+                  : `Nothing in your library matches${search ? ` "${search}"` : " this filter"}.`}
+              </p>
+            ) : view === "list" ? (
+              <div className="flex flex-col gap-1.5">
+                {visibleContent.map((item) => (
+                  <PickerRow
+                    key={item._id}
+                    item={item}
+                    selected={selectedIds.includes(item._id)}
+                    showDuration={!singleSelect}
+                    onToggle={(e) => toggleSelect(item._id, e)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {visibleContent.map((item) => {
+                  const order = selectedIds.indexOf(item._id);
+                  return (
+                    <ContentTile
+                      key={item._id}
+                      item={item}
+                      size="fluid"
+                      coloredType
+                      showDuration={!singleSelect}
+                      onClick={(e) => toggleSelect(item._id, e)}
+                      className={
+                        order !== -1
+                          ? "!border-2 !border-accent-blue -translate-y-0.5"
+                          : ""
+                      }
+                    >
+                      <SelectCheckbox
+                        shape="square"
+                        checked={order !== -1}
+                        onClick={(e) => toggleSelect(item._id, e)}
+                        className="absolute left-1.5 top-1.5 z-10"
+                      />
+                    </ContentTile>
+                  );
+                })}
+              </div>
+            );
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-      <div className="flex flex-col gap-5 pl-4 pr-4 sm:pl-11 sm:pr-6 pb-5 flex-1 min-h-0">
+      <div className="flex flex-col gap-5 pl-4 pr-4 sm:pl-11 sm:pr-6 pt-3 sm:pt-4 pb-5 sm:pb-0 flex-1 min-h-0 overflow-y-auto sm:overflow-visible">
         {showNameField && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:pr-5">
             <label className="flex flex-col gap-1.5">
@@ -137,7 +255,7 @@ function PickerFormBody({
           </div>
         )}
 
-        <div className="flex flex-col gap-3 flex-1 min-h-0">
+        <div className="flex flex-col gap-3 sm:flex-1 sm:min-h-0">
           {showNameField && (
             <span className="text-text-muted text-xs font-semibold">
               Starting content{" "}
@@ -148,19 +266,68 @@ function PickerFormBody({
           )}
 
           <div className="flex flex-col gap-2.5 sm:pr-5">
-            {!singleSelect && (
+            <div className="flex items-center justify-between gap-2">
+              {!singleSelect ? (
+                <div className="flex items-center gap-2">
+                  <SelectCheckbox
+                    checked={allVisibleSelected}
+                    indeterminate={someVisibleSelected && !allVisibleSelected}
+                    onClick={toggleSelectAllVisible}
+                    alwaysVisible
+                  />
+                  <span className="text-text-muted text-sm whitespace-nowrap">
+                    Select all
+                  </span>
+                </div>
+              ) : (
+                <div />
+              )}
+
               <div className="flex items-center gap-2">
-                <SelectCheckbox
-                  checked={allVisibleSelected}
-                  indeterminate={someVisibleSelected && !allVisibleSelected}
-                  onClick={toggleSelectAllVisible}
-                  alwaysVisible
-                />
-                <span className="text-text-muted text-sm whitespace-nowrap">
-                  Select all
-                </span>
+                {!singleSelect && (
+                  <button
+                    type="button"
+                    aria-pressed={selectedOnly}
+                    disabled={selectedIds.length === 0 && !selectedOnly}
+                    onClick={() => setSelectedOnly((v) => !v)}
+                    title="Show only the items you have ticked"
+                    className={`h-8 px-3 rounded-lg border text-sm font-medium whitespace-nowrap transition-colors disabled:opacity-40 disabled:pointer-events-none ${
+                      selectedOnly
+                        ? "bg-[#102a4c] border-accent-blue text-text-primary"
+                        : "border-border-muted text-text-muted hover:bg-bg-hover hover:text-text-primary"
+                    }`}
+                  >
+                    Selected ({selectedIds.length})
+                  </button>
+                )}
+                <div
+                  role="group"
+                  aria-label="View"
+                  className="flex rounded-lg border border-border-muted overflow-hidden"
+                >
+                  {[
+                    { key: "grid", label: "Grid view", Icon: LayoutGrid },
+                    { key: "list", label: "List view", Icon: List },
+                  ].map(({ key, label, Icon }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      title={label}
+                      aria-label={label}
+                      aria-pressed={view === key}
+                      onClick={() => setView(key)}
+                      className={`w-8 h-8 flex items-center justify-center transition-colors ${
+                        view === key
+                          ? "bg-bg-hover text-text-primary"
+                          : "text-text-muted hover:bg-bg-hover hover:text-text-primary"
+                      }`}
+                    >
+                      <Icon size={15} />
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+            </div>
 
             {/* search and filter / sort share one line */}
             <div className="flex items-center gap-2">
@@ -189,42 +356,13 @@ function PickerFormBody({
             </div>
           </div>
 
-          <ScrollBox className="sm:pr-5 pt-2">
-            {visibleContent.length === 0 ? (
-              <p className="text-text-muted text-sm text-center py-8">
-                Nothing in your library matches
-                {search ? ` "${search}"` : " this filter"}.
-              </p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {visibleContent.map((item) => {
-                  const order = selectedIds.indexOf(item._id);
-                  return (
-                    <ContentTile
-                      key={item._id}
-                      item={item}
-                      size="fluid"
-                      coloredType
-                      showDuration={!singleSelect}
-                      onClick={(e) => toggleSelect(item._id, e)}
-                      className={
-                        order !== -1
-                          ? "!border-2 !border-accent-blue -translate-y-0.5"
-                          : ""
-                      }
-                    >
-                      <SelectCheckbox
-                        shape="square"
-                        checked={order !== -1}
-                        onClick={(e) => toggleSelect(item._id, e)}
-                        className="absolute left-1.5 top-1.5 z-10"
-                      />
-                    </ContentTile>
-                  );
-                })}
-              </div>
-            )}
-          </ScrollBox>
+          {/* Tall screens: the grid scrolls on its own. Short phones: the whole
+              body scrolls instead, so the form fields can't squeeze the grid
+              down to a sliver. */}
+          <div className="sm:hidden pt-1">{libraryGrid}</div>
+          <div className="hidden sm:flex flex-col flex-1 min-h-0">
+            <ScrollBox className="sm:pr-5 pt-2 sm:pb-4">{libraryGrid}</ScrollBox>
+          </div>
         </div>
       </div>
 
@@ -243,12 +381,14 @@ function PickerFormBody({
         <div className="flex-1 hidden sm:block" />
         <Dialog.Close
           type="button"
-          className="flex-1 sm:flex-none h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-4 text-sm font-semibold transition-colors"
+          disabled={busy}
+          className="flex-1 sm:flex-none h-10 disabled:opacity-40 disabled:pointer-events-none text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-4 text-sm font-semibold transition-colors"
         >
           Cancel
         </Dialog.Close>
-        <Button type="submit" className="flex-1 sm:flex-none whitespace-nowrap">
-          {submitLabel}
+        <Button type="submit" disabled={busy} className="flex-1 sm:flex-none whitespace-nowrap">
+          {busy && busyLabel ? <Loader2 size={14} className="animate-spin" /> : null}
+          {busy && busyLabel ? busyLabel : submitLabel}
         </Button>
       </div>
     </form>
@@ -262,6 +402,7 @@ function ContentPickerModal({
   title,
   subtitle,
   submitLabel = "Save",
+  busyLabel,
   showNameField = true,
   showTypeFilter = true,
   singleSelect = false,
@@ -288,7 +429,7 @@ function ContentPickerModal({
           ref={setContentEl}
           className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[760px] max-w-[calc(100vw-32px)] max-h-[85dvh] flex flex-col z-[60]"
         >
-          <div className="flex items-start gap-3 pl-4 pr-4 sm:pl-11 sm:pr-6 pt-5 pb-4">
+          <div className="flex items-center gap-3 pl-4 pr-4 sm:pl-11 sm:pr-6 pt-3 pb-3 sm:pt-5 sm:pb-4 border-b border-border-muted">
             <div className="flex-1 min-w-0">
               <Dialog.Title className="text-text-primary font-bold text-lg m-0">
                 {title}
@@ -306,6 +447,7 @@ function ContentPickerModal({
             <PickerFormBody
               content={content}
               submitLabel={submitLabel}
+              busyLabel={busyLabel}
               showNameField={showNameField}
               showTypeFilter={showTypeFilter}
               singleSelect={singleSelect}
@@ -330,5 +472,6 @@ export default ContentPickerModal;
 // (filter/sort) + search used on the Content page. Selection is ORDERED
 // (an array, not a Set) — each picked tile shows its pick-order number in
 // place of a checkmark, since playlist content plays in the order it was
-// added. `onSubmit(name, description, orderedIds)`.
+// added. `onSubmit(name, description, orderedIds)` may be async: the submit
+// button then shows `busyLabel` (e.g. "Creating…") until it settles.
 // Used by: pages/Playlists.jsx (Create Playlist + Add Content modals).
