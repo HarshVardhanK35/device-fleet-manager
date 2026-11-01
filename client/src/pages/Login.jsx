@@ -10,6 +10,7 @@ import PasswordField from "../components/PasswordField.jsx";
 import AuthErrorBanner from "../components/AuthErrorBanner.jsx";
 import AuthHeading from "../components/AuthHeading.jsx";
 import Button from "../components/Button.jsx";
+import { useAsyncAction } from "../hooks/useAsyncAction.js";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -26,11 +27,7 @@ function Login() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setResent(false);
-
+  const [signIn, signingIn] = useAsyncAction(async () => {
     const response = await loginApi({ email, password });
 
     if (response.token) {
@@ -39,6 +36,13 @@ function Login() {
     } else {
       setError(response.message || "Login failed");
     }
+  });
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setResent(false);
+    signIn();
   }
 
   async function handleResend() {
@@ -115,8 +119,8 @@ function Login() {
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Sign in
+        <Button type="submit" className="w-full" disabled={signingIn}>
+          {signingIn ? "Signing in…" : "Sign in"}
         </Button>
 
         <p className="text-center text-text-muted text-[13px] m-0">

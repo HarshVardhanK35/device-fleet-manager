@@ -24,6 +24,7 @@ import SkeletonGrid from "../components/SkeletonGrid.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import DetailPane from "../components/DetailPane.jsx";
 import Button from "../components/Button.jsx";
+import RefreshButton from "../components/RefreshButton.jsx";
 import { pluralizeCount } from "../utils/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
 
@@ -112,6 +113,19 @@ function Playlists() {
       setLoading(false);
     })();
   }, []);
+
+  // Pulls fresh playlists + library. An unsaved reorder is dropped, and the
+  // selection moves on if its playlist no longer exists.
+  async function refreshAll() {
+    const [playlistData, contentData] = await Promise.all([getPlaylists(), getContent()]);
+    setPlaylists(playlistData);
+    setContent(contentData);
+    setDraftItems(null);
+    clearCheckedSlots();
+    setSelectedPlaylistId((id) =>
+      playlistData.some((p) => p._id === id) ? id : (playlistData[0]?._id ?? null),
+    );
+  }
 
   function selectPlaylist(id) {
     setDraftItems(null);
@@ -259,17 +273,18 @@ function Playlists() {
     <div className="max-w-7xl mx-auto h-[calc(100dvh-88px)] flex gap-4 ">
       {/* left pane */}
       <div
-        className={`w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
+        className={`w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
           mobileView === "detail" ? "hidden lg:flex" : "flex"
         }`}
       >
-        <div className="flex items-center gap-2 pb-3 flex-shrink-0">
+        <div className="flex items-center gap-2 pb-3 lg:pr-4 flex-shrink-0">
           <h2 className="text-text-primary font-bold text-base m-0">
             Playlists
           </h2>
           <span className="text-text-muted text-sm tabular-nums">
             {pluralizeCount(playlists.length, "item")}
           </span>
+          <RefreshButton className="ml-auto" onRefresh={refreshAll} />
         </div>
 
         {playlists.length > 0 && (
@@ -355,6 +370,12 @@ function Playlists() {
               actionIcon={Plus}
               onAction={() => setAddContentOpen(true)}
               headerDivider
+              // Side by side (lg+) the list's own Refresh already covers this page.
+              refresh={
+                <div className="lg:hidden">
+                  <RefreshButton onRefresh={refreshAll} />
+                </div>
+              }
               actionInToolbar={shownItems.length > 0}
               titleExtra={
                 shownItems.length > 0 &&
@@ -385,7 +406,7 @@ function Playlists() {
                         className="h-8 px-3 rounded-lg bg-[#1f6feb] border border-accent-blue text-white text-sm font-semibold flex items-center gap-1.5 disabled:opacity-40"
                       >
                         <Check size={14} />
-                        Save
+                        {savingOrder ? "Saving…" : "Save"}
                       </button>
                     </div>
                   </>
@@ -506,6 +527,7 @@ function Playlists() {
         content={content}
         title="Create Playlist"
         submitLabel="Create"
+        busyLabel="Creating…"
         onSubmit={handleCreatePlaylist}
       />
 
@@ -517,6 +539,7 @@ function Playlists() {
         title="Add Content"
         subtitle={selectedPlaylist?.name}
         submitLabel="Add"
+        busyLabel="Adding…"
         showNameField={false}
         onSubmit={(_, __, ids) => handleAddContentSave(ids)}
       />
@@ -579,8 +602,8 @@ function Playlists() {
             </span>
           </>
         }
-        onConfirm={() => {
-          handleDeleteSlots();
+        onConfirm={async () => {
+          await handleDeleteSlots();
           setSlotDeleteConfirmOpen(false);
         }}
       />

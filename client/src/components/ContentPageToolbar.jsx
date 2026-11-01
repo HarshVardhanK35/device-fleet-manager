@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUpDown, Trash2 } from "lucide-react";
+import { ArrowUpDown, Filter, Trash2 } from "lucide-react";
 
 import SelectCheckbox from "./SelectCheckbox.jsx";
 import StyledSelect from "./StyledSelect.jsx";
@@ -18,17 +18,17 @@ const SORTS = [
 
 const plural = (n) => (n === 1 ? "item" : "items");
 
-// Destructive button that stays readable when disabled (about 5:1 label
-// contrast) so users can see the action exists before selecting anything.
+// Same red as the trash button in the details panel (accent-red); stays
+// readable when disabled so users can see the action exists before selecting.
 const DELETE_CLASS =
-  "inline-flex items-center justify-center gap-2 flex-none h-11 w-11 md:w-auto md:h-9 md:px-3.5 rounded-md border border-[#b62324] text-[#ff7b72] text-sm font-semibold whitespace-nowrap transition-colors hover:bg-[#2a1418] hover:border-[#f85149] active:bg-[#3d1a1f] disabled:text-[#c26d68] disabled:border-[#5c2629] disabled:cursor-not-allowed disabled:hover:bg-transparent";
+  "inline-flex items-center justify-center gap-2 flex-none h-11 w-11 md:w-auto md:h-9 md:px-3.5 rounded-md border border-accent-red/40 text-accent-red text-sm font-semibold whitespace-nowrap transition-colors hover:bg-accent-red/10 hover:border-accent-red/60 active:bg-accent-red/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-accent-red/40";
 
 function TypeChips({ counts, value, disabled, onChange }) {
   return (
     <div
       role="radiogroup"
       aria-label="Filter by type"
-      className="flex-1 lg:flex-none flex gap-1.5 min-w-0 overflow-x-auto scrollbar-hidden"
+      className="flex-1 lg:hidden flex gap-1.5 min-w-0 overflow-x-auto scrollbar-hidden"
     >
       {TYPES.map((t) => {
         const off = disabled && t.value !== "all";
@@ -68,7 +68,8 @@ function TypeChips({ counts, value, disabled, onChange }) {
 }
 
 // The Content page's toolbar: selection on the left, type chips + sort in the
-// middle, actions (`children`, Upload / Create) on the right. Desktop: one
+// middle (type chips; on desktop a single Filter dropdown), actions
+// (`children`, Upload / Create) on the right. Desktop: one
 // row. Tablet (md): two rows — selection + actions, then the chips + sort.
 // Mobile: one column; the actions live in their own sticky bottom bar.
 // `counts` is { all, image, video, app }. Playlists keeps the shared
@@ -86,7 +87,8 @@ function ContentPageToolbar({
   mobileSearch,
   children,
 }) {
-  const [sortOpen, setSortOpen] = useState(false);
+  // "filter" | "sort" | null — opening one closes the other.
+  const [openMenu, setOpenMenu] = useState(null);
   const empty = counts.all === 0;
   const allChecked = totalCount > 0 && checkedCount === totalCount;
   const selectTitle =
@@ -148,6 +150,22 @@ function ContentPageToolbar({
           disabled={empty}
           onChange={onFilterChange}
         />
+        {/* Desktop: one Filter dropdown instead of the chips (tablet and phone
+            keep the chips). */}
+        <div className="hidden lg:block">
+          <StyledSelect
+            value={filterValue}
+            onChange={onFilterChange}
+            options={TYPES}
+            labelFor={(t) => `${t.label} (${counts[t.value] ?? 0})`}
+            icon={Filter}
+            label="Filter content"
+            bgClassName="bg-bg-primary"
+            open={openMenu === "filter"}
+            onOpenChange={(o) => setOpenMenu(o ? "filter" : null)}
+            disabled={empty}
+          />
+        </div>
         <StyledSelect
           value={sortValue}
           onChange={onSortChange}
@@ -155,8 +173,8 @@ function ContentPageToolbar({
           icon={ArrowUpDown}
           label="Sort content"
           bgClassName="bg-bg-primary"
-          open={sortOpen}
-          onOpenChange={setSortOpen}
+          open={openMenu === "sort"}
+          onOpenChange={(o) => setOpenMenu(o ? "sort" : null)}
           disabled={empty}
           touchSize
           align="end"

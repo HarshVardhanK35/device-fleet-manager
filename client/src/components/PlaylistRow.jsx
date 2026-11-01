@@ -1,9 +1,9 @@
-import { useRef } from "react";
 import { Pencil, Trash2, ListVideo, Repeat } from "lucide-react";
 
 import ActionMenu from "./ActionMenu.jsx";
 import SelectCheckbox from "./SelectCheckbox.jsx";
 import SelectableRow from "./SelectableRow.jsx";
+import { useLongPress } from "../hooks/useLongPress.js";
 import { formatDuration } from "../utils/formatDuration.js";
 import { pluralizeCount } from "../utils/pluralize.js";
 
@@ -28,55 +28,18 @@ function PlaylistRow({
   onLongPress,
 }) {
   // Long press (touch only) ticks the row — touch screens have no hover to
-  // reveal the checkbox. The press cancels if the finger moves (scrolling),
-  // and the click that follows a long press is swallowed.
-  const pressTimer = useRef(null);
-  const pressStart = useRef(null);
-  const longPressed = useRef(false);
-
-  function clearPress() {
-    clearTimeout(pressTimer.current);
-    pressTimer.current = null;
-  }
-
-  function handlePointerDown(e) {
-    if (!onLongPress || e.pointerType === "mouse") return;
-    longPressed.current = false;
-    pressStart.current = { x: e.clientX, y: e.clientY };
-    clearPress();
-    pressTimer.current = setTimeout(() => {
-      longPressed.current = true;
-      navigator.vibrate?.(15);
-      onLongPress();
-    }, 500);
-  }
-
-  function handlePointerMove(e) {
-    if (!pressTimer.current || !pressStart.current) return;
-    if (Math.hypot(e.clientX - pressStart.current.x, e.clientY - pressStart.current.y) > 10) {
-      clearPress();
-    }
-  }
+  // reveal the checkbox.
+  const { handlers: pressHandlers, consumeClick } = useLongPress(onLongPress);
 
   function handleClick() {
-    if (longPressed.current) {
-      longPressed.current = false;
-      return;
-    }
+    if (consumeClick()) return;
     onSelect();
   }
 
   return (
     <SelectableRow
       onClick={handleClick}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={clearPress}
-      onPointerCancel={clearPress}
-      onPointerLeave={clearPress}
-      onContextMenu={(e) => {
-        if (onLongPress) e.preventDefault();
-      }}
+      {...pressHandlers}
       className={`group relative overflow-hidden select-none [-webkit-touch-callout:none] flex flex-col gap-2.5 p-3 pl-4 rounded-[10px] border ${
         active
           ? "border-accent-blue bg-bg-panel"

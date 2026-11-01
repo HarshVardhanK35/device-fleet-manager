@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Send, RefreshCw } from "lucide-react";
+import { Send } from "lucide-react";
 
 import { getDevices } from "../api/devices.js";
 import {
@@ -17,6 +17,7 @@ import {
 } from "../utils/assignmentStatus.js";
 import { pluralizeCount } from "../utils/pluralize.js";
 import AssignmentCard from "../components/AssignmentCard.jsx";
+import RefreshButton from "../components/RefreshButton.jsx";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
 import PublishModal from "../components/PublishModal.jsx";
 import SkeletonList from "../components/SkeletonList.jsx";
@@ -34,7 +35,8 @@ function Assignments() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [publishOpen, setPublishOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  // The assignment being stopped — its card shows "Stopping…" until it settles.
+  const [stoppingId, setStoppingId] = useState(null);
 
   useEffect(() => {
     load(true);
@@ -60,20 +62,6 @@ function Assignments() {
     if (isInitial) setLoading(false);
   }
 
-  // Manual refresh — the 10s poll above already keeps progress bars/countdowns
-  // moving on its own, but a durationInMillis edit on a Content item (or any
-  // other change that doesn't touch this device's own assignments) can take
-  // up to that same 10s to show up here. This gives an immediate way to pull
-  // the latest state without waiting on the poll or a full page reload.
-  async function manualRefresh() {
-    setRefreshing(true);
-    try {
-      await load(false);
-    } finally {
-      setRefreshing(false);
-    }
-  }
-
   function openPublish() {
     setEditingAssignment(null);
     setPublishOpen(true);
@@ -85,8 +73,14 @@ function Assignments() {
   }
 
   async function handleStopRequest(assignment) {
-    await updateAssignment(assignment._id, { endDT: new Date().toISOString() });
-    load(false);
+    if (stoppingId) return;
+    setStoppingId(assignment._id);
+    try {
+      await updateAssignment(assignment._id, { endDT: new Date().toISOString() });
+      await load(false);
+    } finally {
+      setStoppingId(null);
+    }
   }
 
   async function handleConfirmDeleteAssignment() {
@@ -120,8 +114,9 @@ function Assignments() {
           }`}
         >
           <h1 className="text-text-primary text-xl font-bold">Assignments</h1>
-          <p className="text-accent-blue text-sm mb-4">
-            Choose which playlist each screen plays, and when.
+          <p className="text-text-muted text-sm mb-4 whitespace-nowrap">
+            <span className="sm:hidden">Choose what each screen plays, and when.</span>
+            <span className="hidden sm:inline">Choose which playlist each screen plays, and when.</span>
           </p>
 
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-bg-hover">
@@ -132,16 +127,7 @@ function Assignments() {
               <span className="text-text-muted text-xs">
                 {onlineCount} of {devices.length} online
               </span>
-              <button
-                type="button"
-                onClick={manualRefresh}
-                disabled={refreshing}
-                title="Refresh"
-                aria-label="Refresh"
-                className="text-accent-blue hover:text-accent-blue/80 disabled:opacity-50 transition-colors"
-              >
-                <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-              </button>
+              <RefreshButton onRefresh={() => load(false)} />
             </div>
           </div>
 
@@ -264,6 +250,7 @@ function Assignments() {
                             onDeleteRequest={setDeleteTarget}
                             onEditRequest={handleEditRequest}
                             onStopRequest={handleStopRequest}
+                            stopping={stoppingId === assignment._id}
                           />
                         </div>
                       </div>

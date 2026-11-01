@@ -15,10 +15,10 @@ function PickerSelectionStatus({
   if (missingName || missingContent) {
     const message =
       missingName && missingContent
-        ? "Add a name and pick at least 1 item to continue"
+        ? "Add a name and pick an item"
         : missingName
           ? "Add a name to continue"
-          : "Pick at least 1 item to continue";
+          : "Pick at least 1 item";
 
     return (
       <span

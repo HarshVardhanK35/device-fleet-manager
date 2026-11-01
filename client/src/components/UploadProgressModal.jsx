@@ -101,7 +101,8 @@ function UploadProgressModal({
             {error}
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-4">
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
             <div
               role="progressbar"
               aria-valuemin={0}
@@ -128,9 +129,11 @@ function UploadProgressModal({
               </span>
             </div>
           </div>
+          {done && <Button onClick={onClose} className="flex-none">Okay</Button>}
+          </div>
         )}
 
-        {(done || error) && (
+        {error && (
           <div className="flex justify-end">
             <Button onClick={onClose}>Okay</Button>
           </div>

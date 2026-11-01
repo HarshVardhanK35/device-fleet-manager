@@ -5,7 +5,6 @@ import {
   ListVideo,
   Image as ImageIcon,
   CalendarCheck,
-  RefreshCw,
   ArrowRight,
 } from "lucide-react";
 
@@ -19,12 +18,13 @@ import { timeAgo } from "../utils/timeAgo.js";
 import { pluralizeCount, pluralizeWord } from "../utils/pluralize.js";
 
 import StatTile from "../components/StatTile.jsx";
+import LimitsPanel from "../components/LimitsPanel.jsx";
 import DashboardAttentionPanel from "../components/DashboardAttentionPanel.jsx";
 import ContentTile from "../components/ContentTile.jsx";
-import Button from "../components/Button.jsx";
+import RefreshButton from "../components/RefreshButton.jsx";
 import { useAuth } from "../context/useAuth.js";
 
-const RECENT_CONTENT_COUNT = 8;
+const RECENT_CONTENT_COUNT = 4;
 
 function Dashboard() {
   const [devices, setDevices] = useState([]);
@@ -39,8 +39,9 @@ function Dashboard() {
     load();
   }, []);
 
+  // Initial state is already loading; a manual refresh keeps the page up and
+  // just swaps the data in.
   async function load() {
-    setLoading(true);
     const [deviceData, assignmentData, playlistData, contentData] =
       await Promise.all([
         getDevices(),
@@ -67,14 +68,17 @@ function Dashboard() {
     (d) => getDeviceSummary(d).text === "Nothing scheduled",
   );
 
+  // Every screen, healthiest first: playing, then online with nothing
+  // scheduled, then offline (most recently seen first, so the longest-offline
+  // screen is last).
   const attentionItems = [
-    ...[...offline]
-      .sort((a, b) => new Date(a.lastSeenAt) - new Date(b.lastSeenAt))
+    ...online
+      .filter((d) => !idle.includes(d))
       .map((device) => ({
         device,
-        kind: "off",
-        since: timeAgo(device.lastSeenAt),
-        reason: `Last seen ${timeAgo(device.lastSeenAt)}`,
+        kind: "ok",
+        since: "",
+        reason: `Playlist: ${getDeviceSummary(device).text.replace(/^Playing /, "")}`,
       })),
     ...idle.map((device) => ({
       device,
@@ -82,6 +86,14 @@ function Dashboard() {
       since: timeAgo(device.lastSeenAt),
       reason: "Nothing scheduled right now",
     })),
+    ...[...offline]
+      .sort((a, b) => new Date(b.lastSeenAt) - new Date(a.lastSeenAt))
+      .map((device) => ({
+        device,
+        kind: "off",
+        since: timeAgo(device.lastSeenAt),
+        reason: `Last seen ${timeAgo(device.lastSeenAt)}`,
+      })),
   ];
 
   const imageCount = content.filter((c) => c.type === "image").length;
@@ -115,7 +127,7 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto flex flex-col gap-6">
+      <div className="max-w-7xl mx-auto flex flex-col gap-4">
         <div className="skeleton h-14 rounded-xl" />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {Array.from({ length: 5 }, (_, i) => (
@@ -128,7 +140,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col gap-6">
+    <div className="max-w-7xl mx-auto flex flex-col gap-4">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-text-primary text-[32px] font-bold m-0">
@@ -137,24 +149,36 @@ function Dashboard() {
               ? `, ${user.firstName.charAt(0).toUpperCase()}${user.firstName.slice(1)}`
               : ""}
           </h1>
-          <p className="text-text-muted text-sm m-0">
-            Fleet status as of {new Date().toLocaleString(undefined, {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-text-muted text-sm m-0">
+              Fleet status
+              <span className="hidden sm:inline">
+                {" "}as of {new Date().toLocaleString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
+              <span className="sm:hidden">
+                {" "}· {new Date().toLocaleString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
+            </p>
+            {/* phones: icon only, straight after the date at the right end */}
+            <div className="md:hidden">
+              <RefreshButton onRefresh={load} />
+            </div>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          icon={RefreshCw}
-          onClick={load}
-          className="self-start md:self-auto !min-h-9"
-        >
-          Refresh
-        </Button>
+        <div className="hidden md:block">
+          <RefreshButton onRefresh={load} />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -193,7 +217,10 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      {/* lg+: needs-attention | recently created (2 x 2) | the three shortcuts
+          stacked. The attention panel sets the row height; the other two stretch
+          to match it. Below lg everything stacks and the shortcuts become a row. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-4">
         <div>
           <DashboardAttentionPanel
             items={attentionItems}
@@ -201,7 +228,7 @@ function Dashboard() {
           />
         </div>
 
-        <div className="bg-bg-panel border border-border-muted rounded-xl overflow-hidden">
+        <div className="bg-bg-panel border border-border-muted rounded-xl overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-border-muted">
             <span className="font-semibold text-[15px] text-text-primary">
               Recently created
@@ -214,19 +241,21 @@ function Dashboard() {
             </button>
           </div>
 
-          <div className="p-3">
+          <div className="p-3 flex-1 min-h-0 flex flex-col">
             {recentContent.length === 0 ? (
               <p className="text-text-muted text-sm text-center py-8">
                 No content yet.
               </p>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-rows-2 gap-3 flex-1 min-h-0">
                 {recentContent.map((item) => (
                   <ContentTile
                     key={item._id}
                     item={item}
                     size="fluid"
                     coloredType
+                    className="lg:h-full lg:flex lg:flex-col"
+                    thumbClassName="aspect-video lg:aspect-auto lg:flex-1 lg:min-h-[64px]"
                     onClick={() => navigate("/content")}
                   />
                 ))}
@@ -234,28 +263,30 @@ function Dashboard() {
             )}
           </div>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 lg:grid-rows-3 gap-4">
+          {quickLinks.map((link) => (
+            <button
+              key={link.title}
+              onClick={link.onClick}
+              className="bg-bg-panel border border-border-muted hover:border-border-hover hover:bg-bg-hover rounded-xl p-4 flex items-center gap-3.5 text-left transition-colors"
+            >
+              <span className="w-10 h-10 rounded-lg bg-accent-blue/15 text-accent-blue flex items-center justify-center flex-none">
+                <link.icon size={20} />
+              </span>
+              <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                <div className="font-semibold text-text-primary">
+                  {link.title}
+                </div>
+                <div className="text-text-muted text-[12.5px]">{link.sub}</div>
+              </div>
+              <ArrowRight size={16} className="text-text-muted flex-none" />
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {quickLinks.map((link) => (
-          <button
-            key={link.title}
-            onClick={link.onClick}
-            className="bg-bg-panel border border-border-muted hover:border-border-hover hover:bg-bg-hover rounded-xl p-4 flex items-center gap-3.5 text-left transition-colors"
-          >
-            <span className="w-10 h-10 rounded-lg bg-accent-blue/15 text-accent-blue flex items-center justify-center flex-none">
-              <link.icon size={20} />
-            </span>
-            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-              <div className="font-semibold text-text-primary">
-                {link.title}
-              </div>
-              <div className="text-text-muted text-[12.5px]">{link.sub}</div>
-            </div>
-            <ArrowRight size={16} className="text-text-muted flex-none" />
-          </button>
-        ))}
-      </div>
+      <LimitsPanel content={content} screenCount={devices.length} />
     </div>
   );
 }

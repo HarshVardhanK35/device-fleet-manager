@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Pencil, Square, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, Pencil, Square, Trash2 } from "lucide-react";
 
 import ActionMenu from "./ActionMenu.jsx";
 import {
@@ -46,6 +46,7 @@ function AssignmentCard({
   onDeleteRequest,
   onEditRequest,
   onStopRequest,
+  stopping = false,
 }) {
   const status = getAssignmentStatus(assignment, device);
   const pill = STATUS_PILL[status];
@@ -67,9 +68,10 @@ function AssignmentCard({
     <div className="bg-bg-primary rounded-lg p-4 border border-border-muted hover:border-border-hover transition-colors">
       <div className="flex items-center justify-between mb-3">
         <span
-          className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${pill.className}`}
+          className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${pill.className}`}
         >
-          {pill.label}
+          {stopping && <Loader2 size={12} className="animate-spin" />}
+          {stopping ? "Stopping…" : pill.label}
         </span>
         <ActionMenu
           label={`More actions for ${assignment.playlistId?.name ?? "assignment"}`}

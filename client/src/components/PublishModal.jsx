@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Check,
   TriangleAlert,
-  Send,
 } from "lucide-react";
 
 import {
@@ -396,7 +395,7 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
 
   return (
     <>
-      <ScrollBox className="px-6 pt-5 pb-5">
+      <ScrollBox className="px-4 sm:px-6 pt-4 sm:pt-5 pb-4 sm:pb-5">
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-0">
         {/* left pane */}
         <div className="flex-1 flex flex-col gap-5 lg:max-w-[360px] lg:pr-6">
@@ -494,9 +493,9 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
       </div>
       </ScrollBox>
 
-      <div className="flex items-center gap-3 px-6 py-4 border-t border-border-muted">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-border-muted">
         <p
-          className={`text-[13px] m-0 flex-1 ${
+          className={`text-[13px] m-0 w-full sm:w-auto sm:flex-1 ${
             footerTone === "error" ? "text-accent-red font-medium" : "text-text-muted"
           }`}
         >
@@ -507,18 +506,17 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
         </p>
         <Dialog.Close
           type="button"
-          className="h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-4 text-sm font-semibold transition-colors flex-none"
+          className="h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-4 text-sm font-semibold transition-colors flex-1 sm:flex-none"
         >
           Cancel
         </Dialog.Close>
         <Button
           type="button"
-          icon={Send}
           disabled={!canPublish || submitting}
           onClick={handlePublish}
-          className="flex-none"
+          className="flex-1 sm:flex-none"
         >
-          {assignment ? "Save" : "Publish"}
+          {submitting ? (assignment ? "Saving…" : "Publishing…") : assignment ? "Save" : "Publish"}
         </Button>
       </div>
     </>
@@ -554,14 +552,14 @@ function PublishModal({ open, onOpenChange, playlists, devices, assignment, onPu
             // Cancel/X buttons.
             e.preventDefault();
           }}
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[900px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40"
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[900px] max-w-[calc(100vw-32px)] max-h-[85dvh] flex flex-col z-40"
         >
-          <div className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-border-muted">
+          <div className="flex items-center gap-3 px-4 sm:px-6 pt-3 pb-3 sm:pt-5 sm:pb-4 border-b border-border-muted">
             <div className="flex-1 min-w-0">
               <Dialog.Title className="text-text-primary font-bold text-lg m-0">
                 {assignment ? "Edit assignment" : "Publish playlist"}
               </Dialog.Title>
-              <p className="text-text-muted text-sm mt-1">
+              <p className="hidden sm:block text-text-muted text-sm mt-1">
                 Choose what plays, when, and on which screens.
               </p>
             </div>

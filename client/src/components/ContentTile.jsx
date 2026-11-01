@@ -1,5 +1,3 @@
-import { Pencil } from "lucide-react";
-
 import { getTypeMeta } from "../utils/contentTypeMeta.js";
 import { formatDuration } from "../utils/formatDuration.js";
 import { getOptimizedThumbnail } from "../utils/cloudinaryTransform.js";
@@ -16,8 +14,9 @@ function ContentTile({
   coloredType = false,
   footerActions,
   footerBar,
+  thumbClassName = "aspect-video",
   onClick,
-  onEditClick,
+  rootProps,
 }) {
   const width =
     size === "sm" ? "w-[140px]" : size === "fluid" ? "w-full" : "w-[218px]";
@@ -27,9 +26,10 @@ function ContentTile({
   return (
     <div
       onClick={onClick}
+      {...rootProps}
       className={`relative group cursor-pointer ${width} rounded-[10px] overflow-hidden bg-bg-panel border border-border-muted transition-colors duration-150 hover:bg-[#1c2129] hover:border-border-hover ${className}`}
     >
-      <div className="relative aspect-video bg-[#201e1e] flex items-center justify-center">
+      <div className={`relative ${thumbClassName} bg-[#201e1e] flex items-center justify-center`}>
         {item.type === "app" ? (
           <span className="text-text-muted text-sm">App</span>
         ) : (
@@ -61,30 +61,21 @@ function ContentTile({
           </span>
         )}
 
-        {onEditClick && (
-          <button
-            type="button"
-            aria-label="Edit settings"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditClick(item);
-            }}
-            className="absolute right-1.5 top-1.5 w-[26px] h-[26px] rounded-md flex items-center justify-center bg-black/70 border border-white/80 text-white opacity-0 group-hover:opacity-100 hover:bg-black/85 transition-opacity"
-          >
-            <Pencil size={13} />
-          </button>
-        )}
-
         {children}
       </div>
 
       <div className="flex items-center gap-2 px-2.5 py-2.5">
-        <p
-          title={item.name}
-          className={`flex-1 min-w-0 font-bold ${textSize} leading-[1.35] text-text-primary whitespace-nowrap overflow-hidden text-ellipsis`}
-        >
-          {item.name}
-        </p>
+        {/* Up to two lines, in a box that is always two lines tall, so tiles
+            in a row stay the same height and a long name is readable on touch
+            screens (no hover tooltip there). */}
+        <div className={`flex-1 min-w-0 flex items-center min-h-[2.7em] ${textSize}`}>
+          <p
+            title={item.name}
+            className="font-bold leading-[1.35] text-text-primary line-clamp-2"
+          >
+            {item.name}
+          </p>
+        </div>
         <span
           className={`flex-none inline-flex items-center justify-center text-[10px] font-bold px-[6px] py-[2px] rounded-[5px] ${
             coloredType
@@ -92,7 +83,8 @@ function ContentTile({
               : "text-[rgb(214,220,227)] bg-[rgb(39,45,55)]"
           }`}
         >
-          {item.type.toUpperCase()}
+          <span className="sm:hidden">{meta.short}</span>
+          <span className="hidden sm:inline">{meta.label}</span>
         </span>
         {footerActions && <div className="flex-none">{footerActions}</div>}
       </div>
@@ -104,8 +96,8 @@ function ContentTile({
 export default ContentTile;
 
 // The reusable content-item tile: thumbnail/app placeholder, duration
-// badge, and a footer row with the name (left, tooltip when truncated) and
-// the type badge (right). `size` is "lg" (218px, default), "sm"
+// badge, and a footer row with the name (left, up to two lines, tooltip when
+// cut off) and the type badge (right). `size` is "lg" (218px, default), "sm"
 // (140px), or "fluid" (fills parent width — used in grids/modals).
 // `slotIndex` (optional) renders a position-number badge top-left on the
 // thumbnail (e.g. "3"), for playlist-slot context — pair with a
@@ -113,7 +105,9 @@ export default ContentTile;
 // don't collide. `slotIndexActive` turns that badge blue (e.g. while the
 // tile is checked for bulk selection). `footerActions` (optional) renders a node (e.g. an
 // ActionMenu) pinned top-right of the name/type-badge footer, for
-// per-item actions. `footerBar` (optional) renders a full-width node under
+// per-item actions. `thumbClassName` (default "aspect-video") sizes the
+// thumbnail — the Dashboard swaps it for a flexible height so the tiles fill
+// their panel. `footerBar` (optional) renders a full-width node under
 // the footer row (e.g. PlaylistSlotTile's mobile move buttons). `onClick` (optional) fires for a click anywhere on
 // the tile (thumbnail or footer).
 // Used by: pages/Content.jsx (via SelectableContentTile), and
