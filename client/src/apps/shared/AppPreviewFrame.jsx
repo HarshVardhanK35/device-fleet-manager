@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
 
 import { PREVIEW_SIZES } from "./previewSizes.js";
 import { loadAppBundle, isAppBundleUrl } from "./loadAppBundle.js";
+import BrandLoader from "../../components/BrandLoader.jsx";
 import { API_BASE } from "../../api/apiClient.js";
 
 // The bordered/shadowed preview box every app settings screen shows its
@@ -146,7 +146,7 @@ function AppPreviewFrame({ size = "desktop", src = "about:blank", config, fullsc
         )}
         {!appReady && !bundleError && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <Loader2 size={28} className="animate-spin text-text-muted" />
+            <BrandLoader size={44} label="Loading preview" />
           </div>
         )}
         {bundleError && (

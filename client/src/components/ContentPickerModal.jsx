@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { LayoutGrid, List, Loader2, Search } from "lucide-react";
+import { LayoutGrid, List, Search } from "lucide-react";
 
 import ContentTile from "./ContentTile.jsx";
 import ScrollBox from "./ScrollBox.jsx";
@@ -9,6 +9,7 @@ import CancelButton from "./CancelButton.jsx";
 import SelectCheckbox from "./SelectCheckbox.jsx";
 import ContentFilterSortBar from "./ContentFilterSortBar.jsx";
 import PickerSelectionStatus from "./PickerSelectionStatus.jsx";
+import LoadingOverlay from "./LoadingOverlay.jsx";
 import { useAsyncAction } from "../hooks/useAsyncAction.js";
 import { getTypeMeta } from "../utils/contentTypeMeta.js";
 import { formatDuration } from "../utils/formatDuration.js";
@@ -387,9 +388,9 @@ function PickerFormBody({
           Cancel
         </Dialog.Close>
         <Button type="submit" disabled={busy} className="flex-1 sm:flex-none whitespace-nowrap">
-          {busy && busyLabel ? <Loader2 size={14} className="animate-spin" /> : null}
           {busy && busyLabel ? busyLabel : submitLabel}
         </Button>
+        <LoadingOverlay show={busy} />
       </div>
     </form>
   );

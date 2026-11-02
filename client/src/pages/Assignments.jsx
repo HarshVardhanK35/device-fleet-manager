@@ -106,10 +106,11 @@ function Assignments() {
     <div
       className={`mx-auto lg:max-w-6xl ${mobileView === "detail" ? "max-w-3xl" : "max-w-xl"}`}
     >
-      <div className="flex gap-4">
+      {/* min height = the visible page, so the divider runs to the bottom */}
+      <div className="flex gap-4 lg:min-h-[calc(100dvh-88px)]">
         {/* left pane */}
         <div
-          className={`w-full lg:w-80 lg:flex-shrink-0 lg:pr-4 ${
+          className={`w-full lg:w-80 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted ${
             mobileView === "detail" ? "hidden lg:block" : ""
           }`}
         >

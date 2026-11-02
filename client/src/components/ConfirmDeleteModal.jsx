@@ -1,7 +1,8 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Loader2, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import ScrollBox from "./ScrollBox.jsx";
+import LoadingOverlay from "./LoadingOverlay.jsx";
 import { useAsyncAction } from "../hooks/useAsyncAction.js";
 
 function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm, busyLabel = "Deleting…" }) {
@@ -63,12 +64,13 @@ function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm, busyL
               disabled={busy}
               className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter] disabled:opacity-70 disabled:pointer-events-none"
             >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+              <Trash2 size={16} />
               {busy ? busyLabel : `Delete ${itemLabel}`}
             </button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
+      <LoadingOverlay show={busy} />
     </Dialog.Root>
   );
 }

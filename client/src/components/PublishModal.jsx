@@ -25,6 +25,7 @@ import SelectCheckbox from "./SelectCheckbox.jsx";
 import CancelButton from "./CancelButton.jsx";
 import Button from "./Button.jsx";
 import ScrollBox from "./ScrollBox.jsx";
+import LoadingOverlay from "./LoadingOverlay.jsx";
 import DateTimeField from "./DateTimeField.jsx";
 import ToggleSwitch from "../apps/shared/ToggleSwitch.jsx";
 
@@ -518,6 +519,7 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
         >
           {submitting ? (assignment ? "Saving…" : "Publishing…") : assignment ? "Save" : "Publish"}
         </Button>
+        <LoadingOverlay show={submitting} />
       </div>
     </>
   );

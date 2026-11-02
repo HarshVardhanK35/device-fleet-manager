@@ -10,6 +10,7 @@ import PasswordField from "../components/PasswordField.jsx";
 import AuthErrorBanner from "../components/AuthErrorBanner.jsx";
 import AuthHeading from "../components/AuthHeading.jsx";
 import Button from "../components/Button.jsx";
+import LoadingOverlay from "../components/LoadingOverlay.jsx";
 import { useAsyncAction } from "../hooks/useAsyncAction.js";
 
 function Login() {
@@ -134,6 +135,7 @@ function Login() {
           </button>
         </p>
       </form>
+      <LoadingOverlay show={signingIn} />
     </AuthLayout>
   );
 }

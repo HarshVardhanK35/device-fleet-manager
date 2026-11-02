@@ -1,10 +1,20 @@
 import { useParams } from "react-router-dom";
 
+import BrandLoader from "../components/BrandLoader.jsx";
 import DevicePlayback from "../components/DevicePlayback.jsx";
 
 function Player() {
   const { token } = useParams();
-  return <DevicePlayback screenToken={token} />;
+  return (
+    <DevicePlayback
+      screenToken={token}
+      waitingView={
+        <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#0d1117" }}>
+          <BrandLoader size={96} label="Waiting for content" />
+        </div>
+      }
+    />
+  );
 }
 
 export default Player;
