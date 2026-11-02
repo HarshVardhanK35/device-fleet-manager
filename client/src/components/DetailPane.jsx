@@ -54,17 +54,18 @@ function DetailPane({
             {meta && <p className="text-text-muted text-sm m-0">{meta}</p>}
           </div>
 
-          {actionLabel && !actionInToolbar && (
-            <div className="hidden md:block flex-shrink-0">
-              <Button icon={actionIcon} onClick={onAction} disabled={actionDisabled}>
-                {actionLabel}
-              </Button>
-            </div>
-          )}
-          {/* h-7 = the title's own line height, so the buttons centre on the title
-              row (equal space above and below) however tall the buttons are. */}
-          {(refresh || headerExtra) && (
+          {/* One right-hand group (never three siblings, or justify-between would
+              push the action button into the middle). h-7 = the title's own line
+              height, so the buttons centre on the title row. */}
+          {((actionLabel && !actionInToolbar) || refresh || headerExtra) && (
             <div className="flex-shrink-0 self-start h-7 flex items-center gap-2">
+              {actionLabel && !actionInToolbar && (
+                <div className="hidden md:block">
+                  <Button icon={actionIcon} onClick={onAction} disabled={actionDisabled}>
+                    {actionLabel}
+                  </Button>
+                </div>
+              )}
               {refresh && <div className="hidden md:block">{refresh}</div>}
               {headerExtra}
             </div>

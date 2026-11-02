@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 
+import LoadingOverlay from "./LoadingOverlay.jsx";
 import { useAuth } from "../context/useAuth.js";
 
 function ProtectedRoute({ children }) {
@@ -9,7 +10,7 @@ function ProtectedRoute({ children }) {
     // AuthContext is still trying to silently refresh from the httpOnly
     // cookie — wait for that before deciding, otherwise a logged-in user
     // would flash-redirect to /login on every page reload.
-    return null;
+    return <LoadingOverlay show />;
   }
 
   if (!token) {

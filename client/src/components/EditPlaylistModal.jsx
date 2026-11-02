@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 import ScrollBox from "./ScrollBox.jsx";
 import CancelButton from "./CancelButton.jsx";
 import Button from "./Button.jsx";
 import RemovableContentTile from "./RemovableContentTile.jsx";
+import LoadingOverlay from "./LoadingOverlay.jsx";
 import { useAsyncAction } from "../hooks/useAsyncAction.js";
 
 // Owns name/description/contentItems state. Rendered only while `open` is
@@ -85,9 +85,9 @@ function EditPlaylistBody({ playlist, onSave, onRemoveItem }) {
           Close
         </Dialog.Close>
         <Button onClick={() => save(name, description)} disabled={saving}>
-          {saving && <Loader2 size={14} className="animate-spin" />}
           {saving ? "Saving…" : "Save"}
         </Button>
+        <LoadingOverlay show={saving} />
       </div>
     </>
   );

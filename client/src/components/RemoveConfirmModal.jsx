@@ -1,8 +1,9 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { CircleMinus, Loader2 } from "lucide-react";
+import { CircleMinus } from "lucide-react";
 
 import ScrollBox from "./ScrollBox.jsx";
 import GhostButton from "./GhostButton.jsx";
+import LoadingOverlay from "./LoadingOverlay.jsx";
 import { useAsyncAction } from "../hooks/useAsyncAction.js";
 import { getTypeMeta } from "../utils/contentTypeMeta.js";
 
@@ -89,16 +90,13 @@ function RemoveConfirmModal({
               disabled={busy}
               className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter] disabled:opacity-70 disabled:pointer-events-none"
             >
-              {busy ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Icon size={16} className="hidden sm:block" />
-              )}
+              <Icon size={16} className="hidden sm:block" />
               {busy ? busyLabel : confirmLabel}
             </button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
+      <LoadingOverlay show={busy} />
     </Dialog.Root>
   );
 }

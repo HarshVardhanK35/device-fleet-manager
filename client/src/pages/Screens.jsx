@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { MonitorPlay, Check, Play, Square, RotateCcw } from "lucide-react";
+import { Check, Play, Square, RotateCcw } from "lucide-react";
+import BrandLoader from "../components/BrandLoader.jsx";
+import Logo from "../components/Logo.jsx";
 
 import { generatePairingCode, getPairingStatus } from "../api/pairing.js";
 import { checkDeviceExists, unpairDevice, disconnectDevice } from "../api/devices.js";
@@ -319,28 +321,17 @@ function Screens() {
               boxShadow: "0 0 4cqmin color-mix(in srgb, var(--color-accent) 45%, transparent)",
             }}
           >
-            <MonitorPlay
-              style={{ width: "clamp(16px,3.8cqmin,190px)", height: "clamp(16px,3.8cqmin,190px)", color: "var(--color-accent-200)" }}
-            />
+            <Logo size="clamp(16px,3.8cqmin,190px)" />
           </div>
           <div style={{ fontSize: "clamp(16px,3.5cqmin,180px)", fontWeight: 500, letterSpacing: "-0.015em" }}>
-            Device Fleet Manager
+            CastWise
           </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 0 }}>
           {phase === "loading" && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(12px,3.4cqmin,170px)" }}>
-              <div
-                style={{
-                  width: "clamp(40px,10cqmin,520px)",
-                  height: "clamp(40px,10cqmin,520px)",
-                  borderRadius: "50%",
-                  border: "clamp(3px,0.75cqmin,36px) solid color-mix(in srgb, var(--color-accent-200) 20%, transparent)",
-                  borderTopColor: "var(--color-accent-200)",
-                  animation: "screens-spin 0.9s linear infinite",
-                }}
-              />
+              <BrandLoader size="clamp(56px,14cqmin,700px)" label={null} />
               <div style={{ fontSize: "clamp(16px,3.4cqmin,170px)", color: "var(--color-neutral-200)" }}>
                 Connecting…
               </div>
@@ -473,16 +464,7 @@ function Screens() {
                 initialPosition={pendingPosition}
                 waitingView={
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(12px,3.4cqmin,170px)" }}>
-                    <div
-                      style={{
-                        width: "clamp(40px,10cqmin,520px)",
-                        height: "clamp(40px,10cqmin,520px)",
-                        borderRadius: "50%",
-                        border: "clamp(3px,0.75cqmin,36px) solid color-mix(in srgb, var(--color-accent-200) 20%, transparent)",
-                        borderTopColor: "var(--color-accent-200)",
-                        animation: "screens-spin 0.9s linear infinite",
-                      }}
-                    />
+                    <BrandLoader size="clamp(56px,14cqmin,700px)" label={null} />
                     <div style={{ fontSize: "clamp(16px,3.4cqmin,170px)", color: "var(--color-neutral-200)" }}>
                       Waiting for content…
                     </div>

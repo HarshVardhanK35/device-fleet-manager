@@ -1,7 +1,8 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plug, StopCircle, Info, Check, Loader2 } from "lucide-react";
+import { Plug, StopCircle, Info, Check } from "lucide-react";
 
 import GhostButton from "./GhostButton.jsx";
+import LoadingOverlay from "./LoadingOverlay.jsx";
 import { useAsyncAction } from "../hooks/useAsyncAction.js";
 
 function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm, error }) {
@@ -85,7 +86,7 @@ function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm
                   disabled={!ack || busy}
                   className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter] disabled:opacity-40 disabled:pointer-events-none"
                 >
-                  {busy ? <Loader2 size={16} className="animate-spin" /> : <Plug size={16} />}
+                  <Plug size={16} />
                   {busy ? "Taking over…" : "Disconnect & take over"}
                 </button>
               </div>
@@ -93,6 +94,7 @@ function TakeOverModal({ open, onOpenChange, screen, ack, onAckToggle, onConfirm
           )}
         </Dialog.Content>
       </Dialog.Portal>
+      <LoadingOverlay show={busy} />
     </Dialog.Root>
   );
 }

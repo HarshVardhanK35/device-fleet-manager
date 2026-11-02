@@ -14,6 +14,7 @@ import {
 
 import ScreenThumb from "../components/ScreenThumb.jsx";
 import EmptyState from "../components/EmptyState.jsx";
+import LoadingOverlay from "../components/LoadingOverlay.jsx";
 import Button from "../components/Button.jsx";
 import RefreshButton from "../components/RefreshButton.jsx";
 import { MAX_SCREENS } from "../utils/limits.js";
@@ -327,14 +328,15 @@ function PlayerSlots() {
         mobileView === "detail" ? "max-w-3xl" : "max-w-xl"
       }`}
     >
-      <div className="flex gap-4">
+      {/* min height = the visible page, so the divider runs to the bottom */}
+      <div className="flex gap-4 lg:min-h-[calc(100dvh-88px)]">
         {/* slot rail */}
         <div
-          className={`w-full lg:w-72 lg:flex-shrink-0 flex flex-col gap-2 ${
+          className={`w-full lg:w-72 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted flex flex-col gap-2 ${
             mobileView === "detail" ? "hidden lg:flex" : "flex"
           }`}
         >
-          <div className="mb-1">
+          <div className="mb-1 pb-3 border-b border-bg-hover">
             <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-text-primary text-xl font-bold m-0">
                 Player
@@ -574,6 +576,7 @@ function PlayerSlots() {
                     >
                       {busyId === selected.id ? "Pairing…" : "Pair screen"}
                     </Button>
+                    <LoadingOverlay show={busyId === selected.id} />
                   </div>
                 </div>
               </div>

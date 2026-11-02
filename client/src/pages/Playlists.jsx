@@ -25,6 +25,7 @@ import EmptyState from "../components/EmptyState.jsx";
 import DetailPane from "../components/DetailPane.jsx";
 import Button from "../components/Button.jsx";
 import RefreshButton from "../components/RefreshButton.jsx";
+import LoadingOverlay from "../components/LoadingOverlay.jsx";
 import { pluralizeCount } from "../utils/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
 
@@ -297,6 +298,9 @@ function Playlists() {
           />
         )}
 
+        {/* divider between the header controls and the list */}
+        <div className="mb-3 border-b border-bg-hover lg:mr-4 flex-shrink-0" />
+
         <ScrollBox className="lg:pr-4 pt-1">
           {loading ? (
             <SkeletonPlaylistList count={4} />
@@ -408,6 +412,7 @@ function Playlists() {
                         <Check size={14} />
                         {savingOrder ? "Saving…" : "Save"}
                       </button>
+                      <LoadingOverlay show={savingOrder} />
                     </div>
                   </>
                 ) : (
@@ -436,6 +441,7 @@ function Playlists() {
                     <Button icon={Check} onClick={handleSaveOrder} disabled={savingOrder}>
                       {savingOrder ? "Saving…" : "Save order"}
                     </Button>
+                    <LoadingOverlay show={savingOrder} />
                   </div>
                 )
               }

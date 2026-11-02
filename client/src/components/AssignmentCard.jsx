@@ -1,4 +1,5 @@
-import { AlertTriangle, ArrowRight, Loader2, Pencil, Square, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Pencil, Square, Trash2 } from "lucide-react";
+import LoadingOverlay from "./LoadingOverlay.jsx";
 
 import ActionMenu from "./ActionMenu.jsx";
 import {
@@ -70,9 +71,9 @@ function AssignmentCard({
         <span
           className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${pill.className}`}
         >
-          {stopping && <Loader2 size={12} className="animate-spin" />}
           {stopping ? "Stopping…" : pill.label}
         </span>
+        <LoadingOverlay show={stopping} />
         <ActionMenu
           label={`More actions for ${assignment.playlistId?.name ?? "assignment"}`}
           items={menu.items}

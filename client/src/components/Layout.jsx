@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
+import Logo from "./Logo.jsx";
 import ScrollBox from "./ScrollBox.jsx";
 
 import { useAuth } from "../context/useAuth.js";
@@ -11,7 +12,6 @@ import {
   Image,
   MonitorPlay,
   ListVideo,
-  Monitor,
   PlaySquare,
   User,
   LogOut,
@@ -69,10 +69,8 @@ function Layout({ children }) {
         </button>
 
         <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex items-center gap-2">
-          <span className="w-8 h-8 rounded-lg bg-accent-blue flex items-center justify-center">
-            <Monitor size={18} className="text-white" />
-          </span>
-          <span className="text-text-primary font-bold">DFM</span>
+          <Logo size={28} />
+          <span className="text-text-primary font-bold">CastWise</span>
         </div>
 
         <nav className="hidden md:flex items-center gap-5">

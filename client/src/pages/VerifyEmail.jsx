@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CircleCheck, CircleAlert, MonitorPlay } from "lucide-react";
+import Logo from "../components/Logo.jsx";
+import { CircleCheck, CircleAlert } from "lucide-react";
 
 import { verifyEmail } from "../api/auth.js";
 import Button from "../components/Button.jsx";
@@ -38,11 +39,9 @@ function VerifyEmail() {
     <div className="min-h-screen flex items-center justify-center bg-bg-primary px-5">
       <div className="w-full max-w-[380px] flex flex-col items-center text-center gap-5">
         <div className="flex items-center gap-2.5">
-          <span className="w-9 h-9 rounded-lg bg-accent-blue flex items-center justify-center text-white flex-none">
-            <MonitorPlay size={18} />
-          </span>
+          <Logo size={36} />
           <span className="font-semibold text-sm text-text-primary">
-            Device Fleet Manager
+            CastWise
           </span>
         </div>
 

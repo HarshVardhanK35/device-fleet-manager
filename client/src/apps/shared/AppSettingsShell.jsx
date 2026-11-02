@@ -6,6 +6,7 @@ import CancelButton from "../../components/CancelButton.jsx";
 import ScrollBox from "../../components/ScrollBox.jsx";
 import ActionMenu from "../../components/ActionMenu.jsx";
 import RemoveConfirmModal from "../../components/RemoveConfirmModal.jsx";
+import Logo from "../../components/Logo.jsx";
 import { PREVIEW_SIZES } from "./previewSizes.js";
 
 // Click the pencil to turn the app name into a text input. Small enough
@@ -172,6 +173,7 @@ function AppSettingsShell({
               fullPreview ? "h-0 opacity-0 pointer-events-none border-b-0" : "h-[60px] opacity-100"
             }`}
           >
+            <Logo size={28} className="flex-none mr-1" />
             <EditableTitle name={appName} onChange={onAppNameChange} />
             <div className="flex-1" />
             <PreviewSizeToggle size={previewSize} onChange={setPreviewSize} />

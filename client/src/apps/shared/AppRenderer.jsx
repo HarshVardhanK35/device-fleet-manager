@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
 import { loadAppBundle, isAppBundleUrl } from "./loadAppBundle.js";
 import { API_BASE } from "../../api/apiClient.js";
+import BrandLoader from "../../components/BrandLoader.jsx";
 
 // Full-screen renderer for a `type: "app"` content item at real playback
 // time (DevicePlayback.jsx) — same bundle-loading + postMessage handshake
@@ -14,6 +15,8 @@ function AppRenderer({ configBlob }) {
   const [bundleHtml, setBundleHtml] = useState(null);
   const [bundleError, setBundleError] = useState(null);
   const [appListening, setAppListening] = useState(false);
+  const [appLoaded, setAppLoaded] = useState(false);
+  const [slow, setSlow] = useState(false);
   const iframeRef = useRef(null);
 
   const src = resolveAppUrlByName(configBlob?.appType);
@@ -40,6 +43,7 @@ function AppRenderer({ configBlob }) {
     function handleMessage(e) {
       if (e.source !== iframeRef.current?.contentWindow) return;
       if (e.data?.type === "APP_READY") setAppListening(true);
+      if (e.data?.type === "APP_LOAD") setAppLoaded(true);
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
@@ -56,14 +60,30 @@ function AppRenderer({ configBlob }) {
     );
   }, [appListening, configBlob]);
 
+  // The logo only appears if the app is still loading after a moment, so a
+  // quick start never flashes it on the screen.
+  useEffect(() => {
+    if (appLoaded) return undefined;
+    const t = setTimeout(() => setSlow(true), 700);
+    return () => clearTimeout(t);
+  }, [appLoaded]);
+
+  const loader =
+    !appLoaded && slow ? (
+      <div style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", pointerEvents: "none" }}>
+        <BrandLoader size={72} label="Loading app" />
+      </div>
+    ) : null;
+
   if (bundleError) {
     return <h1>{bundleError}</h1>;
   }
 
   const canMountIframe = isBundle ? bundleHtml !== null : true;
-  if (!canMountIframe) return null;
+  if (!canMountIframe) return loader;
 
   return (
+    <>
     <iframe
       ref={iframeRef}
       title="App"
@@ -77,6 +97,8 @@ function AppRenderer({ configBlob }) {
       style={{ border: "none", width: "100vw", height: "100vh", pointerEvents: "none" }}
       sandbox="allow-scripts allow-same-origin"
     />
+    {loader}
+    </>
   );
 }
 
