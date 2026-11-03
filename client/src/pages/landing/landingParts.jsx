@@ -1,4 +1,4 @@
-import Logo from "../../components/Logo.jsx";
+import Logo from "../../components/layout/Logo.jsx";
 
 // Small pieces shared by the landing sections.
 // Used by: LandingHeader.jsx, LandingFooter.jsx, LandingSections.jsx.

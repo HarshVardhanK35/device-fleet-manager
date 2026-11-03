@@ -1,6 +1,6 @@
 import { Music2, Pause, Play, Volume2, VolumeX } from "lucide-react";
 
-import StyledSelect from "../../components/StyledSelect.jsx";
+import StyledSelect from "../../components/ui/StyledSelect.jsx";
 
 // A dropdown to pick a background-audio file + inline Play/Pause and Mute
 // buttons. The parent screen owns all the actual state (which file,

@@ -8,27 +8,28 @@ import {
   deleteContent,
 } from "../api/content";
 
-import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
+import ConfirmDeleteModal from "../components/modals/ConfirmDeleteModal.jsx";
 import AppsPickerModal from "../apps/AppsPickerModal.jsx";
 import WeatherSettingsScreen from "../apps/appModals/weather-modal.jsx";
 import ClockSettingsScreen from "../apps/appModals/clock-modal.jsx";
 import RssSettingsScreen from "../apps/appModals/rss-modal.jsx";
 import AnnouncementsSettingsScreen from "../apps/appModals/announcements-modal.jsx";
-import ContentPageToolbar from "../components/ContentPageToolbar.jsx";
-import ContentDetailsPanel from "../components/ContentDetailsPanel.jsx";
-import UploadProgressModal from "../components/UploadProgressModal.jsx";
-import ContentSearchInput from "../components/ContentSearchInput.jsx";
-import ContentActionButtons from "../components/ContentActionButtons.jsx";
-import RefreshButton from "../components/RefreshButton.jsx";
-import ContentEmptyState from "../components/ContentEmptyState.jsx";
-import SelectableContentTile from "../components/SelectableContentTile.jsx";
-import SkeletonGrid from "../components/SkeletonGrid.jsx";
-import ScrollBox from "../components/ScrollBox.jsx";
-import ScrollToTopButton from "../components/ScrollToTopButton.jsx";
+import ContentPageToolbar from "../components/content/ContentPageToolbar.jsx";
+import ContentDetailsPanel from "../components/content/ContentDetailsPanel.jsx";
+import UploadProgressModal from "../components/modals/UploadProgressModal.jsx";
+import ContentSearchInput from "../components/content/ContentSearchInput.jsx";
+import ContentActionButtons from "../components/content/ContentActionButtons.jsx";
+import RefreshButton from "../components/ui/RefreshButton.jsx";
+import ContentEmptyState from "../components/content/ContentEmptyState.jsx";
+import SelectableContentTile from "../components/content/SelectableContentTile.jsx";
+import SkeletonGrid from "../components/loading/SkeletonGrid.jsx";
+import ScrollBox from "../components/layout/ScrollBox.jsx";
+import ScrollToTopButton from "../components/layout/ScrollToTopButton.jsx";
 import { getVideoDurationMs } from "../utils/getVideoDuration.js";
 import { pluralizeCount } from "../utils/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
-import { MAX_IMAGES, MAX_VIDEO_BYTES, formatMB } from "../utils/limits.js";
+import { useCompactLayout } from "../hooks/useCompactLayout.js";
+import { MAX_CONTENT_NAME, MAX_IMAGES, MAX_VIDEO_BYTES, formatMB } from "../utils/limits.js";
 
 // The quota numbers (utils/limits.js) are a pre-upload UX check only — avoid
 // wasting a Cloudinary upload on something already known to be rejected. The
@@ -47,6 +48,10 @@ function Content() {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const gridScrollRef = useRef(null);
+  // A narrow tablet (768px with the side navbar open): search, refresh, filter
+  // and sort shrink to icons, each staying in its own place.
+  const pageRef = useRef(null);
+  const compact = useCompactLayout(pageRef);
 
   // bulk selection (checkbox-tick, for multi-item actions)
   const [checkedIds, { toggle: toggleChecked, toggleAll: toggleCheckedAll, setSet: setCheckedIds }] =
@@ -224,7 +229,7 @@ function Content() {
           signal: controller.signal,
         });
 
-        const name = selectedFile.name.replace(/\.[^/.]+$/, "");
+        const name = selectedFile.name.replace(/\.[^/.]+$/, "").slice(0, MAX_CONTENT_NAME);
         const durationInMillis = isVideo
           ? await getVideoDurationMs(selectedFile).catch(() => undefined)
           : undefined;
@@ -366,7 +371,7 @@ function Content() {
     // ScrollArea viewport doesn't stretch its content to 100% height, so a
     // percentage height on this root wouldn't resolve — needed so the nested
     // ScrollBox below can scroll just the grid, not the whole page.
-    <div className="max-w-7xl mx-auto h-[calc(100dvh-88px)] flex flex-col">
+    <div ref={pageRef} className="max-w-7xl mx-auto h-[calc(100dvh-88px)] flex flex-col">
       <input
         ref={fileInputRef}
         type="file"
@@ -416,11 +421,21 @@ function Content() {
           </div>
 
           <div className="flex items-center justify-end gap-2 flex-1 min-w-0">
-            <ContentSearchInput
-              only="desktop"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            {compact ? (
+              <div className="flex-1 min-w-0 flex justify-end">
+                <ContentSearchInput
+                  compact
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            ) : (
+              <ContentSearchInput
+                only="desktop"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            )}
             <RefreshButton onRefresh={fetchContent} />
           </div>
         </div>
@@ -436,6 +451,7 @@ function Content() {
           onFilterChange={setFilterType}
           sortValue={sortBy}
           onSortChange={setSortBy}
+          compact={compact}
           mobileSearch={
             <ContentSearchInput
               only="mobile"
@@ -468,7 +484,7 @@ function Content() {
               </p>
             ) : (
               <div
-                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 ${inspectedItem ? "" : "xl:grid-cols-7"}`}
+                className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 ${inspectedItem ? "xl:grid-cols-4 2xl:grid-cols-5" : "xl:grid-cols-5 2xl:grid-cols-7"}`}
               >
                 {visibleContent.map((item) => (
                   <SelectableContentTile

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { LIMITS, maxLengthWhenChanged } from "../utils/fieldLimits.js";
 
 const playlistSchema = new mongoose.Schema(
   {
@@ -10,10 +11,13 @@ const playlistSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
+      validate: maxLengthWhenChanged("name", LIMITS.playlistName, "Name"),
     },
     description: {
       type: String,
       default: "",
+      validate: maxLengthWhenChanged("description", LIMITS.playlistDescription, "Description"),
     },
     contentItems: [
       {

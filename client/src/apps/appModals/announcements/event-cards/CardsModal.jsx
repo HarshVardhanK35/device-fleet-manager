@@ -6,8 +6,8 @@ import { INPUT_CLASS, TEXTAREA_CLASS } from "../../../shared/columnModal/columnM
 import SliderField from "../../../shared/SliderField.jsx";
 import ToggleSwitch from "../../../shared/ToggleSwitch.jsx";
 import BackgroundAudioField from "../../../shared/BackgroundAudioField.jsx";
-import StyledSelect from "../../../../components/StyledSelect.jsx";
-import ContentPickerModal from "../../../../components/ContentPickerModal.jsx";
+import StyledSelect from "../../../../components/ui/StyledSelect.jsx";
+import ContentPickerModal from "../../../../components/content/ContentPickerModal.jsx";
 import { AUDIO_OPTIONS } from "../common/audioOptions.js";
 import { TYPE_ICON } from "./eventCardsIcons.js";
 import {

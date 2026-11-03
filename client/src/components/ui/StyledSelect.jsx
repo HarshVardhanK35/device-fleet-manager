@@ -1,0 +1,213 @@
+import { useRef } from "react";
+import * as Select from "@radix-ui/react-select";
+import { ChevronDown, Check } from "lucide-react";
+
+function StyledSelect({
+  value,
+  onChange,
+  options,
+  labelFor,
+  icon: Icon,
+  label,
+  open,
+  onOpenChange,
+  roundedSide = "full",
+  portalContainer,
+  bgClassName = "bg-bg-panel",
+  collapseOnMobile = true,
+  collapseOnContainer = false,
+  iconOnly = false,
+  matchTriggerWidth = false,
+  disabled = false,
+  touchSize = false,
+  align = "start",
+}) {
+  const roundedClass =
+    roundedSide === "left"
+      ? "rounded-l-lg rounded-r-none"
+      : roundedSide === "right"
+        ? "rounded-r-lg rounded-l-none border-l-0"
+        : "rounded-lg";
+  // touchSize: 44px tall (and a 44px square when collapsed) below md, 36px
+  // from md up — the Content toolbar matches its sort to the chips beside it.
+  const heightClass = touchSize ? "h-11 md:h-9" : "h-9";
+  const widthClass = iconOnly
+    ? "w-9"
+    : collapseOnContainer
+    ? "w-9 @lg:w-auto @lg:min-w-[140px]"
+    : collapseOnMobile
+    ? touchSize
+      ? "w-11 md:w-auto md:min-w-[170px]"
+      : "w-9 md:w-auto md:min-w-[140px]"
+    : "w-full min-w-0";
+  const padClass = iconOnly ? "px-0" : collapseOnContainer ? "px-0 @lg:px-3" : collapseOnMobile ? "px-0 md:px-3" : "px-3";
+  const justifyClass = iconOnly
+    ? "justify-center"
+    : collapseOnContainer
+    ? "justify-center @lg:justify-between"
+    : collapseOnMobile
+      ? "justify-center md:justify-between"
+      : "justify-between";
+  const iconHideClass = iconOnly ? "" : collapseOnContainer ? "@lg:hidden" : collapseOnMobile ? "md:hidden" : "hidden";
+  const labelShowClass = iconOnly ? "hidden" : collapseOnContainer ? "hidden @lg:inline" : collapseOnMobile ? "hidden md:inline" : "inline";
+  const chevronShowClass = iconOnly ? "hidden" : collapseOnContainer ? "hidden @lg:block" : collapseOnMobile ? "hidden md:block" : "block";
+
+  const triggerRef = useRef(null);
+
+  // avoidCollisions={false} (below) always opens the popup downward, never
+  // flipping above the trigger — fine normally, but a trigger near the
+  // bottom of a scrollable settings panel (e.g. AppSettingsShell's) then
+  // opens the list straight over the panel's own sticky Save/Close footer.
+  // Only scroll the trigger up when there's genuinely not enough room below
+  // it for this list — otherwise a trigger that already has plenty of
+  // space (e.g. near the top of the panel) would still get yanked to the
+  // very top on every open, which reads as broken/unnecessary.
+  function handleOpenChange(isOpen) {
+    if (isOpen && triggerRef.current) {
+      const itemCount = options.length;
+      const estimatedPopupHeight = Math.min(itemCount * 36 + 8, 320 + 8);
+      // Extra margin for AppSettingsShell's sticky Save/Close footer, which
+      // sits below the trigger's own scrollable panel but isn't reflected
+      // in a plain viewport-bottom measurement.
+      const footerSafeMargin = 80;
+      const spaceBelow = window.innerHeight - triggerRef.current.getBoundingClientRect().bottom;
+      if (spaceBelow < estimatedPopupHeight + footerSafeMargin) {
+        triggerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+    onOpenChange?.(isOpen);
+  }
+
+  return (
+    <Select.Root
+      value={value}
+      onValueChange={onChange}
+      open={open}
+      onOpenChange={handleOpenChange}
+      disabled={disabled}
+    >
+      <Select.Trigger
+        ref={triggerRef}
+        aria-label={label}
+        className={`group inline-flex items-center ${justifyClass} gap-2 ${bgClassName} border border-border-muted text-text-primary text-sm ${widthClass} ${padClass} ${heightClass} outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass} ${
+          disabled
+            ? "opacity-45 cursor-not-allowed"
+            : "hover:bg-bg-hover hover:border-border-hover"
+        }`}
+      >
+        <Icon
+          size={16}
+          className={`${iconHideClass} text-text-muted group-hover:text-text-primary transition-colors`}
+        />
+        <span className={`${labelShowClass} truncate`}>
+          <Select.Value />
+        </span>
+        <Select.Icon className={chevronShowClass}>
+          <ChevronDown
+            size={14}
+            className="text-text-muted group-hover:text-text-primary transition-colors flex-none"
+          />
+        </Select.Icon>
+      </Select.Trigger>
+
+      <Select.Portal container={portalContainer}>
+        <Select.Content
+          position="popper"
+          side="bottom"
+          align={align}
+          sideOffset={4}
+          // Fixed to the bottom (no auto-flip-to-top on limited space) so it
+          // never ends up covering fields ABOVE the trigger — instead, the
+          // list itself scrolls internally once it runs out of room below.
+          avoidCollisions={false}
+          className={`bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] p-1 z-50 ${
+            matchTriggerWidth ? "" : "w-[180px] sm:w-[216px]"
+          }`}
+          style={matchTriggerWidth ? { width: "var(--radix-select-trigger-width)" } : undefined}
+        >
+          {/* No longer clamped to --radix-select-content-available-height —
+              that var is computed against the nearest scrollable ancestor's
+              fixed on-screen viewport rect (ScrollBox's own box), not how
+              much content is inside it, so it was clipping the list to ~3-4
+              rows regardless of how much real empty space existed below the
+              trigger. max-h-[320px] (~8 rows) is a plain fixed cap instead —
+              still bounded so a long list doesn't run off the browser
+              entirely, just a taller bound than before. */}
+          <Select.Viewport className="dark-scrollbar max-h-[320px] overflow-y-auto">
+            {options.map((opt) => (
+              <Select.Item
+                key={opt.value}
+                value={opt.value}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-md text-sm text-text-muted data-[highlighted]:bg-bg-hover data-[highlighted]:text-text-primary data-[state=checked]:text-text-primary cursor-pointer outline-none"
+              >
+                <Select.ItemText>
+                  {labelFor ? labelFor(opt) : opt.label}
+                </Select.ItemText>
+                <Select.ItemIndicator className="ml-auto">
+                  <Check size={14} className="text-accent-blue" />
+                </Select.ItemIndicator>
+              </Select.Item>
+            ))}
+          </Select.Viewport>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
+  );
+}
+
+export default StyledSelect;
+
+// Shared dark-themed Radix Select dropdown — NOT a native <select>, since a
+// native select's expanded option list can't be restyled across browsers.
+// Collapses to an icon-only 36px square below `md` (44px with `touchSize`); the dropdown content
+// itself is unaffected, still showing full option labels. `options` is
+// [{ value, label }]; `labelFor(opt)` (optional) overrides the displayed
+// label per-item (e.g. to append a count). `open`/`onOpenChange` (optional)
+// make it a controlled dropdown — pass these when a sibling control needs
+// to force this one closed (e.g. ContentFilterSortBar's Filter/Sort pair,
+// so opening one closes the other instead of both being open at once).
+// Omit both to stay uncontrolled (Radix manages its own open state).
+// `roundedSide` ("full" default | "left" | "right") turns two adjacent
+// instances into one visually merged segmented control — "left" keeps its
+// left corners/right border square, "right" keeps its right corners square
+// and drops its own left border so the pair reads as one bordered unit
+// instead of two separate boxes with a gap.
+// `portalContainer` (optional) — defaults to `document.body` (Radix's own
+// default). Pass a ref to an ancestor element when this Select is nested
+// inside a Radix Dialog — the Dialog's modal pointer-events lockdown
+// otherwise treats the Select's body-level portal as "outside" content and
+// disables pointer events on it, silently killing hover highlighting (the
+// bug AppsPickerModal.jsx hit: clicking an option still worked, since
+// Radix's own click handling doesn't depend on CSS :hover, but the visual
+// hover/highlight state never appeared). Keeping the portal inside the
+// Dialog's own content subtree avoids that entirely.
+// `bgClassName` (optional, default "bg-bg-panel") — trigger background
+// override, e.g. "bg-bg-primary" to match a darker surrounding input style
+// (used by apps/WeatherSettingsScreen.jsx for its Refresh interval/Font
+// family/Background audio fields, to match the Location text input).
+// `collapseOnMobile` (optional, default true) — the original icon-only
+// 36px-square collapse below `md`, built for the Content page's compact
+// filter/sort row. Pass false for a Select that's a full-width labeled
+// field in its own right (e.g. a settings form) — it stays full-width with
+// its text label visible at every screen size instead of shrinking to a
+// bare icon on mobile.
+// `matchTriggerWidth` (optional, default false) — makes the dropdown
+// exactly as wide as its trigger button (via Radix's own
+// --radix-select-trigger-width CSS var) instead of the fixed 180/216px
+// width every other usage keeps. Pass true for a full-width field (e.g.
+// Font family) where the dropdown should visually line up with the input
+// above/below it.
+// The option list itself is capped at max-h-[320px] (~8 rows) and scrolls
+// internally (avoidCollisions={false} keeps it pinned below the trigger
+// rather than flipping above it when there's limited room) — long lists
+// (e.g. 16 fonts) scroll instead of covering fields above the trigger. This
+// is a plain fixed cap, not tied to Radix's own computed available-height
+// (deliberately dropped — that var measures the nearest scrollable
+// ancestor's fixed on-screen viewport, not real empty space below the
+// trigger, and was clipping the list much shorter than the room actually
+// available in a settings panel).
+// `align` (optional, "start" default | "end") — which trigger edge the
+// dropdown lines up with; "end" for a trigger at the right edge of the screen.
+// Used by: components/ContentFilterSortBar.jsx,
+// components/DashboardAttentionPanel.jsx, apps/AppsPickerModal.jsx,
+// apps/appModals/weather-modal.jsx, apps/appModals/clock-modal.jsx.

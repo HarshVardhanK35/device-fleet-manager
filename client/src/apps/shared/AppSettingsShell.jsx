@@ -1,22 +1,128 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Pencil, ChevronDown, Check, Maximize2, Minimize2, TriangleAlert } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Pencil, ChevronDown, Check, X, Maximize2, Minimize2, TriangleAlert } from "lucide-react";
 
-import CancelButton from "../../components/CancelButton.jsx";
-import ScrollBox from "../../components/ScrollBox.jsx";
-import ActionMenu from "../../components/ActionMenu.jsx";
-import RemoveConfirmModal from "../../components/RemoveConfirmModal.jsx";
-import Logo from "../../components/Logo.jsx";
+import CancelButton from "../../components/ui/CancelButton.jsx";
+import ScrollBox from "../../components/layout/ScrollBox.jsx";
+import ActionMenu from "../../components/ui/ActionMenu.jsx";
+import RemoveConfirmModal from "../../components/modals/RemoveConfirmModal.jsx";
+import Logo from "../../components/layout/Logo.jsx";
+import { useMediaQuery } from "../../hooks/useCompactLayout.js";
+import { MAX_APP_NAME } from "../../utils/limits.js";
 import { PREVIEW_SIZES } from "./previewSizes.js";
 
-// Click the pencil to turn the app name into a text input. Small enough
-// that it doesn't need its own file — it's only ever used here.
-// Cap on an app tile's name — long enough to tell two instances apart,
-// short enough to stay readable on a tile and in this header.
-const APP_NAME_MAX = 60;
+// Rename an app. Small enough that it doesn't need its own file — it's only
+// ever used here. The cap (MAX_APP_NAME, 55) keeps a name to two lines in the
+// phone header. Below md the title is the rename button and renaming takes
+// the whole header (RenameRow); from md up it is the inline input.
+function RenameRow({ initial, onSave, onCancel }) {
+  const [draft, setDraft] = useState(initial);
+  const [empty, setEmpty] = useState(false);
+  const ref = useRef(null);
 
-function EditableTitle({ name, onChange }) {
-  const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    ref.current?.focus();
+    ref.current?.select();
+  }, []);
+
+  function save() {
+    const value = draft.replace(/\s+/g, " ").trim();
+    if (!value) {
+      setEmpty(true);
+      ref.current?.focus();
+      return;
+    }
+    onSave(value);
+  }
+
+  const atLimit = draft.length >= MAX_APP_NAME;
+  const message = empty
+    ? "Name can't be empty"
+    : atLimit
+      ? "Character limit reached"
+      : "";
+
+  return (
+    <>
+      <div className="flex items-start gap-1">
+        <textarea
+          ref={ref}
+          rows={2}
+          maxLength={MAX_APP_NAME}
+          aria-label="App name"
+          aria-invalid={empty}
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value.replace(/\n/g, " ").slice(0, MAX_APP_NAME));
+            setEmpty(false);
+          }}
+          className={`flex-1 min-w-0 h-[52px] px-3 py-[9px] resize-none overflow-hidden rounded-lg border bg-bg-primary text-text-primary text-xs leading-4 font-semibold outline-2 outline-offset-1 ${
+            empty ? "border-accent-red outline-accent-red" : "border-accent-blue outline-accent-blue"
+          }`}
+        />
+        <button
+          type="button"
+          title="Save name"
+          aria-label="Save name"
+          onClick={save}
+          className="flex-none w-11 h-11 grid place-items-center rounded-lg bg-[#1f6feb] text-white hover:bg-[#1a62d6] transition-colors"
+        >
+          <Check size={18} />
+        </button>
+        <button
+          type="button"
+          title="Cancel rename"
+          aria-label="Cancel rename"
+          onClick={onCancel}
+          className="flex-none w-11 h-11 grid place-items-center rounded-lg text-text-muted hover:bg-bg-panel hover:text-text-primary transition-colors"
+        >
+          <X size={18} />
+        </button>
+      </div>
+      <div className="flex justify-between gap-2 pr-[98px] text-xs leading-4 text-text-muted">
+        <span role="status" className={empty ? "text-accent-red" : ""}>
+          {message}
+        </span>
+        <span className={`tabular-nums ${atLimit ? "text-accent-amber" : ""}`}>
+          {draft.length}/{MAX_APP_NAME}
+        </span>
+      </div>
+    </>
+  );
+}
+
+function EditableTitle({ name, onChange, editing, setEditing, isMobile }) {
+  // Enter / Esc only on desktop; touch screens (phone, tablet) have no use for them.
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  if (isMobile) {
+    if (editing) {
+      return (
+        <RenameRow
+          initial={name}
+          onSave={(value) => {
+            onChange(value);
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
+        />
+      );
+    }
+    return (
+      <button
+        type="button"
+        title={`${name} \u2014 tap to rename`}
+        aria-label={`Rename app: ${name}`}
+        onClick={() => setEditing(true)}
+        className="group flex-1 min-w-0 min-h-11 flex items-center gap-1.5 py-1 pr-1.5 rounded-md text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue"
+      >
+        <span className="min-w-0 text-xs leading-4 font-semibold text-text-primary [overflow-wrap:anywhere] text-pretty">
+          {name}
+        </span>
+        <Pencil size={14} className="flex-none text-text-muted group-hover:text-text-primary transition-colors" />
+      </button>
+    );
+  }
 
   if (editing) {
     return (
@@ -24,20 +130,20 @@ function EditableTitle({ name, onChange }) {
         <input
           autoFocus
           value={name}
-          maxLength={APP_NAME_MAX}
-          onChange={(e) => onChange(e.target.value.slice(0, APP_NAME_MAX))}
+          maxLength={MAX_APP_NAME}
+          onChange={(e) => onChange(e.target.value.slice(0, MAX_APP_NAME))}
           onBlur={() => setEditing(false)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === "Escape") setEditing(false);
+            if (isDesktop && (e.key === "Enter" || e.key === "Escape")) setEditing(false);
           }}
           className="text-xl font-medium tracking-tight text-text-primary bg-bg-panel border border-accent-blue rounded-md px-2 h-9 outline-none min-w-0 max-w-[260px]"
         />
         <span
           className={`flex-none text-[11px] tabular-nums ${
-            name.length >= APP_NAME_MAX ? "text-accent-amber" : "text-text-muted"
+            name.length >= MAX_APP_NAME ? "text-accent-amber" : "text-text-muted"
           }`}
         >
-          {name.length}/{APP_NAME_MAX}
+          {name.length}/{MAX_APP_NAME}
         </span>
       </>
     );
@@ -78,6 +184,63 @@ function PreviewSizeToggle({ size, onChange }) {
         </button>
       ))}
     </div>
+  );
+}
+
+// Tablet / phone version of the switch above: one button (current screen icon
+// + chevron) that opens a list of every screen, then Full screen below a
+// divider because it is a different kind of choice (hides the settings
+// instead of changing the preview size). There is no hover on touch screens,
+// so nothing here depends on it.
+const MENU_ITEM =
+  "h-11 flex items-center gap-2.5 px-3 rounded-md text-sm text-text-primary cursor-pointer outline-none data-[highlighted]:bg-bg-hover";
+
+function PreviewSizeMenu({ size, fullPreview, onSize, onFull, portalContainer }) {
+  const CurrentIcon = fullPreview ? Maximize2 : PREVIEW_SIZES[size].icon;
+  const currentLabel = fullPreview ? "Full screen" : PREVIEW_SIZES[size].label;
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          title={`Preview screen: ${currentLabel}`}
+          aria-label={`Preview screen: ${currentLabel}`}
+          className="group flex-none w-[60px] md:w-auto md:px-2.5 h-11 md:h-9 flex items-center justify-center gap-1 rounded-lg border border-border-muted text-accent-blue hover:border-border-hover outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue data-[state=open]:border-accent-blue data-[state=open]:bg-accent-blue/15"
+        >
+          <CurrentIcon size={18} />
+          <ChevronDown size={14} strokeWidth={2.5} className="transition-transform group-data-[state=open]:rotate-180" />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal container={portalContainer}>
+        <DropdownMenu.Content
+          align="end"
+          collisionPadding={12}
+          sideOffset={4}
+          className="w-[232px] p-1 bg-bg-panel border border-border-muted rounded-lg shadow-[0_8px_24px_rgba(1,4,9,0.6)] z-50"
+        >
+          <DropdownMenu.Label className="px-3 pt-2 pb-1 text-xs leading-4 text-text-muted">
+            Preview screen
+          </DropdownMenu.Label>
+          <DropdownMenu.RadioGroup value={size} onValueChange={onSize}>
+            {Object.entries(PREVIEW_SIZES).map(([key, s]) => (
+              <DropdownMenu.RadioItem key={key} value={key} className={MENU_ITEM}>
+                <s.icon size={18} />
+                <span className="flex-1">{s.label}</span>
+                <DropdownMenu.ItemIndicator>
+                  <Check size={16} strokeWidth={2.5} className="text-accent-blue" />
+                </DropdownMenu.ItemIndicator>
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
+          <DropdownMenu.Separator className="h-px my-1 bg-border-hover" />
+          <DropdownMenu.Item onSelect={onFull} className={MENU_ITEM}>
+            <Maximize2 size={18} />
+            <span className="flex-1">Fullscreen preview</span>
+            {fullPreview && <Check size={16} strokeWidth={2.5} className="text-accent-blue" />}
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 
@@ -136,6 +299,10 @@ function AppSettingsShell({
   // split view — Save/Close live in the settings column, so they're only
   // reachable there; the header's own Close (X) always works regardless.
   const [fullPreview, setFullPreview] = useState(false);
+  // Renaming the app, and whether we're on the phone layout (below md) where
+  // the title wraps and renaming takes the whole header.
+  const [renaming, setRenaming] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -169,23 +336,46 @@ function AppSettingsShell({
               height also animates (60px -> 0) so the preview area grows
               into the freed space at the same pace as the fade. */}
           <div
-            className={`flex items-center gap-2 px-4 sm:px-6 md:px-8 flex-none border-b border-border-muted overflow-hidden transition-[height,opacity] duration-300 ease-in-out ${
-              fullPreview ? "h-0 opacity-0 pointer-events-none border-b-0" : "h-[60px] opacity-100"
+            className={`flex items-center gap-1 md:gap-2 pl-4 pr-1.5 sm:px-6 md:px-8 flex-none border-b border-border-muted overflow-hidden transition-[height,opacity] duration-300 ease-in-out ${
+              fullPreview
+                ? "h-0 opacity-0 pointer-events-none border-b-0"
+                : isMobile && renaming
+                  ? "flex-col items-stretch gap-1.5 pt-1.5 pb-2.5 opacity-100"
+                  : "min-h-14 md:h-[60px] py-1.5 md:py-0 opacity-100"
             }`}
           >
-            <Logo size={28} className="flex-none mr-1" />
-            <EditableTitle name={appName} onChange={onAppNameChange} />
-            <div className="flex-1" />
-            <PreviewSizeToggle size={previewSize} onChange={setPreviewSize} />
+            <Logo size={28} className="hidden md:block flex-none mr-1" />
+            <EditableTitle
+              name={appName}
+              onChange={onAppNameChange}
+              editing={renaming}
+              setEditing={setRenaming}
+              isMobile={isMobile}
+            />
+            <div className={`flex-1 ${isMobile ? "hidden" : ""}`} />
+            <div className={`lg:hidden ${isMobile && renaming ? "hidden" : ""}`}>
+              <PreviewSizeMenu
+                size={previewSize}
+                fullPreview={fullPreview}
+                onSize={setPreviewSize}
+                onFull={() => setFullPreview(true)}
+                portalContainer={contentEl}
+              />
+            </div>
+            <div className="hidden lg:block">
+              <PreviewSizeToggle size={previewSize} onChange={setPreviewSize} />
+            </div>
             <button
               type="button"
               title="Full-screen preview"
               onClick={() => setFullPreview(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-muted text-text-muted hover:bg-bg-hover transition-colors"
+              className="hidden lg:flex w-9 h-9 items-center justify-center rounded-lg border border-border-muted text-text-muted hover:bg-bg-hover transition-colors"
             >
               <Maximize2 size={15} />
             </button>
-            <CancelButton as={Dialog.Close} size="lg" title="Close" />
+            <div className={isMobile && renaming ? "hidden" : "flex-none"}>
+              <CancelButton as={Dialog.Close} size="lg" title="Close" />
+            </div>
           </div>
 
           {/* In full-screen preview, this toolbar is hidden by default and
@@ -194,11 +384,22 @@ function AppSettingsShell({
           <div
             className={`absolute top-4 right-4 z-10 flex items-center gap-2 transition-opacity duration-300 ease-in-out ${
               fullPreview
-                ? "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+                ? "opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto [@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto"
                 : "opacity-0 pointer-events-none"
             }`}
           >
-            <PreviewSizeToggle size={previewSize} onChange={setPreviewSize} />
+            <div className="lg:hidden">
+              <PreviewSizeMenu
+                size={previewSize}
+                fullPreview={fullPreview}
+                onSize={setPreviewSize}
+                onFull={() => setFullPreview(true)}
+                portalContainer={contentEl}
+              />
+            </div>
+            <div className="hidden lg:block">
+              <PreviewSizeToggle size={previewSize} onChange={setPreviewSize} />
+            </div>
             <button
               type="button"
               title="Exit full-screen preview"

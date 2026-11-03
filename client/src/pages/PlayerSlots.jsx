@@ -12,24 +12,24 @@ import {
   Plug,
 } from "lucide-react";
 
-import ScreenThumb from "../components/ScreenThumb.jsx";
-import EmptyState from "../components/EmptyState.jsx";
-import LoadingOverlay from "../components/LoadingOverlay.jsx";
-import Button from "../components/Button.jsx";
-import RefreshButton from "../components/RefreshButton.jsx";
-import { MAX_SCREENS } from "../utils/limits.js";
-import GhostButton from "../components/GhostButton.jsx";
-import ReleaseScreenButton from "../components/ReleaseScreenButton.jsx";
-import DetailPane from "../components/DetailPane.jsx";
-import ActionMenu from "../components/ActionMenu.jsx";
-import SelectableRow from "../components/SelectableRow.jsx";
-import SkeletonPlayerSlots from "../components/SkeletonPlayerSlots.jsx";
-import SkeletonPanel from "../components/SkeletonPanel.jsx";
-import PreviewModal from "../components/PreviewModal.jsx";
-import TakeOverModal from "../components/TakeOverModal.jsx";
-import RemoveConfirmModal from "../components/RemoveConfirmModal.jsx";
-import PlayerStandinModal from "../components/PlayerStandinModal.jsx";
-import StatusPill from "../components/StatusPill.jsx";
+import ScreenThumb from "../components/screens/ScreenThumb.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
+import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
+import Button from "../components/ui/Button.jsx";
+import RefreshButton from "../components/ui/RefreshButton.jsx";
+import { MAX_SCREENS, MAX_SCREEN_NAME } from "../utils/limits.js";
+import GhostButton from "../components/ui/GhostButton.jsx";
+import ReleaseScreenButton from "../components/screens/ReleaseScreenButton.jsx";
+import DetailPane from "../components/layout/DetailPane.jsx";
+import ActionMenu from "../components/ui/ActionMenu.jsx";
+import SelectableRow from "../components/ui/SelectableRow.jsx";
+import SkeletonPlayerSlots from "../components/loading/SkeletonPlayerSlots.jsx";
+import SkeletonPanel from "../components/loading/SkeletonPanel.jsx";
+import PreviewModal from "../components/modals/PreviewModal.jsx";
+import TakeOverModal from "../components/screens/TakeOverModal.jsx";
+import RemoveConfirmModal from "../components/modals/RemoveConfirmModal.jsx";
+import PlayerStandinModal from "../components/screens/PlayerStandinModal.jsx";
+import StatusPill from "../components/ui/StatusPill.jsx";
 import { pillLabel } from "../utils/screenStatus.js";
 import { claimPairingCode } from "../api/pairing.js";
 import {
@@ -40,6 +40,7 @@ import {
   releaseDevice,
 } from "../api/devices.js";
 import { getAssignments } from "../api/assignments.js";
+import FieldCount from "../components/ui/FieldCount.jsx";
 import { timeAgo } from "../utils/timeAgo.js";
 
 // Must match the backend's code length (server/controllers/pairingController.js's
@@ -324,7 +325,7 @@ function PlayerSlots() {
 
   return (
     <div
-      className={`mx-auto lg:max-w-7xl pb-20 md:pb-0 pr-[10px] ${
+      className={`mx-auto md:max-w-none lg:max-w-7xl pb-20 md:pb-0 pr-[10px] ${
         mobileView === "detail" ? "max-w-3xl" : "max-w-xl"
       }`}
     >
@@ -688,9 +689,16 @@ function PlayerSlots() {
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="flex flex-col gap-1 text-xs font-medium text-text-muted">
-                      Name
+                      <span className="flex items-center justify-between">
+                        Name
+                        <FieldCount
+                          value={editingId === selected.id ? draft.name : selected.name}
+                          max={MAX_SCREEN_NAME}
+                        />
+                      </span>
                       <input
                         ref={nameInputRef}
+                        maxLength={MAX_SCREEN_NAME}
                         value={
                           editingId === selected.id ? draft.name : selected.name
                         }

@@ -10,8 +10,8 @@ import ToggleSwitch from "../shared/ToggleSwitch.jsx";
 import ComingSoonToggle from "../shared/ComingSoonToggle.jsx";
 import BackgroundAudioField from "../shared/BackgroundAudioField.jsx";
 import LocationSearchField from "../shared/LocationSearchField.jsx";
-import StyledSelect from "../../components/StyledSelect.jsx";
-import CancelButton from "../../components/CancelButton.jsx";
+import StyledSelect from "../../components/ui/StyledSelect.jsx";
+import CancelButton from "../../components/ui/CancelButton.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
 import { useAppSettingsForm } from "../shared/useAppSettingsForm.js";
 

@@ -3,16 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Mail, CircleAlert } from "lucide-react";
 
 import { register } from "../api/auth.js";
-import AuthLayout from "../components/AuthLayout.jsx";
-import AuthField from "../components/AuthField.jsx";
-import AuthEmailSentModal from "../components/AuthEmailSentModal.jsx";
-import AuthErrorBanner from "../components/AuthErrorBanner.jsx";
-import AuthHeading from "../components/AuthHeading.jsx";
-import PasswordField from "../components/PasswordField.jsx";
-import PasswordRequirementsList from "../components/PasswordRequirementsList.jsx";
-import PasswordMatchHint from "../components/PasswordMatchHint.jsx";
-import Button from "../components/Button.jsx";
-import LoadingOverlay from "../components/LoadingOverlay.jsx";
+import AuthLayout from "../components/auth/AuthLayout.jsx";
+import AuthField from "../components/auth/AuthField.jsx";
+import AuthEmailSentModal from "../components/auth/AuthEmailSentModal.jsx";
+import AuthErrorBanner from "../components/auth/AuthErrorBanner.jsx";
+import AuthHeading from "../components/auth/AuthHeading.jsx";
+import PasswordField from "../components/auth/PasswordField.jsx";
+import PasswordRequirementsList from "../components/auth/PasswordRequirementsList.jsx";
+import PasswordMatchHint from "../components/auth/PasswordMatchHint.jsx";
+import Button from "../components/ui/Button.jsx";
+import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
 import { getPasswordRules } from "../utils/passwordRules.js";
 
 function Register() {

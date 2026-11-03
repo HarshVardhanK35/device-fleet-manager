@@ -2,7 +2,7 @@ import { Timer } from "lucide-react";
 
 import SettingsCard from "../../../shared/SettingsCard.jsx";
 import ToggleSwitch from "../../../shared/ToggleSwitch.jsx";
-import StyledSelect from "../../../../components/StyledSelect.jsx";
+import StyledSelect from "../../../../components/ui/StyledSelect.jsx";
 import Hint from "../common/Hint.jsx";
 
 const REALERT_OPTIONS = ["Off", "10 s", "30 s", "1 min", "2 min"];

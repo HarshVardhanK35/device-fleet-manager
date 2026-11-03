@@ -1,7 +1,7 @@
-import { apiFetch, getAccessToken, API_BASE } from "./apiClient.js";
+import { apiFetch, cachedGet, getAccessToken, API_BASE } from "./apiClient.js";
 
 export async function getContent() {
-  return apiFetch(`${API_BASE}/content`);
+  return cachedGet(`${API_BASE}/content`);
 }
 
 export async function createContent(data) {

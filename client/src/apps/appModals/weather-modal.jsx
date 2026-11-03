@@ -9,7 +9,7 @@ import SegmentedControl from "../shared/SegmentedControl.jsx";
 import ComingSoonToggle from "../shared/ComingSoonToggle.jsx";
 import BackgroundAudioField from "../shared/BackgroundAudioField.jsx";
 import LocationSearchField from "../shared/LocationSearchField.jsx";
-import StyledSelect from "../../components/StyledSelect.jsx";
+import StyledSelect from "../../components/ui/StyledSelect.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
 import { useAppSettingsForm } from "../shared/useAppSettingsForm.js";
 

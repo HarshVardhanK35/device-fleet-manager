@@ -1,7 +1,11 @@
+import { Suspense, lazy } from "react";
 import { Link } from "react-router-dom";
 import { ArrowDown, ArrowRight } from "lucide-react";
 
-import LiveDemo from "./demo/LiveDemo.jsx";
+
+// The demo (its screens, sample data and styles) is its own file, so the
+// headline and buttons paint first. The placeholder keeps the frame's ratio.
+const LiveDemo = lazy(() => import("./demo/LiveDemo.jsx"));
 
 // Hero: badge, headline, lead, the two buttons and the live demo
 // (which carries the use-case chooser).
@@ -37,7 +41,9 @@ function Hero() {
         </div>
 
         <div className="demo-block">
-          <LiveDemo />
+          <Suspense fallback={<div aria-hidden="true" style={{ width: "100%", maxWidth: 1144, aspectRatio: "16 / 9" }} />}>
+            <LiveDemo />
+          </Suspense>
         </div>
       </div>
     </section>

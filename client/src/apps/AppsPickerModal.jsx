@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Filter, ArrowUpDown, Lock } from "lucide-react";
 
-import CancelButton from "../components/CancelButton.jsx";
-import ScrollBox from "../components/ScrollBox.jsx";
-import StyledSelect from "../components/StyledSelect.jsx";
+import CancelButton from "../components/ui/CancelButton.jsx";
+import ScrollBox from "../components/layout/ScrollBox.jsx";
+import StyledSelect from "../components/ui/StyledSelect.jsx";
 import ToggleSwitch from "./shared/ToggleSwitch.jsx";
 import { buildAppSections, getCategoryList, getAppCounts } from "./appCategories.js";
 

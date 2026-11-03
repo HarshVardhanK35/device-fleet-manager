@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, Play, Square, RotateCcw } from "lucide-react";
-import BrandLoader from "../components/BrandLoader.jsx";
-import Logo from "../components/Logo.jsx";
+import BrandLoader from "../components/loading/BrandLoader.jsx";
+import Logo from "../components/layout/Logo.jsx";
 
 import { generatePairingCode, getPairingStatus } from "../api/pairing.js";
 import { checkDeviceExists, unpairDevice, disconnectDevice } from "../api/devices.js";
-import DevicePlayback from "../components/DevicePlayback.jsx";
+import DevicePlayback from "../components/screens/DevicePlayback.jsx";
 
 const CODE_SECONDS = 15 * 60;
 const STATUS_POLL_MS = 2000;
@@ -350,7 +350,7 @@ function Screens() {
               <div style={{ fontSize: "clamp(16px,3.3cqmin,170px)", lineHeight: 1.35, color: "var(--color-neutral-200)", maxWidth: "34em" }}>
                 Enter this code in the{" "}
                 <span style={{ color: "var(--color-accent-200)", fontWeight: 500 }}>Player</span> tab of your
-                Device Fleet Manager account to pair this screen.
+                CastWise account to pair this screen.
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "min(2.6cqw,4.4cqh)" }}>
                 <div style={{ display: "flex", gap: "min(1.3cqw,2.2cqh)" }}>
@@ -441,6 +441,20 @@ function Screens() {
               <div style={{ fontSize: "clamp(14px,2.6cqmin,130px)", color: "var(--color-accent-200)", textAlign: "center", maxWidth: "90cqw" }}>
                 Playback opens full-screen and runs on its own from here.
               </div>
+              <button
+                type="button"
+                onClick={unpairThisScreen}
+                style={{
+                  all: "unset",
+                  cursor: "pointer",
+                  fontSize: "clamp(13px,2.4cqmin,120px)",
+                  color: "var(--color-neutral-400)",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                }}
+              >
+                Unpair this screen
+              </button>
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import PairingCode from "../models/PairingCode.js";
 import Device from "../models/Device.js";
+import { validationMessage } from "../utils/fieldLimits.js";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -87,6 +88,9 @@ export const claimCode = async (req, res) => {
 
     res.status(201).json(device);
   } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: validationMessage(err) });
+    }
     res.status(500).json({ message: err.message });
   }
 };

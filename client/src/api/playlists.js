@@ -1,7 +1,7 @@
-import { apiFetch, API_BASE } from "./apiClient.js";
+import { apiFetch, cachedGet, API_BASE } from "./apiClient.js";
 
 export async function getPlaylists() {
-  return apiFetch(`${API_BASE}/playlists`);
+  return cachedGet(`${API_BASE}/playlists`);
 }
 
 export async function createPlaylist(data) {
