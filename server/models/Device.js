@@ -1,11 +1,14 @@
 import mongoose from "mongoose";
 import crypto from "crypto";
+import { LIMITS, maxLengthWhenChanged } from "../utils/fieldLimits.js";
 
 const deviceSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
+      trim: true,
+      validate: maxLengthWhenChanged("name", LIMITS.screenName, "Name"),
     },
     type: {
       type: String,

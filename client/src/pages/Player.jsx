@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 
-import BrandLoader from "../components/BrandLoader.jsx";
-import DevicePlayback from "../components/DevicePlayback.jsx";
+import BrandLoader from "../components/loading/BrandLoader.jsx";
+import DevicePlayback from "../components/screens/DevicePlayback.jsx";
 
 function Player() {
   const { token } = useParams();

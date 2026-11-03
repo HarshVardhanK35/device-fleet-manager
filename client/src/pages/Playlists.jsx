@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 
+import { useNavigate } from "react-router-dom";
 import { Plus, Repeat, CircleMinus, Check, X } from "lucide-react";
 
 import {
@@ -10,27 +11,28 @@ import {
 } from "../api/playlists.js";
 import { getContent } from "../api/content.js";
 
-import ContentPickerModal from "../components/ContentPickerModal.jsx";
-import ScrollBox from "../components/ScrollBox.jsx";
-import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
-import RemoveConfirmModal from "../components/RemoveConfirmModal.jsx";
-import EditPlaylistModal from "../components/EditPlaylistModal.jsx";
-import SelectAllBar from "../components/SelectAllBar.jsx";
-import ContentToolbar from "../components/ContentToolbar.jsx";
-import PlaylistSlotTile from "../components/PlaylistSlotTile.jsx";
-import PlaylistRow from "../components/PlaylistRow.jsx";
-import SkeletonPlaylistList from "../components/SkeletonPlaylistList.jsx";
-import SkeletonGrid from "../components/SkeletonGrid.jsx";
-import EmptyState from "../components/EmptyState.jsx";
-import DetailPane from "../components/DetailPane.jsx";
-import Button from "../components/Button.jsx";
-import RefreshButton from "../components/RefreshButton.jsx";
-import LoadingOverlay from "../components/LoadingOverlay.jsx";
+import ContentPickerModal from "../components/content/ContentPickerModal.jsx";
+import ScrollBox from "../components/layout/ScrollBox.jsx";
+import ConfirmDeleteModal from "../components/modals/ConfirmDeleteModal.jsx";
+import RemoveConfirmModal from "../components/modals/RemoveConfirmModal.jsx";
+import EditPlaylistModal from "../components/playlists/EditPlaylistModal.jsx";
+import SelectAllBar from "../components/content/SelectAllBar.jsx";
+import ContentToolbar from "../components/content/ContentToolbar.jsx";
+import PlaylistSlotTile from "../components/playlists/PlaylistSlotTile.jsx";
+import PlaylistRow from "../components/playlists/PlaylistRow.jsx";
+import SkeletonPlaylistList from "../components/loading/SkeletonPlaylistList.jsx";
+import SkeletonGrid from "../components/loading/SkeletonGrid.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
+import DetailPane from "../components/layout/DetailPane.jsx";
+import Button from "../components/ui/Button.jsx";
+import RefreshButton from "../components/ui/RefreshButton.jsx";
+import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
 import { pluralizeCount } from "../utils/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
 
 function Playlists() {
   const [playlists, setPlaylists] = useState([]);
+  const navigate = useNavigate();
   const [content, setContent] = useState([]);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
   const [mobileView, setMobileView] = useState("list"); // "list" | "detail"
@@ -274,7 +276,7 @@ function Playlists() {
     <div className="max-w-7xl mx-auto h-[calc(100dvh-88px)] flex gap-4 ">
       {/* left pane */}
       <div
-        className={`w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
+        className={`w-full max-w-xl md:max-w-none mx-auto lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
           mobileView === "detail" ? "hidden lg:flex" : "flex"
         }`}
       >
@@ -305,7 +307,29 @@ function Playlists() {
           {loading ? (
             <SkeletonPlaylistList count={4} />
           ) : (
-          <div className="flex flex-col gap-2 pb-2">
+          <div className="flex flex-col gap-2 pb-2 md:grid md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] md:gap-3 lg:flex lg:flex-col lg:gap-2">
+            {playlists.length === 0 && (
+              <>
+                {/* Below lg the right pane is hidden, so the guidance lives here. */}
+                <EmptyState
+                  className="lg:hidden md:col-span-full"
+                  title="Create your first playlist"
+                  description={
+                    <>
+                      1. Add images, videos or apps on the Content page.
+                      <br />
+                      2. Create a playlist and pick what goes in it.
+                      <br />
+                      3. Put it on a screen from the Assignments page.
+                    </>
+                  }
+                  actionLabel="Create playlist"
+                  actionIcon={Plus}
+                  onAction={() => setCreateOpen(true)}
+                />
+                <p className="hidden lg:block m-0 px-1 pt-1 text-sm text-text-muted">No playlists yet.</p>
+              </>
+            )}
             {playlists.map((playlist) => (
               <PlaylistRow
                 key={playlist._id}
@@ -351,6 +375,31 @@ function Playlists() {
       >
         {loading ? (
           <SkeletonGrid count={6} />
+        ) : !selectedPlaylist ? (
+          playlists.length === 0 ? (
+            <EmptyState
+              title="Create your first playlist"
+              description="A playlist is an ordered list of your images, videos and apps. Put one on a screen and it plays in a loop."
+              actionLabel="Create playlist"
+              actionIcon={Plus}
+              onAction={() => setCreateOpen(true)}
+            >
+              {content.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/content")}
+                  className="text-sm font-medium text-accent-blue hover:underline"
+                >
+                  Your library is empty. Add content first →
+                </button>
+              )}
+            </EmptyState>
+          ) : (
+            <EmptyState
+              title="Select a playlist"
+              description="Pick one on the left to see and edit what is in it."
+            />
+          )
         ) : (
           selectedPlaylist && (
             <DetailPane
@@ -464,8 +513,9 @@ function Playlists() {
                   {/* From md up the Add content action lives here, right of the
                       filter; below md it's DetailPane's bottom bar. */}
                   <div className="hidden md:block">
-                    <Button icon={Plus} onClick={() => setAddContentOpen(true)}>
-                      Add content
+                    <Button icon={Plus} onClick={() => setAddContentOpen(true)} title="Add content">
+                      <span className="hidden @lg:inline">Add content</span>
+                      <span className="@lg:hidden">Add</span>
                     </Button>
                   </div>
                 </ContentToolbar>
@@ -482,7 +532,7 @@ function Playlists() {
                     No content matches this filter.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                     {visibleSlots.map(({ item, index }) => {
                       const slotId = `${item._id}-${index}`;
                       const canDrag = slotFilterType === "all";

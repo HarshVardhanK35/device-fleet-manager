@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Cloud, CloudRain, CloudSun, Coffee, Newspaper, Sun, User } from "lucide-react";
+import { Cloud, CloudRain, CloudSun, Coffee, Home, Image as ImageIcon, ListVideo, LogOut, MonitorPlay, Newspaper, PlaySquare, Sun, User } from "lucide-react";
 
+import Logo from "../../../components/layout/Logo.jsx";
 import "../demo/liveDemo.css";
 import "./shots.css";
 import { DEMO_DATA } from "../demo/demoData.js";
@@ -82,7 +83,13 @@ function PhotoScreen() {
 }
 
 function DashboardScreen() {
-  const nav = ["Dashboard", "Content", "Playlists", "Assignments", "Player"];
+  const nav = [
+    { label: "Dashboard", Icon: Home },
+    { label: "Content", Icon: ImageIcon },
+    { label: "Playlists", Icon: ListVideo },
+    { label: "Assignments", Icon: MonitorPlay },
+    { label: "Player", Icon: PlaySquare },
+  ];
   const screens = [
     { name: "Lobby TV", state: "Playing", tone: "in" },
     { name: "Café menu", state: "Playing", tone: "in" },
@@ -97,18 +104,23 @@ function DashboardScreen() {
   return (
     <div className="dm-screen sd">
       <header className="sd__bar">
-        <span className="sd__logo" />
-        <nav className="sd__links">
-          {nav.map((n, i) => (
-            <span key={n} className={`sd__nav${i === 0 ? " is-on" : ""}`}>
-              {n}
-            </span>
-          ))}
-        </nav>
+        <Logo size="3.6cqw" />
+        <span className="sd__brand">CastWise</span>
+        <span className="sd__spacer" />
         <span className="sd__avatar">
           <User className="dm-ic" aria-hidden="true" />
         </span>
+        <LogOut className="dm-ic sd__logout" aria-hidden="true" />
       </header>
+      <div className="sd__body">
+        <nav className="sd__side">
+          {nav.map(({ label, Icon }, i) => (
+            <span key={label} className={`sd__nav${i === 0 ? " is-on" : ""}`}>
+              <Icon className="dm-ic" aria-hidden="true" />
+              {label}
+            </span>
+          ))}
+        </nav>
       <div className="sd__main">
         <span className="sd__title">Dashboard</span>
         <div className="sd__grid">
@@ -156,6 +168,7 @@ function DashboardScreen() {
           ))}
         </div>
       </div>
+      </div>
     </div>
   );
 }
@@ -164,8 +177,10 @@ function DashboardScreen() {
 function LightDarkShot() {
   return (
     <>
-      <StatusBoardScreen data={CAFE.board} />
-      <div className="shot-light">
+      <div className="shot-dark sc-dark">
+        <StatusBoardScreen data={CAFE.board} />
+      </div>
+      <div className="shot-light sc-light">
         <StatusBoardScreen data={CAFE.board} />
       </div>
       <span className="shot-split" />

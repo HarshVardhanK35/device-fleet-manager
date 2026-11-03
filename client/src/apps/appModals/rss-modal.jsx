@@ -9,8 +9,8 @@ import SegmentedControl from "../shared/SegmentedControl.jsx";
 import ToggleSwitch from "../shared/ToggleSwitch.jsx";
 import SliderField from "../shared/SliderField.jsx";
 import BackgroundAudioField from "../shared/BackgroundAudioField.jsx";
-import StyledSelect from "../../components/StyledSelect.jsx";
-import ContentPickerModal from "../../components/ContentPickerModal.jsx";
+import StyledSelect from "../../components/ui/StyledSelect.jsx";
+import ContentPickerModal from "../../components/content/ContentPickerModal.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
 import { useAppSettingsForm } from "../shared/useAppSettingsForm.js";
 

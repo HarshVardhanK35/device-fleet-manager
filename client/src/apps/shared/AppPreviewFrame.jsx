@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { PREVIEW_SIZES } from "./previewSizes.js";
 import { loadAppBundle, isAppBundleUrl } from "./loadAppBundle.js";
-import BrandLoader from "../../components/BrandLoader.jsx";
+import BrandLoader from "../../components/loading/BrandLoader.jsx";
 import { API_BASE } from "../../api/apiClient.js";
 
 // The bordered/shadowed preview box every app settings screen shows its

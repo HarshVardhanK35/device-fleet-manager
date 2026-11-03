@@ -17,11 +17,11 @@ import { getDeviceSummary } from "../utils/assignmentStatus.js";
 import { timeAgo } from "../utils/timeAgo.js";
 import { pluralizeCount, pluralizeWord } from "../utils/pluralize.js";
 
-import StatTile from "../components/StatTile.jsx";
-import LimitsPanel from "../components/LimitsPanel.jsx";
-import DashboardAttentionPanel from "../components/DashboardAttentionPanel.jsx";
-import ContentTile from "../components/ContentTile.jsx";
-import RefreshButton from "../components/RefreshButton.jsx";
+import StatTile from "../components/dashboard/StatTile.jsx";
+import LimitsPanel from "../components/dashboard/LimitsPanel.jsx";
+import DashboardAttentionPanel from "../components/dashboard/DashboardAttentionPanel.jsx";
+import ContentTile from "../components/content/ContentTile.jsx";
+import RefreshButton from "../components/ui/RefreshButton.jsx";
 import { useAuth } from "../context/useAuth.js";
 
 const RECENT_CONTENT_COUNT = 4;
@@ -129,7 +129,7 @@ function Dashboard() {
     return (
       <div className="max-w-7xl mx-auto flex flex-col gap-4">
         <div className="skeleton h-14 rounded-xl" />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
           {Array.from({ length: 5 }, (_, i) => (
             <div key={i} className="skeleton h-28 rounded-xl" />
           ))}
@@ -151,7 +151,7 @@ function Dashboard() {
           </h1>
           <div className="flex items-center justify-between gap-3">
             <p className="text-text-muted text-sm m-0">
-              Fleet status
+              Screen status
               <span className="hidden sm:inline">
                 {" "}as of {new Date().toLocaleString(undefined, {
                   weekday: "short",
@@ -181,7 +181,7 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
         <StatTile
           className="col-span-2 md:col-span-1"
           label="Total devices"
@@ -220,7 +220,7 @@ function Dashboard() {
       {/* lg+: needs-attention | recently created (2 x 2) | the three shortcuts
           stacked. The attention panel sets the row height; the other two stretch
           to match it. Below lg everything stacks and the shortcuts become a row. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-4">
         <div>
           <DashboardAttentionPanel
             items={attentionItems}
@@ -247,15 +247,15 @@ function Dashboard() {
                 No content yet.
               </p>
             ) : (
-              <div className="grid grid-cols-2 lg:grid-rows-2 gap-3 flex-1 min-h-0">
+              <div className="grid grid-cols-2 xl:grid-rows-2 gap-3 flex-1 min-h-0">
                 {recentContent.map((item) => (
                   <ContentTile
                     key={item._id}
                     item={item}
                     size="fluid"
                     coloredType
-                    className="lg:h-full lg:flex lg:flex-col"
-                    thumbClassName="aspect-video lg:aspect-auto lg:flex-1 lg:min-h-[64px]"
+                    className="xl:h-full xl:flex xl:flex-col"
+                    thumbClassName="aspect-video xl:aspect-auto xl:flex-1 xl:min-h-[64px]"
                     onClick={() => navigate("/content")}
                   />
                 ))}
@@ -264,7 +264,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 lg:grid-rows-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-1 xl:grid-rows-3 gap-4">
           {quickLinks.map((link) => (
             <button
               key={link.title}
@@ -275,10 +275,10 @@ function Dashboard() {
                 <link.icon size={20} />
               </span>
               <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                <div className="font-semibold text-text-primary">
+                <div className="truncate font-semibold text-text-primary">
                   {link.title}
                 </div>
-                <div className="text-text-muted text-[12.5px]">{link.sub}</div>
+                <div className="truncate text-text-muted text-[12.5px]">{link.sub}</div>
               </div>
               <ArrowRight size={16} className="text-text-muted flex-none" />
             </button>

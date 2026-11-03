@@ -1,94 +1,98 @@
+import { Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-// all pages here
-import Layout from "./components/Layout.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import ConnectionBanner from "./components/error/ConnectionBanner.jsx";
+import RouteErrorBoundary from "./components/error/ErrorBoundary.jsx";
+import Layout from "./components/layout/Layout.jsx";
+import LoadingOverlay from "./components/loading/LoadingOverlay.jsx";
+import ProtectedRoute from "./components/auth/ProtectedRoute.jsx";
+import RouteFallback from "./components/loading/RouteFallback.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
-import ForgotPassword from "./pages/ForgotPassword.jsx";
-import ResetPassword from "./pages/ResetPassword.jsx";
-import VerifyEmail from "./pages/VerifyEmail.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import Content from "./pages/Content.jsx";
-import Assignments from "./pages/Assignments.jsx";
-import Playlists from "./pages/Playlists.jsx";
-import Player from "./pages/Player.jsx";
-import PlayerSlots from "./pages/PlayerSlots.jsx";
-import Screens from "./pages/Screens.jsx";
-import Landing from "./pages/Landing.jsx";
-import LoadingOverlay from "./components/LoadingOverlay.jsx";
 import { useAuth } from "./context/useAuth.js";
+import { pageLoaders } from "./pageLoaders.js";
+import { lazyRetry } from "./utils/lazyRetry.js";
+import { usePageTitle } from "./utils/usePageTitle.js";
+
+// Every page is loaded on demand (its own file in the build), so a visitor on
+// the landing page or sign-in doesn't download the whole app first.
+const Login = lazyRetry(pageLoaders.login);
+const Register = lazyRetry(pageLoaders.register);
+const ForgotPassword = lazyRetry(pageLoaders.forgotPassword);
+const ResetPassword = lazyRetry(pageLoaders.resetPassword);
+const VerifyEmail = lazyRetry(pageLoaders.verifyEmail);
+const Dashboard = lazyRetry(pageLoaders.dashboard);
+const Content = lazyRetry(pageLoaders.content);
+const Assignments = lazyRetry(pageLoaders.assignments);
+const Playlists = lazyRetry(pageLoaders.playlists);
+const Player = lazyRetry(pageLoaders.player);
+const PlayerSlots = lazyRetry(pageLoaders.playerSlots);
+const Screens = lazyRetry(pageLoaders.screens);
+const Landing = lazyRetry(pageLoaders.landing);
+const NotFound = lazyRetry(pageLoaders.notFound);
+
+// A signed-in page: the app shell stays on screen while the page itself loads.
+function AppPage({ children }) {
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <RouteErrorBoundary>
+          <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+        </RouteErrorBoundary>
+      </Layout>
+    </ProtectedRoute>
+  );
+}
 
 // "/" is the dashboard for signed-in users and the public landing page for
 // everyone else (same URL, no redirect). Waits for the silent refresh so a
 // signed-in user never sees the landing page flash.
 function HomeRoute() {
   const { token, loading } = useAuth();
-  if (loading) return <LoadingOverlay show />;
+  if (loading) return <LoadingOverlay show slowAfter={4000} slowMessage="Waking up the server, this can take a minute…" />;
   if (!token) return <Landing />;
   return (
     <Layout>
-      <Dashboard />
+      <RouteErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Dashboard />
+        </Suspense>
+      </RouteErrorBoundary>
     </Layout>
   );
+}
+
+// Keeps the browser tab title in step with the page.
+function TitleSync() {
+  usePageTitle();
+  return null;
 }
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/player/:token" element={<Player />} />
-        <Route path="/screens" element={<Screens />} />
+        <TitleSync />
+        <ConnectionBanner />
+        <RouteErrorBoundary fullScreen>
+        <Suspense fallback={<RouteFallback fullScreen />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/player/:token" element={<RouteErrorBoundary device><Player /></RouteErrorBoundary>} />
+            <Route path="/screens" element={<RouteErrorBoundary device><Screens /></RouteErrorBoundary>} />
 
-        <Route path="/" element={<HomeRoute />} />
-        <Route
-          path="/content"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Content />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/assignments"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Assignments />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/playlists"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Playlists />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/player"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <PlayerSlots />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+            <Route path="/" element={<HomeRoute />} />
+            <Route path="/content" element={<AppPage><Content /></AppPage>} />
+            <Route path="/assignments" element={<AppPage><Assignments /></AppPage>} />
+            <Route path="/playlists" element={<AppPage><Playlists /></AppPage>} />
+            <Route path="/player" element={<AppPage><PlayerSlots /></AppPage>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+        </RouteErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useNavigate, useSearchParams } from "react-router-dom";
-import Logo from "../components/Logo.jsx";
+import Logo from "../components/layout/Logo.jsx";
 import { CircleCheck, CircleAlert } from "lucide-react";
 
 import { verifyEmail } from "../api/auth.js";
-import Button from "../components/Button.jsx";
+import Button from "../components/ui/Button.jsx";
 
 function VerifyEmail() {
   const [status, setStatus] = useState("loading");

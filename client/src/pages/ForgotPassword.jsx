@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Mail, Key, ArrowLeft, CircleAlert } from "lucide-react";
 
 import { forgotPassword } from "../api/auth.js";
-import AuthLayout from "../components/AuthLayout.jsx";
-import AuthField from "../components/AuthField.jsx";
-import AuthEmailSentModal from "../components/AuthEmailSentModal.jsx";
-import AuthErrorBanner from "../components/AuthErrorBanner.jsx";
-import AuthHeading from "../components/AuthHeading.jsx";
-import Button from "../components/Button.jsx";
-import LoadingOverlay from "../components/LoadingOverlay.jsx";
+import AuthLayout from "../components/auth/AuthLayout.jsx";
+import AuthField from "../components/auth/AuthField.jsx";
+import AuthEmailSentModal from "../components/auth/AuthEmailSentModal.jsx";
+import AuthErrorBanner from "../components/auth/AuthErrorBanner.jsx";
+import AuthHeading from "../components/auth/AuthHeading.jsx";
+import Button from "../components/ui/Button.jsx";
+import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");

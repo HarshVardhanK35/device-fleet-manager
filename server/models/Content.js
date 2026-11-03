@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { LIMITS, maxLengthWhenChanged } from "../utils/fieldLimits.js";
 
 // defines shape to our document
 const contentSchema = new mongoose.Schema(
@@ -11,6 +12,8 @@ const contentSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
+      validate: maxLengthWhenChanged("name", LIMITS.contentName, "Name"),
     },
     type: {
       type: String,

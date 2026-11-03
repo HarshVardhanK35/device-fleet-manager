@@ -2,6 +2,7 @@ import Content from "../models/Content.js";
 import Playlist from "../models/Playlist.js";
 import Assignment from "../models/Assignment.js";
 import buildManifestForDevice from "../services/manifestService.js";
+import { validationMessage } from "../utils/fieldLimits.js";
 import { publishManifestToDevice } from "../services/mqttService.js";
 
 async function pushManifest(deviceId) {
@@ -51,7 +52,7 @@ export const createContent = async (req, res) => {
     const content = await Content.create({ ...req.body, userId: req.user.id });
     res.status(201).json(content);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: validationMessage(error) });
   }
 };
 
@@ -109,7 +110,7 @@ export const updateContent = async (req, res) => {
 
     res.status(200).json(content);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: validationMessage(error) });
   }
 };
 

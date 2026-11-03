@@ -1,13 +1,32 @@
-import { useRef } from "react";
+import { Suspense, lazy, useRef } from "react";
 
+// Inter is self-hosted (only the weights the page uses) and loads with this
+// page, not with the whole app.
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
 import "./landing/landing.css";
 import Hero from "./landing/Hero.jsx";
 import LandingFooter from "./landing/LandingFooter.jsx";
 import LandingHeader from "./landing/LandingHeader.jsx";
-import { AnyDevice, ClosingCta, Control, HowItWorks, Looks, WhatToShow } from "./landing/LandingSections.jsx";
 import { useLandingTheme } from "./landing/useLandingTheme.js";
 import { usePageChrome } from "./landing/usePageChrome.js";
 import { useReveal } from "./landing/useReveal.js";
+
+// The sections under the hero load as their own file, right after the hero
+// paints. Until they arrive, this keeps the page tall enough to scroll and
+// keeps the header's anchor links pointing somewhere.
+const BelowFold = lazy(() => import("./landing/BelowFold.jsx"));
+
+function BelowFoldPlaceholder() {
+  return (
+    <div aria-hidden="true" style={{ minHeight: "240vh" }}>
+      {["how", "show", "control", "looks", "devices"].map((id) => (
+        <span key={id} id={id} />
+      ))}
+    </div>
+  );
+}
 
 // The public landing page, shown at "/" to signed-out visitors (App.jsx).
 // Reference: z-CastWise-A1-package (SPEC / COPY / css / js). Styles are
@@ -29,12 +48,9 @@ function Landing() {
       <LandingHeader theme={theme} onToggleTheme={toggleTheme} />
       <main id="main">
         <Hero />
-        <HowItWorks />
-        <WhatToShow />
-        <Control />
-        <Looks />
-        <AnyDevice />
-        <ClosingCta />
+        <Suspense fallback={<BelowFoldPlaceholder />}>
+          <BelowFold />
+        </Suspense>
       </main>
       <LandingFooter />
     </div>

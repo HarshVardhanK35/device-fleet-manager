@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Send } from "lucide-react";
 
 import { getDevices } from "../api/devices.js";
 import {
@@ -16,17 +17,18 @@ import {
   TIMELINE_DOT,
 } from "../utils/assignmentStatus.js";
 import { pluralizeCount } from "../utils/pluralize.js";
-import AssignmentCard from "../components/AssignmentCard.jsx";
-import RefreshButton from "../components/RefreshButton.jsx";
-import ConfirmDeleteModal from "../components/ConfirmDeleteModal.jsx";
-import PublishModal from "../components/PublishModal.jsx";
-import SkeletonList from "../components/SkeletonList.jsx";
-import SkeletonPanel from "../components/SkeletonPanel.jsx";
-import EmptyState from "../components/EmptyState.jsx";
-import DetailPane from "../components/DetailPane.jsx";
-import SelectableRow from "../components/SelectableRow.jsx";
+import AssignmentCard from "../components/assignments/AssignmentCard.jsx";
+import RefreshButton from "../components/ui/RefreshButton.jsx";
+import ConfirmDeleteModal from "../components/modals/ConfirmDeleteModal.jsx";
+import PublishModal from "../components/assignments/PublishModal.jsx";
+import SkeletonList from "../components/loading/SkeletonList.jsx";
+import SkeletonPanel from "../components/loading/SkeletonPanel.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
+import DetailPane from "../components/layout/DetailPane.jsx";
+import SelectableRow from "../components/ui/SelectableRow.jsx";
 
 function Assignments() {
+  const navigate = useNavigate();
   const [devices, setDevices] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -104,7 +106,7 @@ function Assignments() {
 
   return (
     <div
-      className={`mx-auto lg:max-w-6xl ${mobileView === "detail" ? "max-w-3xl" : "max-w-xl"}`}
+      className={`mx-auto md:max-w-none lg:max-w-7xl ${mobileView === "detail" ? "max-w-3xl" : "max-w-xl"}`}
     >
       {/* min height = the visible page, so the divider runs to the bottom */}
       <div className="flex gap-4 lg:min-h-[calc(100dvh-88px)]">
@@ -136,6 +138,28 @@ function Assignments() {
             <SkeletonList count={3} />
           ) : (
             <div className="flex flex-col gap-2">
+              {devices.length === 0 && (
+                <>
+                  {/* Below lg the right pane is hidden, so the guidance lives here. */}
+                  <EmptyState
+                    className="lg:hidden"
+                    title="Pair a screen first"
+                    description={
+                      <>
+                        1. Add a screen on the Player page.
+                        <br />
+                        2. Create a playlist with your content.
+                        <br />
+                        3. Come back here to choose when it plays.
+                      </>
+                    }
+                    actionLabel="Add a screen"
+                    actionIcon={Plus}
+                    onAction={() => navigate("/player")}
+                  />
+                  <p className="hidden lg:block m-0 px-1 pt-1 text-sm text-text-muted">No screens yet.</p>
+                </>
+              )}
               {devices.map((device) => {
                 const summary = getDeviceSummary(device);
                 return (
@@ -188,6 +212,29 @@ function Assignments() {
         >
           {loading ? (
             <SkeletonPanel rows={3} />
+          ) : !selectedDevice ? (
+            devices.length === 0 ? (
+              <EmptyState
+                title="Pair a screen first"
+                description="An assignment plays a playlist on a screen at the times you choose. Add a screen on the Player page, then come back to schedule it."
+                actionLabel="Add a screen"
+                actionIcon={Plus}
+                onAction={() => navigate("/player")}
+              />
+            ) : playlists.length === 0 ? (
+              <EmptyState
+                title="Create a playlist to schedule"
+                description="You have a screen, but no playlist to put on it yet. Make a playlist, then schedule it here."
+                actionLabel="Create a playlist"
+                actionIcon={Plus}
+                onAction={() => navigate("/playlists")}
+              />
+            ) : (
+              <EmptyState
+                title="Select a screen"
+                description="Pick one on the left to see its schedule."
+              />
+            )
           ) : (
             selectedDevice && (
               <DetailPane

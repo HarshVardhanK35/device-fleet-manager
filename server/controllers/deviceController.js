@@ -1,6 +1,7 @@
 import Device from "../models/Device.js";
 import Assignment from "../models/Assignment.js";
 import buildManifestForDevice from "../services/manifestService.js";
+import { validationMessage } from "../utils/fieldLimits.js";
 import {
   publishControlMessage,
   publishManifestToDevice,
@@ -20,7 +21,7 @@ export const createDevice = async (req, res) => {
     const device = await Device.create({ ...req.body, userId: req.user.id });
     res.status(201).json(device);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: validationMessage(error) });
   }
 };
 
@@ -93,7 +94,7 @@ export const updateDevice = async (req, res) => {
     await device.save();
     res.status(200).json(device);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: validationMessage(error) });
   }
 };
 

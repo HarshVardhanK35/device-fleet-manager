@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
 import { loadAppBundle, isAppBundleUrl } from "./loadAppBundle.js";
 import { API_BASE } from "../../api/apiClient.js";
-import BrandLoader from "../../components/BrandLoader.jsx";
+import BrandLoader from "../../components/loading/BrandLoader.jsx";
 
 // Full-screen renderer for a `type: "app"` content item at real playback
 // time (DevicePlayback.jsx) — same bundle-loading + postMessage handshake
