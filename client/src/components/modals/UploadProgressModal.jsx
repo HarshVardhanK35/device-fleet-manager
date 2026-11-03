@@ -96,9 +96,12 @@ function UploadProgressModal({
         </div>
 
         {error ? (
-          <div className="flex items-start gap-2 bg-accent-red/10 border border-accent-red/30 text-accent-red text-sm rounded px-3 py-2">
-            <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-            {error}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0 flex items-start gap-2 bg-accent-red/10 border border-accent-red/30 text-accent-red text-sm rounded px-3 py-2">
+              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+              {error}
+            </div>
+            <Button onClick={onClose} className="flex-none">Okay</Button>
           </div>
         ) : (
           <div className="flex items-center gap-4">
@@ -133,11 +136,6 @@ function UploadProgressModal({
           </div>
         )}
 
-        {error && (
-          <div className="flex justify-end">
-            <Button onClick={onClose}>Okay</Button>
-          </div>
-        )}
       </div>
     </div>
   );

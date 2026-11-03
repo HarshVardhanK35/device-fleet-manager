@@ -29,7 +29,16 @@ import { getVideoDurationMs } from "../utils/getVideoDuration.js";
 import { pluralizeCount } from "../utils/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
 import { useCompactLayout } from "../hooks/useCompactLayout.js";
-import { MAX_CONTENT_NAME, MAX_IMAGES, MAX_VIDEO_BYTES, formatMB } from "../utils/limits.js";
+import {
+  MAX_CONTENT_NAME,
+  MAX_IMAGES,
+  MAX_IMAGE_FILE_BYTES,
+  MAX_IMAGE_MEGAPIXELS,
+  MAX_VIDEO_BYTES,
+  MAX_VIDEO_FILE_BYTES,
+  formatMB,
+} from "../utils/limits.js";
+import { readImageSize } from "../utils/imageSize.js";
 
 // The quota numbers (utils/limits.js) are a pre-upload UX check only — avoid
 // wasting a Cloudinary upload on something already known to be rejected. The
@@ -59,6 +68,7 @@ function Content() {
 
   // single-item inspector (click the card body to open)
   const [inspectedId, setInspectedId] = useState(null);
+  const [panelDock, setPanelDock] = useState({ side: "right", left: 0 });
 
   // filter/sort/search
   const [search, setSearch] = useState("");
@@ -97,7 +107,16 @@ function Content() {
   // panel itself shows an extra "Edit app settings" button, app-only, that
   // calls openAppSettingsModal below for the app-specific fields (location,
   // refresh interval, etc.) that don't belong in the generic panel.
-  function handleTileEdit(item) {
+  // Desktop: the details panel opens on the side away from the clicked tile, so
+  // the tile is never hidden under it. `left` is where the page's tiles start
+  // (after the side navbar), for a panel docked on the left.
+  function handleTileEdit(item, tileRect) {
+    const page = pageRef.current?.getBoundingClientRect();
+    if (page && tileRect) {
+      const tileMid = tileRect.left + tileRect.width / 2;
+      const pageMid = page.left + page.width / 2;
+      setPanelDock({ side: tileMid > pageMid ? "left" : "right", left: page.left });
+    }
     setInspectedId(item._id);
   }
 
@@ -183,6 +202,31 @@ function Content() {
     for (let i = 0; i < validFiles.length; i++) {
       const selectedFile = validFiles[i];
       const isVideo = selectedFile.type.startsWith("video");
+
+      // Per-file limits (Cloudinary free plan), before the progress bar starts.
+      let fileError = null;
+      if (!isVideo && selectedFile.size > MAX_IMAGE_FILE_BYTES) {
+        fileError = "Images must be under 10 MB";
+      } else if (isVideo && selectedFile.size > MAX_VIDEO_FILE_BYTES) {
+        fileError = "Videos must be under 100 MB";
+      } else if (!isVideo) {
+        const dims = await readImageSize(selectedFile);
+        if (dims && dims.width * dims.height > MAX_IMAGE_MEGAPIXELS * 1_000_000) {
+          fileError = `Image is too large (max ${MAX_IMAGE_MEGAPIXELS} megapixels)`;
+        }
+      }
+      if (fileError) {
+        setUploadState({
+          fileName: selectedFile.name,
+          isVideo,
+          progress: 0,
+          done: false,
+          error: fileError,
+          queueIndex: i + 1,
+          queueTotal: validFiles.length,
+        });
+        return;
+      }
 
       if (!isVideo && imagesQueued >= MAX_IMAGES) {
         setUploadState({
@@ -318,11 +362,13 @@ function Content() {
   }
 
   function toggleSelectAll() {
+    setInspectedId(null);
     toggleCheckedAll(visibleContent.map((item) => item._id));
   }
 
   function toggleSelect(id, e) {
     e?.stopPropagation();
+    setInspectedId(null); // selecting and the details panel never go together
     toggleChecked(id);
   }
 
@@ -385,7 +431,7 @@ function Content() {
           pr-4 matches the grid's own scrollbar gutter (ScrollBox below) — but
           only when the Details panel is closed. With it open, the panel's own
           border is the row's real right edge, not the grid's scrollbar. */}
-      <div className={`flex-shrink-0 ${inspectedItem ? "" : "pr-4"}`}>
+      <div className="flex-shrink-0 pr-4">
         {/* row 1: title + count + quota (left, two lines), search (right,
             vertically centered against the full left column via items-center) */}
         <div className="flex items-start md:items-center justify-between gap-4 mb-3">
@@ -470,7 +516,10 @@ function Content() {
       <div className="flex gap-4 flex-1 min-h-0">
         {/* content grid */}
         <div className="relative flex-1 min-h-0 flex">
-          <ScrollBox ref={gridScrollRef} className="flex-1 pr-4 pt-2 pb-20 md:pb-0">
+          <ScrollBox
+            ref={gridScrollRef}
+            className={`flex-1 pr-4 pt-2 pb-20 md:pb-0 ${inspectedItem ? "xl:!overflow-hidden" : ""}`}
+          >
             {loading ? (
               <SkeletonGrid />
             ) : content.length === 0 ? (
@@ -484,7 +533,7 @@ function Content() {
               </p>
             ) : (
               <div
-                className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 ${inspectedItem ? "xl:grid-cols-4 2xl:grid-cols-5" : "xl:grid-cols-5 2xl:grid-cols-7"}`}
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7 gap-4"
               >
                 {visibleContent.map((item) => (
                   <SelectableContentTile
@@ -492,6 +541,7 @@ function Content() {
                     item={item}
                     checked={checkedIds.has(item._id)}
                     inspected={inspectedId === item._id}
+                    dimmed={!!inspectedItem && inspectedId !== item._id}
                     selectionMode={checkedIds.size > 0}
                     onToggleSelect={toggleSelect}
                     onOpen={handleTileEdit}
@@ -508,6 +558,8 @@ function Content() {
           <ContentDetailsPanel
             key={inspectedItem._id}
             item={inspectedItem}
+            dockSide={panelDock.side}
+            dockLeft={panelDock.left}
             onClose={() => setInspectedId(null)}
             onSave={handleSaveItem}
             onDelete={(item) => setSingleDeleteTarget(item)}

@@ -3,6 +3,7 @@ import { CloudOff, FileQuestion, LockKeyhole, RefreshCw, TriangleAlert } from "l
 
 import BrandLoader from "../loading/BrandLoader.jsx";
 import Logo from "../layout/Logo.jsx";
+import ScrollBox from "../layout/ScrollBox.jsx";
 
 const KINDS = {
   notFound: {
@@ -114,9 +115,11 @@ function ErrorPage({ kind = "crash", error, signedIn = false, fullScreen = false
             <summary className="cursor-pointer text-center text-[13px] text-text-muted hover:text-text-primary">
               Show details
             </summary>
-            <pre className="mt-3 max-h-48 overflow-auto rounded-lg border border-border-muted bg-bg-panel p-3 text-xs text-text-muted whitespace-pre-wrap break-words">
-              {details}
-            </pre>
+            <div className="mt-3 flex flex-col rounded-lg border border-border-muted bg-bg-panel">
+              <ScrollBox className="!h-auto max-h-48">
+                <pre className="m-0 p-3 text-xs text-text-muted whitespace-pre-wrap break-words">{details}</pre>
+              </ScrollBox>
+            </div>
           </details>
         )}
       </div>

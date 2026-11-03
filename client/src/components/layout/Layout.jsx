@@ -18,6 +18,7 @@ import {
   PanelLeftOpen,
   User,
   LogOut,
+  Users,
 } from "lucide-react";
 
 const navItems = [
@@ -27,6 +28,9 @@ const navItems = [
   { to: "/assignments", label: "Assignments", icon: MonitorPlay },
   { to: "/player", label: "Player", icon: PlaySquare },
 ];
+
+// Only shown to admins.
+const adminItem = { to: "/admin/users", label: "Users", icon: Users };
 
 const COLLAPSED_KEY = "castwise-nav-collapsed";
 
@@ -70,6 +74,7 @@ function Layout({ children }) {
     });
   }
 
+  const items = user?.role === "admin" ? [...navItems, adminItem] : navItems;
   const userName = user ? `${user.firstName} ${user.lastName || ""}`.trim() : "";
   const initials = getInitials(userName);
 
@@ -139,7 +144,7 @@ function Layout({ children }) {
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 top-14 z-50 bg-bg-primary flex flex-col">
           <nav className="flex flex-col p-4 gap-1">
-            {navItems.map((item) => (
+            {items.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -204,7 +209,7 @@ function Layout({ children }) {
             collapsed ? "w-16 p-2" : "w-48 p-3"
           }`}
         >
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
