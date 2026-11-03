@@ -183,6 +183,26 @@ input[type="number"] {
   .animate-modal-in { animation-duration: 1ms; }
 }
 
+/* Admin user details: the side panel slides in, the modal pops, the dim fades.
+   Plays once; deliberately ignores the OS reduced-motion setting (Windows
+   animation effects are off on some machines, which would hide it). */
+@keyframes cw-slide-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cw-slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cw-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+.cw-panel-in { animation: cw-slide-in 240ms ease-out both; }
+.cw-panel-in-left { animation: cw-slide-in-left 240ms ease-out both; }
+.cw-pop-in { animation: cw-pop 200ms ease-out both; }
+.cw-scrim-in { animation: cw-fade 180ms ease-out both; }
+
 /* CastWise loading mark (components/BrandLoader.jsx), the Orbit design: the
    ring grows from a point, wraps the screens and collapses again while it
    turns; the TV and phone pulse in turn. Never disabled for reduced motion. */

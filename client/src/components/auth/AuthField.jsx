@@ -9,6 +9,7 @@ function AuthField({
   autoComplete,
   error,
   required = true,
+  maxLength,
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -30,6 +31,7 @@ function AuthField({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required={required}
+          maxLength={maxLength}
           className={`w-full h-10 ${Icon ? "pl-10" : "pl-3"} pr-3 bg-bg-panel border ${
             error ? "border-accent-red" : "border-border-muted"
           } rounded-lg text-text-primary text-sm outline-none transition-colors focus-visible:border-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue/20`}

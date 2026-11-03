@@ -8,6 +8,7 @@ import { getTypeMeta } from "../../utils/contentTypeMeta.js";
 import BlurImage from "../ui/BlurImage.jsx";
 import FieldCount from "../ui/FieldCount.jsx";
 import { MAX_APP_NAME, MAX_CONTENT_NAME } from "../../utils/limits.js";
+import { useMediaQuery } from "../../hooks/useCompactLayout.js";
 import {
   DURATION_UNIT_CYCLE,
   parseDurationInput,
@@ -43,7 +44,7 @@ function deriveCustomUnit(sec) {
 // `onOpenAppSettings` (app items only) opens that app's own full settings
 // modal (location, refresh interval, etc.) — this panel only ever edits
 // name + duration, the two fields every content type shares.
-function ContentDetailsPanel({ item, onClose, onSave, onDelete, onOpenAppSettings }) {
+function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, onSave, onDelete, onOpenAppSettings }) {
   const [name, setName] = useState(item.name);
   const [durationSec, setDurationSec] = useState(
     item.durationInMillis ? item.durationInMillis / 1000 : "",
@@ -130,15 +131,12 @@ function ContentDetailsPanel({ item, onClose, onSave, onDelete, onOpenAppSetting
     });
   }
 
-  return (
+  // xl and up: a floating panel over the page (the tiles keep their size); below
+  // that: a centred modal over a blurred page.
+  const sidePanel = useMediaQuery("(min-width: 1280px)");
+
+  const inner = (
     <>
-      {/* Below xl: dim the page behind the dialog; click it to close. */}
-      <div
-        aria-hidden="true"
-        onClick={onClose}
-        className="xl:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
-      />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-48px)] max-h-[85dvh] shadow-2xl z-40 xl:static xl:translate-x-0 xl:translate-y-0 xl:w-[320px] xl:max-w-none xl:max-h-none xl:flex-shrink-0 xl:h-full xl:shadow-none xl:z-auto bg-bg-panel border border-border-muted rounded-xl flex flex-col overflow-hidden">
       <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-border-muted">
         <h3 className="text-text-primary font-bold">Details</h3>
         <CancelButton onClick={onClose} title="Close" />
@@ -304,6 +302,26 @@ function ContentDetailsPanel({ item, onClose, onSave, onDelete, onOpenAppSetting
           </Button>
         </div>
       </div>
+    </>
+  );
+
+  return sidePanel ? (
+    <>
+      <div aria-hidden="true" onClick={onClose} className="fixed inset-0 z-20" />
+      <aside
+        style={dockSide === "left" ? { left: dockLeft } : undefined}
+        className={`${dockSide === "left" ? "cw-panel-in-left" : "cw-panel-in right-4"} fixed top-[72px] bottom-4 z-30 w-[320px] flex flex-col overflow-hidden bg-bg-panel border border-border-muted rounded-xl shadow-2xl`}
+      >
+        {inner}
+      </aside>
+    </>
+  ) : (
+    <>
+      <div aria-hidden="true" onClick={onClose} className="cw-scrim-in fixed inset-0 z-30 bg-black/60 backdrop-blur-sm" />
+      <div className="fixed inset-0 z-40 flex items-center justify-center p-4 pointer-events-none">
+        <div className="cw-pop-in pointer-events-auto w-full max-w-[420px] max-h-full flex flex-col overflow-hidden bg-bg-panel border border-border-muted rounded-xl shadow-2xl">
+          {inner}
+        </div>
       </div>
     </>
   );

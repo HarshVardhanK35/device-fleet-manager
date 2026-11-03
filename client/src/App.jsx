@@ -29,6 +29,7 @@ const PlayerSlots = lazyRetry(pageLoaders.playerSlots);
 const Screens = lazyRetry(pageLoaders.screens);
 const Landing = lazyRetry(pageLoaders.landing);
 const NotFound = lazyRetry(pageLoaders.notFound);
+const AdminUsers = lazyRetry(pageLoaders.adminUsers);
 
 // A signed-in page: the app shell stays on screen while the page itself loads.
 function AppPage({ children }) {
@@ -40,6 +41,17 @@ function AppPage({ children }) {
         </RouteErrorBoundary>
       </Layout>
     </ProtectedRoute>
+  );
+}
+
+// Admin-only page: everyone else sees the normal 404. The role arrives with
+// the user record just after the token, so wait for it before deciding.
+function AdminPage({ children }) {
+  const { user } = useAuth();
+  return (
+    <AppPage>
+      {!user ? <RouteFallback /> : user.role === "admin" ? children : <NotFound />}
+    </AppPage>
   );
 }
 
@@ -89,6 +101,7 @@ function App() {
             <Route path="/assignments" element={<AppPage><Assignments /></AppPage>} />
             <Route path="/playlists" element={<AppPage><Playlists /></AppPage>} />
             <Route path="/player" element={<AppPage><PlayerSlots /></AppPage>} />
+            <Route path="/admin/users" element={<AdminPage><AdminUsers /></AdminPage>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

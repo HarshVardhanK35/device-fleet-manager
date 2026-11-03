@@ -6,6 +6,7 @@ function SelectableContentTile({
   item,
   checked,
   inspected,
+  dimmed,
   selectionMode,
   onToggleSelect,
   onOpen,
@@ -15,12 +16,12 @@ function SelectableContentTile({
   // opening the details panel.
   const { handlers, consumeClick } = useLongPress(() => onToggleSelect(item._id));
 
-  function handleClick() {
+  function handleClick(e) {
     if (consumeClick()) return;
-    if (selectionMode && window.matchMedia("(pointer: coarse)").matches) {
+    if (selectionMode) {
       onToggleSelect(item._id);
     } else {
-      onOpen(item);
+      onOpen(item, e?.currentTarget?.getBoundingClientRect?.());
     }
   }
 
@@ -31,7 +32,9 @@ function SelectableContentTile({
       coloredType
       onClick={handleClick}
       rootProps={handlers}
-      className={`select-none [-webkit-touch-callout:none] ${
+      className={`select-none [-webkit-touch-callout:none] transition-[filter,opacity] duration-200 ${
+        dimmed ? "xl:blur-[3px] xl:opacity-60" : ""
+      } ${
         checked
           ? "!border-2 !border-accent-blue -translate-y-0.5"
           : inspected
@@ -55,8 +58,9 @@ function SelectableContentTile({
 export default SelectableContentTile;
 
 // A ContentTile wired up for the Content library grid: click opens the
-// details panel (gray border while it is the open one); the hover-reveal
-// checkbox top-left selects (blue border). On touch, a long press selects and
-// — while anything is selected — a tap toggles instead of opening, and every
-// checkbox stays visible. `onToggleSelect(id, event?)` and `onOpen(item)` come
-// from the parent. Used by: pages/Content.jsx.
+// details panel (gray border while it is the open one; the other tiles blur
+// on desktop while it is open); the hover-reveal
+// checkbox top-left selects (blue border). While anything is selected a click
+// or tap toggles instead of opening, and every checkbox stays visible; on touch
+// a long press starts the selection. `onToggleSelect(id, event?)` and `onOpen(item)` come
+// from the parent (`onOpen` also gets the tile's on-screen rectangle). Used by: pages/Content.jsx.

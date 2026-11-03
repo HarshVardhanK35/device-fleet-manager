@@ -6,7 +6,7 @@
     "thumbnail": null,
     "devUrl": "",
     "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-weather/releases/download/staging/weather.zip",
-    "prodZipUrl": null
+    "prodZipUrl": "https://github.com/HarshVardhanK35/castwise-weather/releases/download/prod/weather.zip"
   },
   {
     "appId": "db284dfe-e2b8-4c57-a6d6-1342c7c2ce82",
@@ -15,7 +15,7 @@
     "thumbnail": null,
     "devUrl": "",
     "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-clock/releases/download/staging/clock.zip",
-    "prodZipUrl": null
+    "prodZipUrl": "https://github.com/HarshVardhanK35/castwise-clock/releases/download/prod/clock.zip"
   },
   {
     "appId": "a9ceaa9a-4384-46e7-8bf1-abfaa18bcd93",
@@ -24,7 +24,7 @@
     "thumbnail": null,
     "devUrl": "",
     "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-rss/releases/download/staging/rss.zip",
-    "prodZipUrl": null
+    "prodZipUrl": "https://github.com/HarshVardhanK35/castwise-rss/releases/download/prod/rss.zip"
   },
   {
     "appId": "4078f574-a953-429c-8b8a-15c0525e8528",
@@ -33,6 +33,6 @@
     "thumbnail": null,
     "devUrl": "http://localhost:5182/",
     "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-announcements/releases/download/staging/announcements.zip",
-    "prodZipUrl": null
+    "prodZipUrl": "https://github.com/HarshVardhanK35/castwise-announcements/releases/download/prod/announcements.zip"
   }
 ]

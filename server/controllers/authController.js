@@ -6,6 +6,8 @@ import Device from "../models/Device.js";
 import Assignment from "../models/Assignment.js";
 
 import { sendEmail } from "../utils/sendEmail.js";
+import { generateUsername } from "../utils/username.js";
+import { validationMessage } from "../utils/fieldLimits.js";
 import {
   buildVerificationEmail,
   buildResetPasswordEmail,
@@ -52,6 +54,7 @@ export const register = async (req, res) => {
     const user = await User.create({
       firstName,
       lastName,
+      username: await generateUsername(firstName, lastName),
       email,
       password,
     });
@@ -70,11 +73,17 @@ export const register = async (req, res) => {
     res.status(201).json(user);
   } catch (err) {
     if (err.code === 11000) {
+      // Two sign-ups drew the same username at the same instant: try again.
+      if (err.keyPattern?.username) {
+        return res
+          .status(409)
+          .json({ message: "Something went wrong, please try again" });
+      }
       return res
         .status(409)
         .json({ message: "An account with this email already exists" });
     }
-    res.status(400).json({ message: err.message });
+    res.status(400).json({ message: validationMessage(err) });
   }
 };
 
@@ -379,6 +388,13 @@ export const logout = (req, res) => {
 
 export const deleteUser = async (req, res) => {
   try {
+    // An admin can't delete their own account from the admin panel.
+    if (req.params.id === req.user.id) {
+      return res
+        .status(400)
+        .json({ message: "You can't delete your own account" });
+    }
+
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });

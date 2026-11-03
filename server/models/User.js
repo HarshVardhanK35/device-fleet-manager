@@ -1,15 +1,28 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import { LIMITS, maxLengthWhenChanged } from "../utils/fieldLimits.js";
 
 const UserSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
       required: true,
+      trim: true,
+      validate: maxLengthWhenChanged("firstName", LIMITS.firstName, "First name"),
     },
     lastName: {
       type: String,
       required: false,
+      trim: true,
+      validate: maxLengthWhenChanged("lastName", LIMITS.lastName, "Last name"),
+    },
+    // Short unique handle shown in the admin list, made once at sign-up.
+    // Sparse: accounts created before usernames existed simply have none.
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
     },
     email: {
       type: String,

@@ -14,6 +14,7 @@ import PasswordMatchHint from "../components/auth/PasswordMatchHint.jsx";
 import Button from "../components/ui/Button.jsx";
 import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
 import { getPasswordRules } from "../utils/passwordRules.js";
+import { MAX_FIRST_NAME, MAX_LAST_NAME } from "../utils/limits.js";
 
 function Register() {
   const [firstName, setFirstName] = useState("");
@@ -69,6 +70,7 @@ function Register() {
               id="rg-fn"
               label="First name"
               value={firstName}
+              maxLength={MAX_FIRST_NAME}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Alex"
               autoComplete="given-name"
@@ -77,6 +79,7 @@ function Register() {
               id="rg-ln"
               label="Last name (optional)"
               value={lastName}
+              maxLength={MAX_LAST_NAME}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Morgan"
               autoComplete="family-name"

@@ -5,6 +5,8 @@ export const LIMITS = {
   playlistName: 60,
   playlistDescription: 200,
   screenName: 30,
+  firstName: 20,
+  lastName: 20,
 };
 
 // A max-length validator that only checks a field when it is new or has been

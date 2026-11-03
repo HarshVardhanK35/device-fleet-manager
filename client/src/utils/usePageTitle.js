@@ -11,6 +11,7 @@ const TITLES = {
   "/playlists": "Playlists",
   "/assignments": "Assignments",
   "/player": "Screens",
+  "/admin/users": "Users",
   "/screens": "Pair this screen",
   "/login": "Sign in",
   "/register": "Create account",

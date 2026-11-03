@@ -23,6 +23,7 @@ import startOfflineChecker from "./services/offlineChecker.js";
 
 // wiring routes
 import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import contentRoutes from "./routes/contentRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
@@ -52,6 +53,7 @@ app.use(helmet());
 
 // mounts your router at the /<route> path prefix.
 app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
 app.use("/content", contentRoutes);
 app.use("/devices", deviceRoutes);
 app.use("/assignments", assignmentRoutes);
