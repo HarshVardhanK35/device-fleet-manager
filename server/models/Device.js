@@ -12,6 +12,8 @@ const deviceSchema = new mongoose.Schema(
     },
     type: {
       type: String,
+      trim: true,
+      validate: maxLengthWhenChanged("type", LIMITS.screenType, "Type"),
     },
     status: {
       type: String,

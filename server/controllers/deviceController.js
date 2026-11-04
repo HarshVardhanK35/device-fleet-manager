@@ -14,7 +14,7 @@ export const createDevice = async (req, res) => {
       if (count >= 3) {
         return res
           .status(403)
-          .json({ message: "Device limit reached (3 max)" });
+          .json({ message: "Screen limit reached (3 max)" });
       }
     }
 
@@ -39,10 +39,10 @@ export const getDeviceById = async (req, res) => {
   try {
     const device = await Device.findById(req.params.id);
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
     if (req.user.role !== "admin" && device.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not your device" });
+      return res.status(403).json({ message: "Not your screen" });
     }
     res.status(200).json(device);
   } catch (error) {
@@ -54,7 +54,7 @@ export const connectDevice = async (req, res) => {
   try {
     const device = await Device.findOne({ accessToken: req.params.token });
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
 
     const THRESHOLD_MS = 20000; // matches offlineChecker.js's own threshold
@@ -63,7 +63,7 @@ export const connectDevice = async (req, res) => {
       Date.now() - device.lastSeenAt < THRESHOLD_MS;
 
     if (alreadyConnected) {
-      return res.status(409).json({ message: "Device already connected" });
+      return res.status(409).json({ message: "Screen already connected" });
     }
 
     device.status = "online";
@@ -83,11 +83,11 @@ export const updateDevice = async (req, res) => {
   try {
     const device = await Device.findById(req.params.id);
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
 
     if (device.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not your device" });
+      return res.status(403).json({ message: "Not your screen" });
     }
 
     Object.assign(device, req.body);
@@ -102,15 +102,17 @@ export const deleteDevice = async (req, res) => {
   try {
     const device = await Device.findById(req.params.id);
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
 
     if (device.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not your device" });
+      return res.status(403).json({ message: "Not your screen" });
     }
 
+    // Its schedules go with it (otherwise they point at a screen that no longer exists).
+    await Assignment.deleteMany({ deviceId: device._id });
     await device.deleteOne();
-    res.status(200).json({ message: "Device deleted" });
+    res.status(200).json({ message: "Screen deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -120,11 +122,11 @@ export const takeOverDevice = async (req, res) => {
   try {
     const device = await Device.findById(req.params.id);
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
 
     if (device.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not your device" });
+      return res.status(403).json({ message: "Not your screen" });
     }
 
     publishControlMessage(device._id, { action: "disconnect" });
@@ -138,11 +140,11 @@ export const releaseDevice = async (req, res) => {
   try {
     const device = await Device.findById(req.params.id);
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
 
     if (device.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not your device" });
+      return res.status(403).json({ message: "Not your screen" });
     }
 
     publishControlMessage(device._id, { action: "reconnect" });
@@ -169,13 +171,13 @@ export const unpairDevice = async (req, res) => {
   try {
     const device = await Device.findOne({ accessToken: req.params.token });
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
 
     await Assignment.deleteMany({ deviceId: device._id });
     await device.deleteOne();
 
-    res.status(200).json({ message: "Device deleted" });
+    res.status(200).json({ message: "Screen deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -185,7 +187,7 @@ export const disconnectDevice = async (req, res) => {
   try {
     const device = await Device.findOne({ accessToken: req.params.token });
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
 
     device.status = "offline";

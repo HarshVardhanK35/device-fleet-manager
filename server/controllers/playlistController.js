@@ -5,9 +5,41 @@ import buildManifestForDevice from "../services/manifestService.js";
 import { validationMessage } from "../utils/fieldLimits.js";
 import { publishManifestToDevice } from "../services/mqttService.js";
 
+// Sends a screen its fresh manifest. A problem with one screen must never fail
+// the edit that triggered it: an assignment whose screen was deleted is cleaned
+// up, and anything else is only logged.
 async function pushManifest(deviceId) {
-  const manifest = await buildManifestForDevice(deviceId);
-  publishManifestToDevice(deviceId, manifest);
+  try {
+    const manifest = await buildManifestForDevice(deviceId);
+    publishManifestToDevice(deviceId, manifest);
+  } catch (err) {
+    if (err.message === "Device not found!") {
+      await Assignment.deleteMany({ deviceId });
+      return;
+    }
+    console.error("Could not push the manifest to a screen:", err.message);
+  }
+}
+
+// An image may appear in a playlist up to 3 times; any other content once.
+const MAX_IMAGE_COPIES = 3;
+
+// Returns an error message when the list breaks that rule, otherwise null.
+async function duplicateRuleError(contentIds) {
+  const ids = contentIds.map(String);
+  const docs = await Content.find({ _id: { $in: [...new Set(ids)] } })
+    .select("type")
+    .lean();
+  const typeById = new Map(docs.map((d) => [String(d._id), d.type]));
+  const counts = new Map();
+  for (const id of ids) counts.set(id, (counts.get(id) || 0) + 1);
+  for (const [id, n] of counts) {
+    const cap = typeById.get(id) === "image" ? MAX_IMAGE_COPIES : 1;
+    if (n > cap) {
+      return `An image can be added up to ${MAX_IMAGE_COPIES} times; other content only once`;
+    }
+  }
+  return null;
 }
 
 export const createPlaylist = async (req, res) => {
@@ -18,9 +50,12 @@ export const createPlaylist = async (req, res) => {
       userId: req.user.id,
     });
 
-    if (ownedCount !== contentIds.length) {
+    if (ownedCount !== new Set(contentIds.map(String)).size) {
       return res.status(403).json({ message: "Invalid content selection" });
     }
+
+    const ruleError = await duplicateRuleError(contentIds);
+    if (ruleError) return res.status(400).json({ message: ruleError });
 
     const playlist = await Playlist.create({
       ...req.body,
@@ -80,9 +115,12 @@ export const updatePlaylist = async (req, res) => {
         _id: { $in: req.body.contentItems },
         userId: req.user.id,
       });
-      if (ownedCount !== req.body.contentItems.length) {
+      if (ownedCount !== new Set(req.body.contentItems.map(String)).size) {
         return res.status(403).json({ message: "Invalid content selection" });
       }
+
+      const ruleError = await duplicateRuleError(req.body.contentItems);
+      if (ruleError) return res.status(400).json({ message: ruleError });
     }
 
     Object.assign(playlist, req.body);

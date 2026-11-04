@@ -9,6 +9,8 @@ function EmptyState({
   actionLabel,
   actionIcon,
   onAction,
+  actionDisabled = false,
+  actionTitle,
   minHeight,
   className = "",
   children,
@@ -23,7 +25,7 @@ function EmptyState({
       </h3>
       <p className="text-text-muted text-sm max-w-md">{description}</p>
       {actionLabel && (
-        <Button icon={actionIcon} onClick={onAction}>
+        <Button icon={actionIcon} onClick={onAction} disabled={actionDisabled} title={actionDisabled ? actionTitle : undefined}>
           {actionLabel}
         </Button>
       )}

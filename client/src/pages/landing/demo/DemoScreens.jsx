@@ -7,7 +7,6 @@ import { CARD_TYPES } from "./demoData.js";
 // Used by: demo/LiveDemo.jsx.
 
 const STATUS_LABEL = { in: "In", low: "Low", out: "Out" };
-const CONFETTI = Array.from({ length: 14 }, (_, i) => i);
 
 export function StatusBoardScreen({ data }) {
   return (
@@ -73,11 +72,6 @@ export function EventCardScreen({ data }) {
   const Icon = type.icon;
   return (
     <div className="dm-screen dm-card">
-      <div className="dm-confetti" aria-hidden="true">
-        {CONFETTI.map((i) => (
-          <i key={i} style={{ "--i": i }} />
-        ))}
-      </div>
       <div className="dm-card__text">
         <span className="dm-card__badge">{data.badge}</span>
         <span className="dm-card__kicker">

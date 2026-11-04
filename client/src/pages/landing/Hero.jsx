@@ -26,7 +26,7 @@ function Hero() {
             Turn any screen into something people read.
           </h1>
           <p className="lead">
-            CastWise puts the right thing on your screen in minutes. It runs on any device with a browser: a TV, a tablet, a spare phone.
+            CastWise puts the right thing on your screen in minutes. It runs on any device with a browser: a TV, a tablet, a spare phone. Free for up to 3 screens.
           </p>
           <div className="hero-actions">
             <Link className="btn btn-primary btn-lg" to="/register">

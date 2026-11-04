@@ -6,6 +6,10 @@ export const MAX_IMAGES = 30;
 export const MAX_VIDEO_BYTES = 150 * 1024 * 1024; // 150MB
 export const MAX_SCREENS = 3;
 
+// A playlist may hold the same image up to this many times; any other kind of
+// content only once (the server enforces the same rule).
+export const MAX_IMAGE_COPIES = 3;
+
 // Cloudinary free plan, per file (checked before the upload starts).
 export const MAX_IMAGE_FILE_BYTES = 10 * 1024 * 1024; // 10MB
 export const MAX_VIDEO_FILE_BYTES = 100 * 1024 * 1024; // 100MB
@@ -17,6 +21,7 @@ export const MAX_APP_NAME = 55; // an app tile's name (guarantees two lines in t
 export const MAX_PLAYLIST_NAME = 60;
 export const MAX_PLAYLIST_DESCRIPTION = 200;
 export const MAX_SCREEN_NAME = 30;
+export const MAX_SCREEN_TYPE = 20;
 export const MAX_FIRST_NAME = 20;
 export const MAX_LAST_NAME = 20;
 

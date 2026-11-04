@@ -28,7 +28,12 @@ import Button from "../components/ui/Button.jsx";
 import RefreshButton from "../components/ui/RefreshButton.jsx";
 import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
 import { pluralizeCount } from "../utils/pluralize.js";
+import { MAX_IMAGE_COPIES } from "../utils/limits.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
+
+// A playlist is made of content, so with an empty library there is nothing to
+// create one from.
+const NO_CONTENT_HINT = "Add content first";
 
 function Playlists() {
   const [playlists, setPlaylists] = useState([]);
@@ -37,6 +42,7 @@ function Playlists() {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
   const [mobileView, setMobileView] = useState("list"); // "list" | "detail"
   const [loading, setLoading] = useState(true);
+  const noContent = content.length === 0;
 
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -215,20 +221,12 @@ function Playlists() {
     setAddContentOpen(false);
   }
 
-  async function handleRemoveEditItem(itemId, currentItems) {
-    const remaining = currentItems.filter((item) => item._id !== itemId);
-    const updated = await updatePlaylist(editPlaylistId, {
-      contentItems: remaining.map((item) => item._id),
-    });
-
-    setPlaylists((prev) =>
-      prev.map((p) => (p._id === updated._id ? updated : p)),
-    );
-    return updated.contentItems;
-  }
-
-  async function handleSaveEditPlaylist(name, description) {
-    const updated = await updatePlaylist(editPlaylistId, { name, description });
+  // Name, description and the content list are saved together, only here: the
+  // modal's remove buttons just edit its own draft until Save.
+  async function handleSaveEditPlaylist(name, description, contentItems) {
+    const updated = await updatePlaylist(editPlaylistId, { name, description, contentItems });
+    // A failed save answers with just { message }.
+    if (!updated?._id) throw new Error(updated?.message || "Could not save the playlist");
     setPlaylists((prev) =>
       prev.map((p) => (p._id === updated._id ? updated : p)),
     );
@@ -303,7 +301,7 @@ function Playlists() {
         {/* divider between the header controls and the list */}
         <div className="mb-3 border-b border-bg-hover lg:mr-4 flex-shrink-0" />
 
-        <ScrollBox className="lg:pr-4 pt-1">
+        <ScrollBox className="pr-4 pt-1">
           {loading ? (
             <SkeletonPlaylistList count={4} />
           ) : (
@@ -313,19 +311,15 @@ function Playlists() {
                 {/* Below lg the right pane is hidden, so the guidance lives here. */}
                 <EmptyState
                   className="lg:hidden md:col-span-full"
-                  title="Create your first playlist"
+                  title={noContent ? "No content yet" : "Create your first playlist"}
                   description={
-                    <>
-                      1. Add images, videos or apps on the Content page.
-                      <br />
-                      2. Create a playlist and pick what goes in it.
-                      <br />
-                      3. Put it on a screen from the Assignments page.
-                    </>
+                    noContent
+                      ? "Add images, videos or apps first."
+                      : "Pick content and put it in a playlist."
                   }
-                  actionLabel="Create playlist"
+                  actionLabel={noContent ? "Go to Content" : "Create playlist"}
                   actionIcon={Plus}
-                  onAction={() => setCreateOpen(true)}
+                  onAction={() => (noContent ? navigate("/content") : setCreateOpen(true))}
                 />
                 <p className="hidden lg:block m-0 px-1 pt-1 text-sm text-text-muted">No playlists yet.</p>
               </>
@@ -360,8 +354,14 @@ function Playlists() {
           )}
         </ScrollBox>
 
-        <div className="flex-shrink-0 pt-3 lg:pr-4">
-          <Button icon={Plus} onClick={() => setCreateOpen(true)} className="w-full">
+        <div className={`flex-shrink-0 pt-3 lg:pr-4 ${noContent && playlists.length === 0 ? "hidden lg:block" : ""}`}>
+          <Button
+            icon={Plus}
+            onClick={() => setCreateOpen(true)}
+            disabled={noContent}
+            title={noContent ? NO_CONTENT_HINT : undefined}
+            className="w-full"
+          >
             Create playlist
           </Button>
         </div>
@@ -383,6 +383,8 @@ function Playlists() {
               actionLabel="Create playlist"
               actionIcon={Plus}
               onAction={() => setCreateOpen(true)}
+              actionDisabled={noContent}
+              actionTitle={NO_CONTENT_HINT}
             >
               {content.length === 0 && (
                 <button
@@ -521,7 +523,7 @@ function Playlists() {
                 </ContentToolbar>
               )}
 
-              <ScrollBox className="flex-1 lg:pr-4 pt-2">
+              <ScrollBox className="flex-1 pr-4 pt-2">
                 {shownItems.length === 0 ? (
                   <EmptyState
                     title="This playlist has no content yet"
@@ -594,9 +596,11 @@ function Playlists() {
         content={content}
         title="Add Content"
         subtitle={selectedPlaylist?.name}
+        note={`Images: up to ${MAX_IMAGE_COPIES} copies. Videos and apps: once.`}
         submitLabel="Add"
         busyLabel="Adding…"
         showNameField={false}
+        existingItems={shownItems}
         onSubmit={(_, __, ids) => handleAddContentSave(ids)}
       />
 
@@ -606,7 +610,6 @@ function Playlists() {
         onOpenChange={(open) => !open && setEditPlaylistId(null)}
         playlist={playlists.find((p) => p._id === editPlaylistId)}
         onSave={handleSaveEditPlaylist}
-        onRemoveItem={handleRemoveEditItem}
       />
 
       {/* confirm delete playlist modal */}

@@ -1,0 +1,16 @@
+# CastWise: what search engines may visit.
+# The landing page, sign in and register are open; the app itself (it needs a
+# login anyway) and the one-time email links are not.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /content
+Disallow: /playlists
+Disallow: /assignments
+Disallow: /player
+Disallow: /screens
+Disallow: /verify-email
+Disallow: /reset-password
+Disallow: /forgot-password
+
+Sitemap: https://castwise.site/sitemap.xml

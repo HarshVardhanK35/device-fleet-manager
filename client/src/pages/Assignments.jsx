@@ -124,7 +124,7 @@ function Assignments() {
 
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-bg-hover">
             <h2 className="text-text-muted text-xs font-semibold uppercase tracking-wide">
-              Your Devices
+              Your Screens
             </h2>
             <div className="flex items-center gap-3">
               <span className="text-text-muted text-xs">
@@ -146,11 +146,15 @@ function Assignments() {
                     title="Pair a screen first"
                     description={
                       <>
-                        1. Add a screen on the Player page.
-                        <br />
-                        2. Create a playlist with your content.
-                        <br />
-                        3. Come back here to choose when it plays.
+                        {/* The smallest phones (about 320px) get one short line. */}
+                        <span className="min-[380px]:hidden">Add a screen on the Player page first.</span>
+                        <span className="hidden min-[380px]:inline">
+                          1. Add a screen on the Player page.
+                          <br />
+                          2. Create a playlist with your content.
+                          <br />
+                          3. Come back here to choose when it plays.
+                        </span>
                       </>
                     }
                     actionLabel="Add a screen"
@@ -238,7 +242,7 @@ function Assignments() {
           ) : (
             selectedDevice && (
               <DetailPane
-                backLabel="All devices"
+                backLabel="All screens"
                 onBack={() => setMobileView("list")}
                 title={selectedDevice.name}
                 badge={
@@ -266,7 +270,7 @@ function Assignments() {
                 actionIcon={Send}
                 onAction={openPublish}
                 sectionLabel="Schedule"
-                sectionMeta={`${pluralizeCount(selectedDevice.assignments.length, "assignment")} · device local time`}
+                sectionMeta={`${pluralizeCount(selectedDevice.assignments.length, "assignment")} · screen local time`}
               >
                 {selectedDevice.assignments.length === 0 ? (
                   <EmptyState

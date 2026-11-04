@@ -17,7 +17,7 @@ import EmptyState from "../components/ui/EmptyState.jsx";
 import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
 import Button from "../components/ui/Button.jsx";
 import RefreshButton from "../components/ui/RefreshButton.jsx";
-import { MAX_SCREENS, MAX_SCREEN_NAME } from "../utils/limits.js";
+import { MAX_SCREENS, MAX_SCREEN_NAME, MAX_SCREEN_TYPE } from "../utils/limits.js";
 import GhostButton from "../components/ui/GhostButton.jsx";
 import ReleaseScreenButton from "../components/screens/ReleaseScreenButton.jsx";
 import DetailPane from "../components/layout/DetailPane.jsx";
@@ -256,7 +256,7 @@ function PlayerSlots() {
     // deleteDevice's success response is also { message: "Device deleted" },
     // unlike other endpoints where success has no `message` field at all —
     // so check the exact success text rather than just "has a message".
-    if (!result || result.message !== "Device deleted") {
+    if (!result || result.message !== "Screen deleted") {
       setRemoveError(
         result?.message || "Couldn't remove this screen. Try again.",
       );
@@ -710,8 +710,15 @@ function PlayerSlots() {
                       />
                     </label>
                     <label className="flex flex-col gap-1 text-xs font-medium text-text-muted">
-                      Type
+                      <span className="flex items-center justify-between">
+                        Type
+                        <FieldCount
+                          value={editingId === selected.id ? draft.type : selected.type || ""}
+                          max={MAX_SCREEN_TYPE}
+                        />
+                      </span>
                       <input
+                        maxLength={MAX_SCREEN_TYPE}
                         value={
                           editingId === selected.id
                             ? draft.type

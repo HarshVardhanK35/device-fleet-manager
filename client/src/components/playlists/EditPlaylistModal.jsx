@@ -14,16 +14,27 @@ import { useAsyncAction } from "../../hooks/useAsyncAction.js";
 // true, so it mounts fresh off `playlist` every time the modal opens —
 // avoids syncing props into state via a useEffect (see
 // react-hooks/set-state-in-effect; same pattern as ContentPickerModal.jsx).
-function EditPlaylistBody({ playlist, onSave, onRemoveItem }) {
+function EditPlaylistBody({ playlist, onSave }) {
   const [name, setName] = useState(playlist.name);
   const [description, setDescription] = useState(playlist.description || "");
   const [contentItems, setContentItems] = useState(playlist.contentItems);
 
-  const [save, saving] = useAsyncAction(onSave);
+  const [error, setError] = useState("");
 
-  async function handleRemove(itemId) {
-    const updatedItems = await onRemoveItem(itemId, contentItems);
-    setContentItems(updatedItems);
+  // Nothing is saved until Save: removing a tile only edits this list, and
+  // Cancel (or closing) throws the edits away.
+  const [save, saving] = useAsyncAction(async () => {
+    setError("");
+    try {
+      await onSave(name, description, contentItems.map((item) => item._id));
+    } catch (err) {
+      setError(err.message || "Could not save the playlist");
+    }
+  });
+
+  // Removes one copy (by position), so a repeated image loses only the tile clicked.
+  function handleRemove(index) {
+    setContentItems((items) => items.filter((_, i) => i !== index));
   }
 
   return (
@@ -44,8 +55,11 @@ function EditPlaylistBody({ playlist, onSave, onRemoveItem }) {
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-text-muted text-xs font-semibold">
-                Description <span className="font-normal">· optional</span>
+              <span className="flex items-center justify-between text-text-muted text-xs font-semibold">
+                <span>
+                  Description <span className="font-normal">· optional</span>
+                </span>
+                <FieldCount value={description} max={MAX_PLAYLIST_DESCRIPTION} />
               </span>
               <textarea
                 value={description}
@@ -69,10 +83,10 @@ function EditPlaylistBody({ playlist, onSave, onRemoveItem }) {
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {contentItems.map((item, index) => (
                   <RemovableContentTile
-                    key={item._id}
+                    key={`${item._id}-${index}`}
                     item={item}
                     slotIndex={index}
-                    onRemove={() => handleRemove(item._id)}
+                    onRemove={() => handleRemove(index)}
                   />
                 ))}
               </div>
@@ -81,15 +95,16 @@ function EditPlaylistBody({ playlist, onSave, onRemoveItem }) {
         </div>
       </ScrollBox>
 
+      {error && <p className="m-0 px-6 pb-2 text-sm text-accent-red">{error}</p>}
       <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
         <Dialog.Close
           type="button"
           disabled={saving}
           className="disabled:opacity-40 disabled:pointer-events-none text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-3 py-1.5 text-sm transition-colors"
         >
-          Close
+          Cancel
         </Dialog.Close>
-        <Button onClick={() => save(name, description)} disabled={saving}>
+        <Button onClick={save} disabled={saving}>
           {saving ? "Saving…" : "Save"}
         </Button>
         <LoadingOverlay show={saving} />
@@ -98,7 +113,7 @@ function EditPlaylistBody({ playlist, onSave, onRemoveItem }) {
   );
 }
 
-function EditPlaylistModal({ open, onOpenChange, playlist, onSave, onRemoveItem }) {
+function EditPlaylistModal({ open, onOpenChange, playlist, onSave }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -115,7 +130,6 @@ function EditPlaylistModal({ open, onOpenChange, playlist, onSave, onRemoveItem 
             <EditPlaylistBody
               playlist={playlist}
               onSave={onSave}
-              onRemoveItem={onRemoveItem}
             />
           )}
         </Dialog.Content>
@@ -128,9 +142,7 @@ export default EditPlaylistModal;
 
 // Edit Playlist modal (Radix Dialog): name + description fields, and a
 // grid of the playlist's current content with per-item remove buttons.
-// `onSave(name, description)` persists the name/description edit.
-// `onRemoveItem(itemId, currentItems)` is async — the caller performs the
-// actual API update + its own playlists-list sync, and returns the
-// resulting contentItems array for the modal's own local list to re-sync
-// to (so removing items updates live without closing the modal).
+// Everything is a draft until Save: `onSave(name, description, contentIds)`
+// saves all three in one request (and throws with a message when the server
+// refuses, which the modal shows); Cancel or closing discards the edits.
 // Used by: pages/Playlists.jsx.

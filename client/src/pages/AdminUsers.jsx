@@ -192,13 +192,14 @@ function AdminUsers() {
               <span className="flex-1" />
               <PagerButton disabled={data.page <= 1} onClick={() => setPage((p) => p - 1)}>
                 <ChevronLeft size={14} />
-                Prev
+                <span className="hidden md:inline">Prev</span>
               </PagerButton>
               <span className="text-[13px] whitespace-nowrap text-text-primary">
-                Page {data.page} of {data.pages}
+                <span className="hidden md:inline">Page </span>
+                {data.page} of {data.pages}
               </span>
               <PagerButton disabled={data.page >= data.pages} onClick={() => setPage((p) => p + 1)}>
-                Next
+                <span className="hidden md:inline">Next</span>
                 <ChevronRight size={14} />
               </PagerButton>
             </div>

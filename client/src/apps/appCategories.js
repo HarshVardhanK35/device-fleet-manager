@@ -13,6 +13,15 @@ const PLACEHOLDERS = {
   Social: [{ name: "Instagram" }, { name: "Facebook" }],
 };
 
+// One line each, shown under the app's name in the Apps picker. Keyed by the
+// registry name; an app without an entry just shows no line.
+const APP_DESCRIPTIONS = {
+  Weather: "Current conditions and forecast for any city.",
+  Clock: "A digital or analog clock in any time zone.",
+  RSS: "Live headlines from any news feed.",
+  Announcements: "Notices, status boards and event cards.",
+};
+
 export function buildAppSections({
   category = "All",
   availableOnly = false,
@@ -31,6 +40,7 @@ export function buildAppSections({
           id: a.appId,
           name: a.name,
           live: true,
+          description: APP_DESCRIPTIONS[a.name] || "",
           thumbnail: a.thumbnail,
         }));
 

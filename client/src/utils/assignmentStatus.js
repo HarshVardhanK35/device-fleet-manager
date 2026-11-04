@@ -41,7 +41,7 @@ export const STATUS_PILL = {
     className: "bg-accent-blue/15 text-accent-blue",
   },
   paused: {
-    label: "Scheduled · device offline",
+    label: "Scheduled · screen offline",
     className: "bg-accent-amber/15 text-accent-amber",
   },
   ended: { label: "Ended", className: "bg-bg-hover text-text-muted" },

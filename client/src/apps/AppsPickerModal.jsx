@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Filter, ArrowUpDown, Lock } from "lucide-react";
+import { Filter, ArrowUpDown, Lock, ChevronRight, CloudSun, Clock, Rss, Megaphone, AppWindow } from "lucide-react";
 
 import CancelButton from "../components/ui/CancelButton.jsx";
 import ScrollBox from "../components/layout/ScrollBox.jsx";
@@ -8,22 +8,9 @@ import StyledSelect from "../components/ui/StyledSelect.jsx";
 import ToggleSwitch from "./shared/ToggleSwitch.jsx";
 import { buildAppSections, getCategoryList, getAppCounts } from "./appCategories.js";
 
-// Font size scales with the CARD's own rendered width (container query
-// units, cqw) instead of a fixed breakpoint — a `sm:`/`lg:` tier kept
-// breaking at in-between widths (tablet, laptop) because the card's actual
-// pixel size at a given breakpoint isn't fixed (it depends on the grid's
-// column count there too). cqw sizing tracks the real box, not the
-// viewport. Still tiered by character count on top of that — a longer name
-// needs a smaller fraction of the box's width per character than a short
-// one. Requires the card itself to have `@container` (container-type:
-// inline-size) applied — see appLabelSizeClass's call sites.
-function appLabelSizeClass(name = "") {
-  const len = name.length;
-  if (len <= 6) return "text-[clamp(10px,18cqw,18px)]";
-  if (len <= 9) return "text-[clamp(9px,13cqw,15px)]";
-  if (len <= 13) return "text-[clamp(8px,10cqw,13px)]";
-  return "text-[clamp(7px,8cqw,11px)]";
-}
+// Stand-in for an app's thumbnail until it has one: an app whose registry entry
+// has a `thumbnail` shows that picture in the square instead (appsRegistry.json).
+const APP_ICONS = { Weather: CloudSun, Clock, RSS: Rss, Announcements: Megaphone };
 
 // Reuses StyledSelect — the same Filter/Sort dropdown component the Content
 // page uses — instead of a custom dropdown, for visual/behavior consistency
@@ -129,43 +116,49 @@ function AppsPickerBody({ onSelectApp, portalContainer }) {
               <span className="text-xs text-text-muted">{s.meta}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="grid grid-flow-col auto-cols-[130px] overflow-x-auto scrollbar-hidden snap-x snap-mandatory pb-2 gap-3 sm:grid-flow-row sm:auto-cols-auto sm:overflow-visible sm:snap-none sm:pb-0 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-                {s.items.map((it, i) =>
-                  it.live ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {s.items.map((it, i) => {
+                  const Icon = APP_ICONS[it.name] || AppWindow;
+                  return it.live ? (
                     <button
                       key={it.id}
                       type="button"
                       onClick={() => onSelectApp?.(it)}
-                      className="group relative min-w-0 snap-start @container aspect-[4/3] rounded-lg bg-bg-panel border border-border-muted hover:border-accent-blue hover:shadow-[0_0_24px_-8px_rgba(47,129,247,0.6)] flex items-center justify-center overflow-hidden px-2 transition-all"
+                      className="group min-w-0 flex items-center gap-4 p-4 text-left bg-bg-panel border border-border-muted rounded-xl hover:border-accent-blue hover:shadow-[0_0_24px_-8px_rgba(47,129,247,0.6)] transition-all"
                     >
-                      <span
-                        className={`block w-full text-center text-text-primary font-bold tracking-wide uppercase leading-tight whitespace-nowrap ${appLabelSizeClass(it.name)}`}
-                      >
-                        {it.name}
+                      <span className="flex-none w-14 h-14 rounded-lg bg-bg-primary border border-border-muted overflow-hidden flex items-center justify-center text-accent-blue">
+                        {it.thumbnail ? (
+                          <img src={it.thumbnail} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon size={26} />
+                        )}
                       </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-base font-semibold text-text-primary truncate">{it.name}</span>
+                        {it.description && (
+                          <span className="block mt-0.5 text-sm text-text-muted leading-snug line-clamp-2">
+                            {it.description}
+                          </span>
+                        )}
+                      </span>
+                      <ChevronRight size={18} className="flex-none text-text-muted group-hover:text-accent-blue transition-colors" />
                     </button>
                   ) : (
                     <div
                       key={`${s.category}-soon-${i}`}
                       aria-disabled="true"
-                      className="relative min-w-0 snap-start @container aspect-[4/3] rounded-lg border border-dashed border-border-muted opacity-45 cursor-not-allowed overflow-hidden flex flex-col items-center justify-center gap-1.5 px-2 select-none"
+                      className="min-w-0 flex items-center gap-4 p-4 border border-dashed border-border-muted rounded-xl opacity-45 cursor-not-allowed select-none"
                     >
-                      {it.name && (
-                        <span className="absolute top-2 left-2 flex items-center gap-1 text-[11px] text-text-muted">
-                          <Lock size={11} />
-                        </span>
-                      )}
-                      {it.name && (
-                        <span
-                          className={`block w-full text-center font-bold tracking-wide uppercase whitespace-nowrap text-text-muted ${appLabelSizeClass(it.name)}`}
-                        >
-                          {it.name}
-                        </span>
-                      )}
-                      <span className="text-xs text-text-muted">Coming soon...</span>
+                      <span className="flex-none w-14 h-14 rounded-lg border border-dashed border-border-muted flex items-center justify-center text-text-muted">
+                        <Lock size={20} />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-base font-semibold text-text-muted truncate">{it.name || "More apps"}</span>
+                        <span className="block mt-0.5 text-sm text-text-muted">Coming soon...</span>
+                      </span>
                     </div>
-                  ),
-                )}
+                  );
+                })}
               </div>
             </div>
           </section>

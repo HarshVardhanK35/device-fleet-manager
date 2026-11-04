@@ -186,24 +186,6 @@
   box-shadow: 0 0 6cqw rgba(31, 111, 235, .4);
 }
 .cw .dm-card__photo span { color: #fff; font-size: 9cqw; font-weight: 600; }
-.cw .dm-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.cw .dm-confetti i {
-  position: absolute;
-  top: -4%;
-  left: calc(var(--i) * 7.2% + 2%);
-  width: 1.2cqw;
-  height: 2.2cqw;
-  border-radius: 2px;
-  background: var(--sc-link);
-  opacity: 0;
-  animation: dm-fall 1.9s ease-in calc(var(--i) * 70ms) forwards;
-}
-.cw .dm-confetti i:nth-child(3n + 1) { background: var(--sc-green); }
-.cw .dm-confetti i:nth-child(3n + 2) { background: var(--sc-amber); }
-@keyframes dm-fall {
-  0% { opacity: 1; transform: translateY(0) rotate(0); }
-  100% { opacity: 0; transform: translateY(110cqh) rotate(540deg); }
-}
 
 /* ---- Play overlay + controls ---- */
 .cw .dm-start {
@@ -305,5 +287,4 @@
 
 @media (prefers-reduced-motion: reduce) {
   .cw .dm-stage { animation: none; }
-  .cw .dm-confetti { display: none; }
 }
