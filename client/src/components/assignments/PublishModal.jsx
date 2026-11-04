@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Select from "@radix-ui/react-select";
 import {
@@ -20,6 +21,7 @@ import {
 } from "../../utils/publishConflicts.js";
 import { getAssignmentStatus, STATUS_PILL } from "../../utils/assignmentStatus.js";
 import { formatScheduleDuration } from "../../utils/scheduleTime.js";
+import { formatDurationHuman } from "../../utils/durationInput.js";
 import { timeAgo } from "../../utils/timeAgo.js";
 import SelectCheckbox from "../ui/SelectCheckbox.jsx";
 import CancelButton from "../ui/CancelButton.jsx";
@@ -54,11 +56,33 @@ function playlistMeta(playlist) {
     (sum, c) => sum + (c.durationInMillis || 0),
     0,
   );
-  return `${count} item${count === 1 ? "" : "s"} · ${formatScheduleDuration(totalMs)} loop`;
+  return `${count} item${count === 1 ? "" : "s"} · ${formatDurationHuman(totalMs / 1000)} loop`;
 }
 
 function PlaylistSelectField({ playlists, value, onChange }) {
   const selected = playlists.find((p) => p._id === value);
+
+  // Nothing to pick: say so, and say how to make one.
+  if (playlists.length === 0) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="w-full flex items-center gap-3 bg-bg-primary border border-border-muted rounded-lg px-3 py-2.5 opacity-60 cursor-not-allowed">
+          <span className="w-9 h-9 rounded-lg bg-accent-blue/15 text-accent-blue flex items-center justify-center flex-none">
+            <ListVideo size={18} />
+          </span>
+          <span className="text-text-muted font-semibold text-sm">No playlists</span>
+        </div>
+        <p className="m-0 text-text-muted text-xs leading-relaxed">
+          Create one first: open{" "}
+          <Link to="/playlists" className="text-accent-blue hover:underline">
+            Playlists
+          </Link>
+          , choose <span className="text-text-primary">Create</span>, pick your content and give it a name.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <Select.Root value={value} onValueChange={onChange}>
       <Select.Trigger className="group w-full flex items-center gap-3 bg-bg-primary border border-border-muted hover:border-border-hover rounded-lg px-3 py-2.5 text-left outline-none transition-colors focus-visible:border-accent-blue data-[state=open]:border-accent-blue">
@@ -314,19 +338,22 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
     selectedIds.size > 0 && !beginError && !endError && unresolvedCount === 0 && playlistId;
 
   function getFooter() {
+    if (playlists.length === 0) {
+      return { message: "Create a playlist first.", tone: "muted" };
+    }
     if (selectedIds.size === 0) {
-      return { message: "Select at least one device.", tone: "muted" };
+      return { message: "Select at least one screen.", tone: "muted" };
     }
     if (beginError) return { message: beginError, tone: "error" };
     if (endError) return { message: endError, tone: "error" };
     if (unresolvedCount > 0) {
       return {
-        message: `Resolve ${unresolvedCount} conflict${unresolvedCount > 1 ? "s" : ""} to publish — override it or deselect the device.`,
+        message: `Resolve ${unresolvedCount} conflict${unresolvedCount > 1 ? "s" : ""} to publish — override it or deselect the screen.`,
         tone: "error",
       };
     }
     return {
-      message: `Publishing to ${selectedIds.size} device${selectedIds.size > 1 ? "s" : ""}${
+      message: `Publishing to ${selectedIds.size} screen${selectedIds.size > 1 ? "s" : ""}${
         overrideCount > 0 ? ` · ${overrideCount} override${overrideCount > 1 ? "s" : ""}` : ""
       }.`,
       tone: "muted",
@@ -391,7 +418,7 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
 
   const runsLabel =
     !beginError && !endError
-      ? `Runs ${formatScheduleDuration(end - begin)} on ${begin.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} · device local time.`
+      ? `Runs ${formatScheduleDuration(end - begin)} on ${begin.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} · screen local time.`
       : null;
 
   return (
@@ -460,7 +487,7 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
         <div className="flex-1 flex flex-col gap-3 min-h-0 lg:border-l lg:border-border-muted lg:bg-bg-primary lg:-mt-5 lg:-mr-6 lg:-mb-5 lg:pl-6 lg:pt-5 lg:pb-5 lg:pr-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-text-primary font-bold text-sm m-0">Devices</h3>
+              <h3 className="text-text-primary font-bold text-sm m-0">Screens</h3>
               <p className="text-text-muted text-xs m-0">
                 {selectedIds.size} of {devices.length} selected · checked against each
                 schedule

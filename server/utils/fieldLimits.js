@@ -5,6 +5,7 @@ export const LIMITS = {
   playlistName: 60,
   playlistDescription: 200,
   screenName: 30,
+  screenType: 20,
   firstName: 20,
   lastName: 20,
 };

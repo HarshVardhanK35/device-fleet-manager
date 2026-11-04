@@ -5,9 +5,20 @@ import buildManifestForDevice from "../services/manifestService.js";
 import { validationMessage } from "../utils/fieldLimits.js";
 import { publishManifestToDevice } from "../services/mqttService.js";
 
+// Sends a screen its fresh manifest. A problem with one screen must never fail
+// the edit that triggered it: an assignment whose screen was deleted is cleaned
+// up, and anything else is only logged.
 async function pushManifest(deviceId) {
-  const manifest = await buildManifestForDevice(deviceId);
-  publishManifestToDevice(deviceId, manifest);
+  try {
+    const manifest = await buildManifestForDevice(deviceId);
+    publishManifestToDevice(deviceId, manifest);
+  } catch (err) {
+    if (err.message === "Device not found!") {
+      await Assignment.deleteMany({ deviceId });
+      return;
+    }
+    console.error("Could not push the manifest to a screen:", err.message);
+  }
 }
 
 const MAX_IMAGES = 30;

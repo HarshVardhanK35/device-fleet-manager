@@ -2,14 +2,14 @@ import { forwardRef } from "react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 
 const ScrollBox = forwardRef(function ScrollBox(
-  { className = "", children },
+  { className = "", children, bleed = false },
   ref,
 ) {
   return (
-    <ScrollArea.Root className="relative flex flex-col flex-1 min-h-0 overflow-hidden">
+    <ScrollArea.Root className={`relative flex flex-col flex-1 min-h-0 overflow-hidden ${bleed ? "-mr-3" : ""}`}>
       <ScrollArea.Viewport
         ref={ref}
-        className={`w-full h-full [&>div]:!block ${className}`}
+        className={`w-full h-full [&>div]:!block ${bleed ? "pr-3" : ""} ${className}`}
       >
         {children}
       </ScrollArea.Viewport>
@@ -35,6 +35,9 @@ export default ScrollBox;
 // outside Root's own rounded/clipped box instead of sitting inside it
 // (only became visible once this was used inside a narrow bordered panel —
 // ContentDetailsPanel.jsx).
+// `bleed` puts the scrollbar in the 12px just outside the box (the page's own
+// padding), so the content keeps the full width and the left and right margins
+// stay equal (Content page).
 // Forwards `ref` to the Viewport's scrollable DOM node — optional, only
 // needed by callers that must read/control scroll position themselves
 // (e.g. ScrollToTopButton).

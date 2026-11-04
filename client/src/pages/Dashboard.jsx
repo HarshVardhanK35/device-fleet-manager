@@ -184,7 +184,7 @@ function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
         <StatTile
           className="col-span-2 md:col-span-1"
-          label="Total devices"
+          label="Total screens"
           icon={Monitor}
           value={mergedDevices.length}
           sub={`${online.length} online · ${offline.length} offline`}
@@ -194,14 +194,14 @@ function Dashboard() {
           dot="#3fb950"
           value={online.length}
           valueClassName="text-accent-green"
-          sub={pluralizeWord(online.length, "Device")}
+          sub={pluralizeWord(online.length, "Screen")}
         />
         <StatTile
           label="Offline"
           dot="#f0426a"
           value={offline.length}
           valueClassName={offline.length ? "text-accent-red" : ""}
-          sub={pluralizeWord(offline.length, "Device")}
+          sub={pluralizeWord(offline.length, "Screen")}
         />
         <StatTile
           label="Playlists"
@@ -243,7 +243,7 @@ function Dashboard() {
 
           <div className="p-3 flex-1 min-h-0 flex flex-col">
             {recentContent.length === 0 ? (
-              <p className="text-text-muted text-sm text-center py-8">
+              <p className="text-text-muted text-sm text-center py-8 flex-1 flex items-center justify-center">
                 No content yet.
               </p>
             ) : (

@@ -104,7 +104,7 @@ function DashboardAttentionPanel({ items, onOpenAssignments }) {
             onChange={setFilter}
             options={FILTER_OPTIONS}
             icon={Filter}
-            label="Filter devices"
+            label="Filter screens"
             align="end"
           />
         </div>

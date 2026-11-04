@@ -464,7 +464,7 @@ function AppSettingsShell({
                   <Dialog.Close
                     type="button"
                     disabled={columnModalOpen}
-                    className="flex-1 h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-border-muted disabled:hover:text-text-muted"
+                    className="flex-none px-3 min-[380px]:flex-1 h-10 text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-border-muted disabled:hover:text-text-muted"
                   >
                     Close
                   </Dialog.Close>
@@ -473,7 +473,7 @@ function AppSettingsShell({
                       type="button"
                       disabled={!dirty || saving || columnModalOpen}
                       onClick={onSaveAndClose}
-                      className="flex-1 min-h-[40px] px-4 rounded-l-lg text-sm font-semibold bg-[#1f6feb] border border-accent-blue hover:bg-[#1a5fd0] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1f6feb]"
+                      className="flex-1 min-h-[40px] px-2 min-[380px]:px-4 whitespace-nowrap rounded-l-lg text-sm font-semibold bg-[#1f6feb] border border-accent-blue hover:bg-[#1a5fd0] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1f6feb]"
                     >
                       {saving ? "Saving…" : "Save & Close"}
                     </button>

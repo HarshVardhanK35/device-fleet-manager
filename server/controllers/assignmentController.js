@@ -13,13 +13,13 @@ export const createAssignment = async (req, res) => {
   try {
     const device = await Device.findById(req.body.deviceId);
     if (!device) {
-      return res.status(404).json({ message: "Device not found" });
+      return res.status(404).json({ message: "Screen not found" });
     }
 
     const isOwner = device.userId && req.user.id === device.userId.toString();
     if (!isOwner) {
       return res.status(403).json({
-        message: "You don't have permission to publish to this device",
+        message: "You don't have permission to publish to this screen",
       });
     }
 
@@ -88,7 +88,7 @@ export const updateAssignments = async (req, res) => {
 
     const device = await Device.findById(assignment.deviceId);
     if (!device || device.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not your device's assignment" });
+      return res.status(403).json({ message: "Not your screen's assignment" });
     }
 
     if (req.body.playlistId) {
@@ -122,7 +122,7 @@ export const deleteAssignment = async (req, res) => {
 
     const device = await Device.findById(assignment.deviceId);
     if (!device || device.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Not your device's assignment" });
+      return res.status(403).json({ message: "Not your screen's assignment" });
     }
 
     await assignment.deleteOne();

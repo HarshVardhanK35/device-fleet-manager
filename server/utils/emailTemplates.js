@@ -1,6 +1,6 @@
 const FEATURES = [
-  "Schedule content across devices",
-  "Real-time device monitoring",
+  "Schedule content across screens",
+  "Real-time screen monitoring",
   "Playlist & content library",
   "Centralized dashboard overview",
 ];

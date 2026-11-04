@@ -11,8 +11,8 @@ import AuthBackgroundWall from "./AuthBackgroundWall.jsx";
 import Logo from "../layout/Logo.jsx";
 
 const FEATURES = [
-  { icon: CalendarCheck, title: "Schedule content across devices" },
-  { icon: Activity, title: "Real-time device monitoring" },
+  { icon: CalendarCheck, title: "Schedule content across screens" },
+  { icon: Activity, title: "Real-time screen monitoring" },
   { icon: ListVideo, title: "Playlist & content library" },
   { icon: LayoutGrid, title: "Centralized dashboard overview" },
 ];

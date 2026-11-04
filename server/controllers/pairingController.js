@@ -77,7 +77,7 @@ export const claimCode = async (req, res) => {
 
     const deviceCount = await Device.countDocuments({ userId: req.user.id });
     if (deviceCount >= 3) {
-      return res.status(403).json({ message: "Device limit reached (3 max)" });
+      return res.status(403).json({ message: "Screen limit reached (3 max)" });
     }
 
     const device = await Device.create({ name, type, userId: req.user.id });

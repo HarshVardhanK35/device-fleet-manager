@@ -14,20 +14,23 @@ import { useAsyncAction } from "../../hooks/useAsyncAction.js";
 import { getTypeMeta } from "../../utils/contentTypeMeta.js";
 import { formatDuration } from "../../utils/formatDuration.js";
 import FieldCount from "../ui/FieldCount.jsx";
-import { MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from "../../utils/limits.js";
+import { MAX_IMAGE_COPIES, MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from "../../utils/limits.js";
 import BlurImage from "../ui/BlurImage.jsx";
 
 // One library item as a compact row (the picker's List view) — about three
 // times more items per screen than tiles, for big libraries.
-function PickerRow({ item, selected, showDuration, onToggle }) {
+function PickerRow({ item, selected, maxed, showDuration, onToggle }) {
   const meta = getTypeMeta(item.type);
   return (
     <div
       onClick={onToggle}
-      className={`flex items-center gap-3 px-2.5 py-1.5 rounded-lg border cursor-pointer transition-colors ${
-        selected
-          ? "border-accent-blue bg-accent-blue/10"
-          : "border-border-muted hover:border-border-hover hover:bg-bg-hover"
+      title={maxed || undefined}
+      className={`flex items-center gap-3 px-2.5 py-1.5 rounded-lg border transition-colors ${
+        maxed
+          ? "border-border-muted opacity-45 cursor-not-allowed"
+          : selected
+            ? "border-accent-blue bg-accent-blue/10 cursor-pointer"
+            : "border-border-muted hover:border-border-hover hover:bg-bg-hover cursor-pointer"
       }`}
     >
       <SelectCheckbox
@@ -80,6 +83,7 @@ function PickerFormBody({
   showTypeFilter,
   singleSelect,
   initialSelectedIds,
+  existingItems,
   onSubmit,
   portalContainer,
 }) {
@@ -127,8 +131,21 @@ function PickerFormBody({
     return list;
   }, [content, filterType, search, sortBy, selectedOnly, selectedIds]);
 
+  // Items already in the playlist (Add content): an image can be added up to
+  // MAX_IMAGE_COPIES times in all, any other kind only once. Returns the reason
+  // text when an item is at its limit.
+  const existingCounts = {};
+  for (const it of existingItems) existingCounts[it._id] = (existingCounts[it._id] || 0) + 1;
+  function maxedMessage(item) {
+    const cap = item.type === "image" ? MAX_IMAGE_COPIES : 1;
+    if ((existingCounts[item._id] || 0) < cap) return null;
+    return item.type === "image" ? `Already added ${cap} times` : "Already in this playlist";
+  }
+
   function toggleSelect(id, e) {
     e.stopPropagation();
+    const target = content.find((c) => c._id === id);
+    if (target && maxedMessage(target)) return;
     if (singleSelect) {
       setSelectedIds((prev) => (prev.includes(id) ? [] : [id]));
       return;
@@ -138,7 +155,7 @@ function PickerFormBody({
     );
   }
 
-  const visibleIds = visibleContent.map((c) => c._id);
+  const visibleIds = visibleContent.filter((c) => !maxedMessage(c)).map((c) => c._id);
   const allVisibleSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
   const someVisibleSelected = visibleIds.some((id) => selectedIds.includes(id));
@@ -186,6 +203,7 @@ function PickerFormBody({
                     key={item._id}
                     item={item}
                     selected={selectedIds.includes(item._id)}
+                    maxed={maxedMessage(item)}
                     showDuration={!singleSelect}
                     onToggle={(e) => toggleSelect(item._id, e)}
                   />
@@ -195,6 +213,7 @@ function PickerFormBody({
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {visibleContent.map((item) => {
                   const order = selectedIds.indexOf(item._id);
+                  const maxed = maxedMessage(item);
                   return (
                     <ContentTile
                       key={item._id}
@@ -203,18 +222,23 @@ function PickerFormBody({
                       coloredType
                       showDuration={!singleSelect}
                       onClick={(e) => toggleSelect(item._id, e)}
+                      rootProps={maxed ? { title: maxed } : undefined}
                       className={
-                        order !== -1
-                          ? "!border-2 !border-accent-blue -translate-y-0.5"
-                          : ""
+                        maxed
+                          ? "opacity-45 !cursor-not-allowed"
+                          : order !== -1
+                            ? "!border-2 !border-accent-blue -translate-y-0.5"
+                            : ""
                       }
                     >
-                      <SelectCheckbox
-                        shape="square"
-                        checked={order !== -1}
-                        onClick={(e) => toggleSelect(item._id, e)}
-                        className="absolute left-1.5 top-1.5 z-10"
-                      />
+                      {!maxed && (
+                        <SelectCheckbox
+                          shape="square"
+                          checked={order !== -1}
+                          onClick={(e) => toggleSelect(item._id, e)}
+                          className="absolute left-1.5 top-1.5 z-10"
+                        />
+                      )}
                     </ContentTile>
                   );
                 })}
@@ -241,8 +265,11 @@ function PickerFormBody({
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-text-muted text-xs font-semibold">
-                Description <span className="font-normal">· optional</span>
+              <span className="flex items-center justify-between text-text-muted text-xs font-semibold">
+                <span>
+                  Description <span className="font-normal">· optional</span>
+                </span>
+                <FieldCount value={description} max={MAX_PLAYLIST_DESCRIPTION} />
               </span>
               <textarea
                 value={description}
@@ -402,12 +429,14 @@ function ContentPickerModal({
   content,
   title,
   subtitle,
+  note,
   submitLabel = "Save",
   busyLabel,
   showNameField = true,
   showTypeFilter = true,
   singleSelect = false,
   initialSelectedIds = [],
+  existingItems = [],
   onSubmit,
 }) {
   // See StyledSelect.jsx's `portalContainer` comment — without this, the
@@ -440,6 +469,7 @@ function ContentPickerModal({
                   {subtitle}
                 </p>
               )}
+              {note && <p className="text-text-muted text-xs mt-1 m-0">{note}</p>}
             </div>
             <CancelButton as={Dialog.Close} title="Close" />
           </div>
@@ -453,6 +483,7 @@ function ContentPickerModal({
               showTypeFilter={showTypeFilter}
               singleSelect={singleSelect}
               initialSelectedIds={initialSelectedIds}
+              existingItems={existingItems}
               onSubmit={onSubmit}
               portalContainer={contentEl}
             />

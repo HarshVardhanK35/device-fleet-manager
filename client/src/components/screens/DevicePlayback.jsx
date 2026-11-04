@@ -3,9 +3,47 @@ import mqtt from "mqtt";
 
 import { API_BASE } from "../../api/apiClient.js";
 import AppRenderer from "../../apps/shared/AppRenderer.jsx";
+import { getOptimizedThumbnail } from "../../utils/cloudinaryTransform.js";
 
 const HEARTBEAT_MS = 10000; // matches services/deviceSimulator.js's interval
+
 const FALLBACK_ITEM_MS = 8000; // used only if a content item has no/invalid durationInMillis
+
+// A screen-sized copy of an image (not the multi-MB original).
+const SCREEN_IMAGE_WIDTH = 1920;
+const screenImageUrl = (url) => getOptimizedThumbnail(url, SCREEN_IMAGE_WIDTH);
+
+// Shows an image only once it has fully loaded and decoded, so it appears
+// whole instead of painting from top to bottom; the previous image stays up
+// until then. A short fade makes the swap soft.
+function ScreenImage({ url, alt }) {
+  const [shown, setShown] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const img = new Image();
+    img.src = url;
+    const ready = img.decode ? img.decode() : Promise.resolve();
+    ready
+      .catch(() => {})
+      .then(() => {
+        if (!cancelled) setShown(url);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  if (!shown) return null;
+  return (
+    <img
+      key={shown}
+      src={shown}
+      alt={alt}
+      style={{ maxWidth: "100%", maxHeight: "100vh", animation: "cw-fade 400ms ease-out both" }}
+    />
+  );
+}
 
 function findActiveAssignment(manifest, nowMs) {
   return (
@@ -268,6 +306,19 @@ function DevicePlayback(
     return () => clearTimeout(t);
   }, [activeAssignment, contentIndex, itemStartedAt]);
 
+  // Download every image of the playing playlist ahead of time, so each is
+  // already in the browser cache when its turn comes.
+  const preloadedImages = useRef([]);
+  useEffect(() => {
+    preloadedImages.current = (activeAssignment?.content || [])
+      .filter((c) => c.type === "image" && c.mediaUrl)
+      .map((c) => {
+        const img = new Image();
+        img.src = screenImageUrl(c.mediaUrl);
+        return img;
+      });
+  }, [activeAssignment]);
+
   if (connection === "rejected") {
     return rejectedView ?? <h1>This screen is already connected elsewhere.</h1>;
   }
@@ -287,11 +338,7 @@ function DevicePlayback(
   return (
     <>
       {currentContent.type === "image" && (
-        <img
-          src={currentContent.mediaUrl}
-          alt={currentContent.name}
-          style={{ maxWidth: "100%", maxHeight: "100vh" }}
-        />
+        <ScreenImage url={screenImageUrl(currentContent.mediaUrl)} alt={currentContent.name} />
       )}
       {currentContent.type === "video" && (
         <video

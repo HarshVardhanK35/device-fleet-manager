@@ -431,7 +431,7 @@ function Content() {
           pr-4 matches the grid's own scrollbar gutter (ScrollBox below) — but
           only when the Details panel is closed. With it open, the panel's own
           border is the row's real right edge, not the grid's scrollbar. */}
-      <div className="flex-shrink-0 pr-4">
+      <div className="flex-shrink-0">
         {/* row 1: title + count + quota (left, two lines), search (right,
             vertically centered against the full left column via items-center) */}
         <div className="flex items-start md:items-center justify-between gap-4 mb-3">
@@ -455,9 +455,12 @@ function Content() {
               <span className="whitespace-nowrap">
                 <span className="mr-1.5">·</span>
                 <span className={quotaColorClass(counts.videoBytes, MAX_VIDEO_BYTES)}>
-                  {formatMB(counts.videoBytes)}
+                  <span className="sm:hidden">{formatMB(counts.videoBytes).replace("MB", "")}</span>
+                  <span className="hidden sm:inline">{formatMB(counts.videoBytes)}</span>
                 </span>
-                /{formatMB(MAX_VIDEO_BYTES)} video
+                {/* Phones: "11.3/150 video" (no MB) so the line fits on one row. */}
+                <span className="sm:hidden">/{MAX_VIDEO_BYTES / (1024 * 1024)}</span>
+                <span className="hidden sm:inline">/{formatMB(MAX_VIDEO_BYTES)}</span> video
               </span>
               <span className="whitespace-nowrap">
                 <span className="mr-1.5">·</span>
@@ -466,7 +469,7 @@ function Content() {
             </p>
           </div>
 
-          <div className="flex items-center justify-end gap-2 flex-1 min-w-0">
+          <div className="flex items-center justify-end gap-2 flex-none md:flex-1 md:min-w-0">
             {compact ? (
               <div className="flex-1 min-w-0 flex justify-end">
                 <ContentSearchInput
@@ -518,7 +521,8 @@ function Content() {
         <div className="relative flex-1 min-h-0 flex">
           <ScrollBox
             ref={gridScrollRef}
-            className={`flex-1 pr-4 pt-2 pb-20 md:pb-0 ${inspectedItem ? "xl:!overflow-hidden" : ""}`}
+            bleed
+            className={`flex-1 pt-2 pb-20 md:pb-0 ${inspectedItem ? "xl:!overflow-hidden" : ""}`}
           >
             {loading ? (
               <SkeletonGrid />

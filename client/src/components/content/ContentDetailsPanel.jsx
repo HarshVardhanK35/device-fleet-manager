@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Trash2, Pencil, Settings2 } from "lucide-react";
 
 import Button from "../ui/Button.jsx";
+import LoadingOverlay from "../loading/LoadingOverlay.jsx";
+import { useAsyncAction } from "../../hooks/useAsyncAction.js";
 import CancelButton from "../ui/CancelButton.jsx";
 import ScrollBox from "../layout/ScrollBox.jsx";
 import { getTypeMeta } from "../../utils/contentTypeMeta.js";
@@ -113,7 +115,7 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
     !MANUAL_DURATION_TEMPLATES.includes(item.configBlob?.template);
   const showDuration = item.type !== "video" && !isAutoDuration;
 
-  function handleSave() {
+  const [handleSave, saving] = useAsyncAction(async () => {
     // Use the freshly-typed value even if the input never blurred (e.g.
     // Save clicked while it still has focus) — `durationSec` itself only
     // syncs on blur.
@@ -122,14 +124,14 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
         ? customParsed.seconds
         : Number(durationSec);
 
-    onSave(item._id, {
+    await onSave(item._id, {
       name,
       // `undefined` leaves the field untouched server-side — both for
       // video (never had a duration field here) and for auto-duration
       // apps (their own settings screen owns this value).
       durationInMillis: showDuration ? effectiveSec * 1000 : undefined,
     });
-  }
+  });
 
   // xl and up: a floating panel over the page (the tiles keep their size); below
   // that: a centred modal over a blurred page.
@@ -264,6 +266,19 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
             </div>
           )}
 
+          {item.type === "video" && (
+            <div>
+              <label className="block text-text-primary text-xs font-semibold mb-1.5">
+                Display duration
+              </label>
+              <div className="bg-bg-primary border border-border-muted rounded-lg px-3 py-2.5">
+                <p className="text-text-muted text-xs m-0">
+                  A video&apos;s duration can&apos;t be edited. It always plays for its full length.
+                </p>
+              </div>
+            </div>
+          )}
+
           {isAutoDuration && (
             <div>
               <label className="block text-text-primary text-xs font-semibold mb-1.5">
@@ -297,11 +312,12 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
           >
             Cancel
           </button>
-          <Button onClick={handleSave} disabled={customInvalid}>
-            Save
+          <Button onClick={handleSave} disabled={customInvalid || saving}>
+            {saving ? "Saving…" : "Save"}
           </Button>
         </div>
       </div>
+      <LoadingOverlay show={saving} />
     </>
   );
 
