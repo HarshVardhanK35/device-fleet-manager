@@ -30,6 +30,8 @@ const Screens = lazyRetry(pageLoaders.screens);
 const Landing = lazyRetry(pageLoaders.landing);
 const NotFound = lazyRetry(pageLoaders.notFound);
 const AdminUsers = lazyRetry(pageLoaders.adminUsers);
+const Feedback = lazyRetry(pageLoaders.feedback);
+const AdminInbox = lazyRetry(pageLoaders.adminInbox);
 
 // A signed-in page: the app shell stays on screen while the page itself loads.
 function AppPage({ children }) {
@@ -102,6 +104,8 @@ function App() {
             <Route path="/playlists" element={<AppPage><Playlists /></AppPage>} />
             <Route path="/player" element={<AppPage><PlayerSlots /></AppPage>} />
             <Route path="/admin/users" element={<AdminPage><AdminUsers /></AdminPage>} />
+            <Route path="/admin/inbox" element={<AdminPage><AdminInbox /></AdminPage>} />
+            <Route path="/feedback" element={<AppPage><Feedback /></AppPage>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

@@ -7,6 +7,7 @@ import ScrollBox from "./ScrollBox.jsx";
 import { useAuth } from "../../context/useAuth.js";
 import { getInitials } from "../../utils/getInitials.js";
 import { prefetchRoute } from "../../pageLoaders.js";
+import { useFeedbackIndicator } from "../../hooks/useFeedbackIndicator.js";
 
 import {
   Home,
@@ -19,6 +20,8 @@ import {
   User,
   LogOut,
   Users,
+  Inbox,
+  MessageSquareText,
 } from "lucide-react";
 
 const navItems = [
@@ -31,6 +34,20 @@ const navItems = [
 
 // Only shown to admins.
 const adminItem = { to: "/admin/users", label: "Users", icon: Users };
+
+// The link just above Collapse: a user sends feedback, the admin reads it.
+const feedbackItem = { to: "/feedback", label: "Feedback", icon: MessageSquareText };
+const inboxItem = { to: "/admin/inbox", label: "Inbox", icon: Inbox };
+
+// A red dot on a link: something new is waiting there.
+function RedDot({ className = "" }) {
+  return (
+    <span
+      aria-label="New"
+      className={`h-2 w-2 flex-none rounded-full bg-[#f85149] ${className}`}
+    />
+  );
+}
 
 const COLLAPSED_KEY = "castwise-nav-collapsed";
 
@@ -74,7 +91,13 @@ function Layout({ children }) {
     });
   }
 
-  const items = user?.role === "admin" ? [...navItems, adminItem] : navItems;
+  const isAdmin = user?.role === "admin";
+  const items = isAdmin ? [...navItems, adminItem] : navItems;
+  // Red dots: the admin sees one while messages are still Sent or Seen; a user
+  // sees one when the admin has answered or changed a status.
+  const indicator = useFeedbackIndicator();
+  const bottomItem = isAdmin ? inboxItem : feedbackItem;
+  const bottomDot = isAdmin ? indicator.adminOpen > 0 : indicator.unread > 0;
   const userName = user ? `${user.firstName} ${user.lastName || ""}`.trim() : "";
   const initials = getInitials(userName);
 
@@ -92,12 +115,13 @@ function Layout({ children }) {
           aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
           aria-expanded={mobileMenuOpen}
           title={mobileMenuOpen ? "Close" : "Menu"}
-          className={`md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-muted border border-transparent transition-colors ${
+          className={`relative md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-muted border border-transparent transition-colors ${
             mobileMenuOpen
               ? "hover:text-accent-red hover:bg-accent-red/10 hover:border-accent-red/40"
               : "hover:bg-bg-hover hover:text-text-primary"
           }`}
         >
+          {bottomDot && !mobileMenuOpen && <RedDot className="absolute right-1 top-1" />}
           {/* Three bars that morph into an X while the menu is open. */}
           <span className="relative block w-[18px] h-[14px]">
             {[
@@ -170,6 +194,23 @@ function Layout({ children }) {
                 )}
               </NavLink>
             ))}
+            <NavLink
+              to={bottomItem.to}
+              onClick={() => setMobileMenuOpen(false)}
+              className={({ isActive }) =>
+                `group flex items-center px-3 py-3 rounded-lg text-base font-medium transition-colors ${
+                  isActive
+                    ? "bg-bg-hover text-accent-blue"
+                    : "text-text-muted hover:text-accent-blue hover:bg-bg-hover"
+                }`
+              }
+            >
+              <span className="flex items-center gap-3">
+                <bottomItem.icon size={18} />
+                {bottomItem.label}
+                {bottomDot && <RedDot />}
+              </span>
+            </NavLink>
           </nav>
 
           <div className="mt-auto p-4 border-t border-border-muted flex items-center gap-3">
@@ -233,11 +274,32 @@ function Layout({ children }) {
             </NavLink>
           ))}
 
+          <NavLink
+            to={bottomItem.to}
+            aria-label={bottomItem.label}
+            className={({ isActive }) =>
+              `group relative mt-auto flex items-center justify-center gap-3 h-10 rounded-lg text-sm font-medium transition-colors ${
+                collapsed ? "" : "!justify-start px-3"
+              } ${
+                isActive
+                  ? "bg-accent-blue/10 text-accent-blue"
+                  : "text-text-muted hover:bg-bg-hover hover:text-text-primary"
+              }`
+            }
+          >
+            <bottomItem.icon size={18} className="flex-shrink-0" />
+            {!collapsed && <span>{bottomItem.label}</span>}
+            {bottomDot && (
+              <RedDot className={collapsed ? "absolute right-2 top-1.5 ring-2 ring-bg-panel" : "ml-1"} />
+            )}
+            {collapsed && <NavTip>{bottomItem.label}</NavTip>}
+          </NavLink>
+
           <button
             type="button"
             onClick={toggleCollapsed}
             aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-            className={`group relative mt-auto flex items-center justify-center gap-3 h-10 rounded-lg text-sm font-medium text-text-muted hover:bg-bg-hover hover:text-text-primary transition-colors ${
+            className={`group relative flex items-center justify-center gap-3 h-10 rounded-lg text-sm font-medium text-text-muted hover:bg-bg-hover hover:text-text-primary transition-colors ${
               collapsed ? "" : "!justify-start px-3"
             }`}
           >

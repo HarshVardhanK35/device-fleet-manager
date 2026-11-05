@@ -8,6 +8,8 @@ export const LIMITS = {
   screenType: 20,
   firstName: 20,
   lastName: 20,
+  feedbackMessage: 500,
+  feedbackReply: 300,
 };
 
 // A max-length validator that only checks a field when it is new or has been

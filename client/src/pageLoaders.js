@@ -19,6 +19,8 @@ export const pageLoaders = {
   player: () => import("./pages/Player.jsx"),
   notFound: () => import("./pages/NotFound.jsx"),
   adminUsers: () => import("./pages/AdminUsers.jsx"),
+  feedback: () => import("./pages/Feedback.jsx"),
+  adminInbox: () => import("./pages/AdminInbox.jsx"),
 };
 
 const PAGE_BY_PATH = {
@@ -28,6 +30,8 @@ const PAGE_BY_PATH = {
   "/assignments": "assignments",
   "/player": "playerSlots",
   "/admin/users": "adminUsers",
+  "/feedback": "feedback",
+  "/admin/inbox": "adminInbox",
 };
 
 export function prefetchRoute(path) {
