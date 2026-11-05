@@ -4,6 +4,7 @@ import crypto from "crypto";
 import User from "../models/User.js";
 import Device from "../models/Device.js";
 import Assignment from "../models/Assignment.js";
+import Feedback from "../models/Feedback.js";
 
 import { sendEmail } from "../utils/sendEmail.js";
 import { generateUsername } from "../utils/username.js";
@@ -406,11 +407,12 @@ export const deleteUser = async (req, res) => {
     // "$in" is a mongoDB operator that matches any value in a given array
     await Assignment.deleteMany({ deviceId: { $in: deviceIds } });
     await Device.deleteMany({ userId: user._id });
+    await Feedback.deleteMany({ userId: user._id });
     await user.deleteOne();
 
     res
       .status(200)
-      .json({ message: "User, their screens, and assignments deleted" });
+      .json({ message: "User, their screens, assignments and feedback deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

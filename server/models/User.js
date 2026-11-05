@@ -16,6 +16,14 @@ const UserSchema = new mongoose.Schema(
       trim: true,
       validate: maxLengthWhenChanged("lastName", LIMITS.lastName, "Last name"),
     },
+    // How many feedback messages this account has sent in total (the limit is in
+    // feedbackController.js). Kept here, not counted from the messages, so
+    // deleting a message doesn't give the slot back.
+    feedbackCount: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
     // Short unique handle shown in the admin list, made once at sign-up.
     // Sparse: accounts created before usernames existed simply have none.
     username: {

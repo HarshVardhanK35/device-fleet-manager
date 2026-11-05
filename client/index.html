@@ -19,21 +19,63 @@
        (www, staging, ?tracking) as copies of it. -->
   <link rel="canonical" href="https://castwise.site/" />
 
-  <!-- What a pasted link looks like in WhatsApp, LinkedIn, Slack, Facebook.
-       No og:image yet: add a 1200x630 picture here when there is one. -->
+  <!-- What a pasted link looks like in WhatsApp, LinkedIn, Slack, Facebook. -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="CastWise" />
   <meta property="og:url" content="https://castwise.site/" />
+  <meta property="og:image" content="https://castwise.site/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="CastWise: turn any screen into something people read" />
   <meta property="og:title" content="CastWise – Free digital signage for any screen" />
   <meta property="og:description"
     content="Free digital signage for up to 3 screens. Show images, videos and notices on any TV, tablet or phone with a browser, set up in minutes." />
 
-  <!-- Same, for X (Twitter). "summary" until there is a share picture, then
-       switch to "summary_large_image". -->
-  <meta name="twitter:card" content="summary" />
+  <!-- Same, for X (Twitter). -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://castwise.site/og-image.png" />
   <meta name="twitter:title" content="CastWise – Free digital signage for any screen" />
   <meta name="twitter:description"
     content="Free digital signage for up to 3 screens. Show images, videos and notices on any TV, tablet or phone with a browser, set up in minutes." />
+
+  <!-- Tells Google what CastWise is and where its official pages are. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://castwise.site/#organization",
+        "name": "CastWise",
+        "url": "https://castwise.site/",
+        "logo": "https://castwise.site/favicon-192.png",
+        "email": "hello@castwise.site",
+        "sameAs": [
+          "https://www.linkedin.com/company/cast-wise",
+          "https://github.com/cast-wise",
+          "https://x.com/castwisehq"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://castwise.site/#website",
+        "name": "CastWise",
+        "url": "https://castwise.site/",
+        "publisher": { "@id": "https://castwise.site/#organization" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "CastWise",
+        "url": "https://castwise.site/",
+        "description": "Free digital signage for up to 3 screens. Show images, videos and notices on any TV, tablet or phone with a browser.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Any device with a web browser",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "publisher": { "@id": "https://castwise.site/#organization" }
+      }
+    ]
+  }
+  </script>
 </head>
 
 <body>
