@@ -1,6 +1,8 @@
 import { CalendarOff, Play } from "lucide-react";
 import { getTypeMeta } from "../../utils/contentTypeMeta.js";
 import BlurImage from "../ui/BlurImage.jsx";
+import AppThumb from "../ui/AppThumb.jsx";
+import { appTypeOf } from "../../utils/appType.js";
 
 // `playing` is null (nothing scheduled) or
 // { type, name, mediaUrl, thumbnailUrl, pos } — the first content item of
@@ -28,7 +30,7 @@ function ScreenThumb({ playing, mini = false, bare = false }) {
     <div className="relative w-full h-full overflow-hidden bg-[#201e1e]">
       {playing.type === "app" ? (
         <div className="w-full h-full flex items-center justify-center">
-          {!mini && <span className="text-text-muted text-sm">App</span>}
+          <AppThumb appType={appTypeOf(playing)} iconClassName={mini ? "w-[34%]" : "w-[18%]"} />
         </div>
       ) : (
         <BlurImage

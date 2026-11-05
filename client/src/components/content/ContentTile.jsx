@@ -1,3 +1,5 @@
+import AppThumb from "../ui/AppThumb.jsx";
+import { appTypeOf } from "../../utils/appType.js";
 import { getTypeMeta } from "../../utils/contentTypeMeta.js";
 import { formatDuration } from "../../utils/formatDuration.js";
 import BlurImage from "../ui/BlurImage.jsx";
@@ -31,7 +33,7 @@ function ContentTile({
     >
       <div className={`relative ${thumbClassName} bg-[#201e1e] flex items-center justify-center`}>
         {item.type === "app" ? (
-          <span className="text-text-muted text-sm">App</span>
+          <AppThumb appType={appTypeOf(item)} bold />
         ) : (
           <BlurImage url={item.thumbnailUrl || item.mediaUrl} width={400} alt={item.name} />
         )}

@@ -16,6 +16,8 @@ import { formatDuration } from "../../utils/formatDuration.js";
 import FieldCount from "../ui/FieldCount.jsx";
 import { MAX_IMAGE_COPIES, MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from "../../utils/limits.js";
 import BlurImage from "../ui/BlurImage.jsx";
+import AppThumb from "../ui/AppThumb.jsx";
+import { appTypeOf } from "../../utils/appType.js";
 
 // One library item as a compact row (the picker's List view) — about three
 // times more items per screen than tiles, for big libraries.
@@ -41,7 +43,7 @@ function PickerRow({ item, selected, maxed, showDuration, onToggle }) {
       />
       <span className="relative w-14 aspect-video flex-none rounded bg-[#201e1e] overflow-hidden flex items-center justify-center text-[10px] text-text-muted">
         {item.type === "app" ? (
-          "App"
+          <AppThumb appType={appTypeOf(item)} iconClassName="w-[34%]" />
         ) : (
           <BlurImage url={item.thumbnailUrl || item.mediaUrl} width={160} />
         )}
