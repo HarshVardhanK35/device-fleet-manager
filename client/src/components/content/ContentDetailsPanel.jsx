@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Trash2, Pencil, Settings2 } from "lucide-react";
 
 import Button from "../ui/Button.jsx";
+import AppThumb from "../ui/AppThumb.jsx";
+import { appTypeOf } from "../../utils/appType.js";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
 import CancelButton from "../ui/CancelButton.jsx";
@@ -148,7 +150,7 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
         <div className="flex flex-col gap-4 px-4 py-5">
           <div className="relative aspect-video bg-[#201e1e] border border-border-muted rounded-lg flex items-center justify-center overflow-hidden">
             {item.type === "app" ? (
-              <span className="text-text-muted text-sm">App</span>
+              <AppThumb appType={appTypeOf(item)} iconClassName="w-[18%]" />
             ) : (
               <BlurImage url={item.thumbnailUrl || item.mediaUrl} width={800} alt={item.name} fit="contain" />
             )}

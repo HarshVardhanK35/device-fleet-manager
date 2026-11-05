@@ -1,16 +1,13 @@
 import { useMemo, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Filter, ArrowUpDown, Lock, ChevronRight, CloudSun, Clock, Rss, Megaphone, AppWindow } from "lucide-react";
+import { Filter, ArrowUpDown, Lock, ChevronRight } from "lucide-react";
 
 import CancelButton from "../components/ui/CancelButton.jsx";
+import AppThumb from "../components/ui/AppThumb.jsx";
 import ScrollBox from "../components/layout/ScrollBox.jsx";
 import StyledSelect from "../components/ui/StyledSelect.jsx";
 import ToggleSwitch from "./shared/ToggleSwitch.jsx";
 import { buildAppSections, getCategoryList, getAppCounts } from "./appCategories.js";
-
-// Stand-in for an app's thumbnail until it has one: an app whose registry entry
-// has a `thumbnail` shows that picture in the square instead (appsRegistry.json).
-const APP_ICONS = { Weather: CloudSun, Clock, RSS: Rss, Announcements: Megaphone };
 
 // Reuses StyledSelect — the same Filter/Sort dropdown component the Content
 // page uses — instead of a custom dropdown, for visual/behavior consistency
@@ -118,7 +115,6 @@ function AppsPickerBody({ onSelectApp, portalContainer }) {
             <div className="flex-1 min-w-0">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {s.items.map((it, i) => {
-                  const Icon = APP_ICONS[it.name] || AppWindow;
                   return it.live ? (
                     <button
                       key={it.id}
@@ -126,12 +122,8 @@ function AppsPickerBody({ onSelectApp, portalContainer }) {
                       onClick={() => onSelectApp?.(it)}
                       className="group min-w-0 flex items-center gap-4 p-4 text-left bg-bg-panel border border-border-muted rounded-xl hover:border-accent-blue hover:shadow-[0_0_24px_-8px_rgba(47,129,247,0.6)] transition-all"
                     >
-                      <span className="flex-none w-14 h-14 rounded-lg bg-bg-primary border border-border-muted overflow-hidden flex items-center justify-center text-accent-blue">
-                        {it.thumbnail ? (
-                          <img src={it.thumbnail} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <Icon size={26} />
-                        )}
+                      <span className="flex-none w-14 h-14 rounded-lg bg-bg-primary border border-border-muted overflow-hidden flex items-center justify-center">
+                        <AppThumb appType={it.name} iconClassName="w-7" />
                       </span>
                       <span className="flex-1 min-w-0">
                         <span className="block text-base font-semibold text-text-primary truncate">{it.name}</span>
