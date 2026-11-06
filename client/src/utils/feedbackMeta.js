@@ -10,8 +10,7 @@ export const TYPE_LABEL = { issue: "Issue", suggestion: "Suggestion", other: "Ot
 export const STATUS_LABEL = {
   sent: "Sent",
   seen: "Seen",
-  "in-progress": "In progress",
-  done: "Done",
+  noted: "Noted",
   "not-planned": "Not planned",
 };
 
@@ -20,8 +19,7 @@ export const INBOX_CHIPS = [
   ["all", "All"],
   ["sent", "New"],
   ["seen", "Seen"],
-  ["in-progress", "In progress"],
-  ["done", "Done"],
+  ["noted", "Noted"],
   ["not-planned", "Not planned"],
 ];
 
@@ -29,8 +27,7 @@ export const INBOX_CHIPS = [
 export const STATUS_EXPLAIN = {
   sent: "Waiting for the admin to read it.",
   seen: "The admin has read your message.",
-  "in-progress": "The admin is working on it.",
-  done: "This has been handled.",
+  noted: "Noted. The admin will work on this.",
   "not-planned": "This isn't planned for now. The reason is below.",
 };
 
@@ -38,8 +35,7 @@ export const STATUS_EXPLAIN = {
 export const STATUS_STYLE = {
   sent: { bg: "bg-[rgba(139,148,158,.14)]", fg: "text-[#c9d1d9]", dot: "bg-[#8b949e]" },
   seen: { bg: "bg-[rgba(31,111,235,.16)]", fg: "text-[#4493f8]", dot: "bg-[#4493f8]" },
-  "in-progress": { bg: "bg-[rgba(227,179,65,.14)]", fg: "text-[#e3b341]", dot: "bg-[#e3b341]" },
-  done: { bg: "bg-[rgba(63,185,80,.14)]", fg: "text-[#3fb950]", dot: "bg-[#3fb950]" },
+  noted: { bg: "bg-[rgba(63,185,80,.14)]", fg: "text-[#3fb950]", dot: "bg-[#3fb950]" },
   "not-planned": { bg: "bg-[rgba(139,148,158,.12)]", fg: "text-[#a9b1ba]", dot: "bg-[rgba(248,81,73,.65)]" },
 };
 

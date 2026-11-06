@@ -22,6 +22,7 @@ import {
   FeedbackSkeleton,
   FeedbackStateBox,
 } from "../components/feedback/FeedbackStates.jsx";
+import ClampedText from "../components/feedback/ClampedText.jsx";
 import StatusBadge from "../components/feedback/StatusBadge.jsx";
 
 const COLUMNS = "grid-cols-[minmax(0,1.6fr)_104px_minmax(0,2.4fr)_128px_112px]";
@@ -61,11 +62,15 @@ function TableRow({ item, onOpen }) {
         <AttentionDot on={attn} />
         <div className="flex min-w-0 flex-col">
           <span className={`truncate text-sm ${attn ? "font-semibold" : "font-medium"} text-text-primary`}>{s.fullName}</span>
-          <span className="truncate text-xs text-text-muted">{s.meta}</span>
+          <ClampedText as="span" text={s.meta} className="truncate text-xs text-text-muted" />
         </div>
       </div>
       <span className="text-[13px] text-text-primary">{TYPE_LABEL[item.type]}</span>
-      <span className={`truncate text-[13px] ${attn ? "text-text-primary" : "text-text-muted"}`}>{item.message}</span>
+      <ClampedText
+        as="span"
+        text={item.message}
+        className={`truncate text-[13px] ${attn ? "text-text-primary" : "text-text-muted"}`}
+      />
       <span>
         <StatusBadge status={item.status} />
       </span>
@@ -99,7 +104,11 @@ function InboxCard({ item, onOpen }) {
         <span className="flex-none text-xs text-text-muted">{formatFeedbackDate(item.createdAt)}</span>
       </div>
       <span className="truncate text-xs text-text-muted">{s.meta}</span>
-      <p className="m-0 line-clamp-2 text-sm text-text-primary [overflow-wrap:anywhere]">{item.message}</p>
+      <ClampedText
+        readMore
+        text={item.message}
+        className="m-0 line-clamp-2 text-sm text-text-primary [overflow-wrap:anywhere]"
+      />
       <div className="flex items-center gap-2 pt-0.5 text-xs text-text-muted">
         <StatusBadge status={item.status} />
         {TYPE_LABEL[item.type]}
@@ -183,7 +192,7 @@ function AdminInbox() {
   const chipLabel = INBOX_CHIPS.find((c) => c[0] === filter)?.[1] || "";
 
   return (
-    <div className="mx-auto max-w-[1100px]">
+    <div>
       <div className="mb-4 flex min-h-9 items-baseline gap-3">
         <h1 className="m-0 text-xl md:text-[22px] font-semibold tracking-tight text-text-primary">Inbox</h1>
         <span className="text-sm text-text-muted">
@@ -278,5 +287,5 @@ export default AdminInbox;
 
 // The admin's Inbox (/admin/inbox): every user's feedback with status chips
 // and counts, 20 per page. Opening a Sent message marks it Seen; details hold
-// the status control, the reply and Delete (Done / Not planned only).
+// the status control, the reply and Delete (once answered).
 // Used by: App.jsx (AdminPage).

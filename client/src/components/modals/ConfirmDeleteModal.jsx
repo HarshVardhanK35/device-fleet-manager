@@ -5,15 +5,25 @@ import ScrollBox from "../layout/ScrollBox.jsx";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
 
-function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm, busyLabel = "Deleting…" }) {
+function ConfirmDeleteModal({
+  open,
+  onOpenChange,
+  title,
+  items,
+  onConfirm,
+  busyLabel = "Deleting…",
+  description,
+  confirmLabel,
+  elevated = false,
+}) {
   const [confirm, busy] = useAsyncAction(onConfirm);
   const itemLabel = `${items.length} item${items.length === 1 ? "" : "s"}`;
 
   return (
     <Dialog.Root open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[440px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col z-40">
+        <Dialog.Overlay className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${elevated ? "z-[60]" : "z-30"}`} />
+        <Dialog.Content className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[440px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col ${elevated ? "z-[70]" : "z-40"}`}>
           <div className="flex flex-col gap-4 px-6 pt-6 pb-5 min-h-0 overflow-auto">
             <div className="flex items-start gap-3">
               <span className="w-9 h-9 flex-none rounded-[10px] bg-accent-red/15 text-accent-red flex items-center justify-center">
@@ -24,7 +34,9 @@ function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm, busyL
                   {title}
                 </Dialog.Title>
                 <p className="text-text-muted text-sm m-0">
-                  {items.length === 1
+                  {description
+                    ? description
+                    : items.length === 1
                     ? `"${items[0].name}" will be permanently deleted. This action cannot be undone.`
                     : `These ${itemLabel} will be permanently deleted. This action cannot be undone.`}
                 </p>
@@ -65,7 +77,7 @@ function ConfirmDeleteModal({ open, onOpenChange, title, items, onConfirm, busyL
               className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter] disabled:opacity-70 disabled:pointer-events-none"
             >
               <Trash2 size={16} />
-              {busy ? busyLabel : `Delete ${itemLabel}`}
+              {busy ? busyLabel : confirmLabel || `Delete ${itemLabel}`}
             </button>
           </div>
         </Dialog.Content>
@@ -87,6 +99,8 @@ export default ConfirmDeleteModal;
 // this has no reassurance copy or type badges — it's for *actual*
 // deletion (playlists, assignments, content), not playlist-membership/
 // pairing removal, so nothing "stays" anywhere.
+// Optional: `description` replaces the standard sentence, `confirmLabel` the red
+// button's text, `elevated` puts it above full-screen panels (Feedback details).
 // Used by: pages/Assignments.jsx (delete assignment), pages/Content.jsx
 // (bulk delete), pages/Playlists.jsx (delete playlist, bulk delete
 // playlists). For removing content from a playlist, or unpairing a

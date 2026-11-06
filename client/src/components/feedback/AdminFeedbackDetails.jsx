@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, CircleAlert, Trash2 } from "lucide-react";
+import { CircleAlert, Trash2 } from "lucide-react";
 
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
 import {
@@ -9,7 +9,11 @@ import {
   formatFeedbackDateTime,
 } from "../../utils/feedbackMeta.js";
 import DetailsShell from "./DetailsShell.jsx";
+import StatusBadge from "./StatusBadge.jsx";
 import { FbButton, FooterRight, FooterSplit } from "./FeedbackButtons.jsx";
+
+// What the admin can decide (Seen is only set by opening a Sent message).
+const CHOICES = ["noted", "not-planned"];
 
 const LABEL = "text-[13px] font-medium text-text-primary";
 const NOTE = "text-xs text-text-muted";
@@ -26,33 +30,50 @@ function sender(item) {
 }
 
 function AdminBody({ item, onClose, onSave, onAskDelete }) {
-  const [status, setStatus] = useState(item.status);
-  const [reply, setReply] = useState(item.reply || "");
-  const [error, setError] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [serverErr, setServerErr] = useState("");
+  const [status, setStatus] = useState("");
+  const [reply, setReply] = useState("");
+  const [error, setError] = useState("");
   const from = sender(item);
-  const notPlanned = status === "not-planned";
-  const canDelete = item.status === "done" || item.status === "not-planned";
+
+  // One decision per message: once it is Noted or Not planned nothing changes.
+  const answered = item.status !== "sent" && item.status !== "seen";
+  const notPlanned = !answered && status === "not-planned";
 
   const [save, saving] = useAsyncAction(async () => {
-    if (notPlanned && !reply.trim()) {
-      setError(true);
-      setSaved(false);
+    if (answered) return;
+    if (!status) {
+      setError("Choose Noted or Not planned.");
       return;
     }
-    setServerErr("");
-    const problem = await onSave(item._id, { status, reply: reply.trim() });
-    if (problem) setServerErr(problem);
-    else setSaved(true);
+    const text = reply.trim();
+    if (notPlanned && !text) {
+      setError("Add a reason to save as Not planned. The user sees it with the status.");
+      return;
+    }
+    setError("");
+    const problem = await onSave(item._id, { status, reply: text });
+    if (problem) setError(problem);
   });
 
-  const dot = (STATUS_STYLE[status] || STATUS_STYLE.sent).dot;
-  const deleteInline = canDelete && (
+  const deleteInline = answered && (
     <FbButton variant="ghostDanger" onClick={onAskDelete} className="md:hidden self-start -ml-3.5">
       <Trash2 size={17} />
       Delete message
     </FbButton>
+  );
+
+  const buttons = answered ? (
+    <FbButton onClick={onClose}>Close</FbButton>
+  ) : (
+    <>
+      <FbButton onClick={onClose}>
+        <span className="hidden md:inline">Cancel</span>
+        <span className="md:hidden">Close</span>
+      </FbButton>
+      <FbButton variant="primary" onClick={save} disabled={saving} className="md:px-4">
+        {saving ? "Saving…" : "Save"}
+      </FbButton>
+    </>
   );
 
   return (
@@ -75,36 +96,47 @@ function AdminBody({ item, onClose, onSave, onAskDelete }) {
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <label htmlFor="fb-status" className={LABEL}>
+            <span id="fb-status-label" className={LABEL}>
               Status
-            </label>
-            {status === "seen" && <span className={NOTE}>Seen · marked when you opened it</span>}
+            </span>
+            {item.status === "seen" && <span className={NOTE}>Seen · marked when you opened it</span>}
           </div>
-          <span className="relative block md:max-w-[280px]">
-            <span className={`pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full ${dot}`} />
-            <select
-              id="fb-status"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setError(false);
-                setSaved(false);
-              }}
-              className={`${FIELD} appearance-none h-11 md:h-9 pl-[26px] pr-9 border-border-muted`}
-            >
-              {status === "seen" && (
-                <option value="seen" disabled>
-                  {STATUS_LABEL.seen}
-                </option>
-              )}
-              {["in-progress", "done", "not-planned"].map((k) => (
-                <option key={k} value={k}>
-                  {STATUS_LABEL[k]}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-muted" />
-          </span>
+
+          {answered ? (
+            <>
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusBadge status={item.status} />
+              </div>
+              <span className={NOTE}>Answered. The status and the reply can&apos;t be changed.</span>
+            </>
+          ) : (
+            <div role="radiogroup" aria-labelledby="fb-status-label" className="grid grid-cols-2 gap-2 md:max-w-[300px]">
+              {CHOICES.map((k) => {
+                const on = status === k;
+                const style = STATUS_STYLE[k];
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => {
+                      setStatus(k);
+                      setError("");
+                    }}
+                    className={`inline-flex h-11 md:h-9 items-center justify-center gap-1.5 rounded-md border px-2 text-[13px] font-medium transition-colors ${
+                      on
+                        ? `border-transparent ${style.bg} ${style.fg}`
+                        : "border-border-muted bg-bg-primary text-text-muted hover:bg-bg-hover hover:text-text-primary"
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 flex-none rounded-full ${on ? style.dot : "bg-text-muted/50"}`} />
+                    <span className="truncate">{STATUS_LABEL[k]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -112,40 +144,43 @@ function AdminBody({ item, onClose, onSave, onAskDelete }) {
             <label htmlFor="fb-reply" className={LABEL}>
               Reply
             </label>
-            <span className={NOTE}>{notPlanned ? "Required for Not planned" : "Optional"}</span>
+            {!answered && <span className={NOTE}>{notPlanned ? "Required for Not planned" : "Optional"}</span>}
           </div>
-          <textarea
-            id="fb-reply"
-            value={reply}
-            maxLength={FEEDBACK_REPLY_MAX}
-            placeholder={notPlanned ? "Explain why this is not planned." : "Write a reply the user will see."}
-            onChange={(e) => {
-              setReply(e.target.value);
-              setSaved(false);
-              if (e.target.value.trim()) setError(false);
-            }}
-            aria-invalid={error}
-            className={`${FIELD} min-h-[96px] px-3 py-2.5 resize-y ${error ? "border-[#f85149] ring-[3px] ring-[rgba(248,81,73,.15)]" : "border-border-muted"}`}
-          />
-          <div className="flex items-start justify-between gap-3">
-            {error ? (
-              <span role="alert" className="flex items-start gap-1.5 text-[13px] text-[#ff7b72]">
-                <CircleAlert size={15} className="flex-none mt-0.5" />
-                <span>Add a reason to save as Not planned. The user sees it with the status.</span>
-              </span>
+
+          {answered ? (
+            item.reply ? (
+              <p className="m-0 whitespace-pre-wrap text-sm leading-[1.6] text-text-primary [overflow-wrap:anywhere]">{item.reply}</p>
             ) : (
-              <span className="text-[13px] text-text-muted">
-                {notPlanned ? "The user sees this as the reason." : "The user sees your reply next to the status."}
-              </span>
-            )}
-            <span className={`flex-none text-xs tabular-nums ${reply.length >= FEEDBACK_REPLY_MAX ? "text-[#ff7b72] font-semibold" : "text-text-muted"}`}>
-              {reply.length} / {FEEDBACK_REPLY_MAX}
-            </span>
-          </div>
-          {serverErr && (
-            <span role="alert" className="text-[13px] text-[#ff7b72]">
-              {serverErr}
-            </span>
+              <span className="text-sm text-text-muted">No reply.</span>
+            )
+          ) : (
+            <>
+              <textarea
+                id="fb-reply"
+                value={reply}
+                maxLength={FEEDBACK_REPLY_MAX}
+                placeholder={notPlanned ? "Explain why this is not planned." : "Write a reply the user will see."}
+                onChange={(e) => {
+                  setReply(e.target.value);
+                  if (e.target.value.trim()) setError("");
+                }}
+                aria-invalid={!!error}
+                className={`${FIELD} dark-scrollbar min-h-[96px] max-h-[220px] px-3 py-2.5 resize-y ${error ? "border-[#f85149] ring-[3px] ring-[rgba(248,81,73,.15)]" : "border-border-muted"}`}
+              />
+              <div className="flex items-start justify-between gap-3">
+                {error ? (
+                  <span role="alert" className="flex items-start gap-1.5 text-[13px] text-[#ff7b72]">
+                    <CircleAlert size={15} className="flex-none mt-0.5" />
+                    <span>{error}</span>
+                  </span>
+                ) : (
+                  <span className="text-[13px] text-text-muted">One status and one reply. You can&apos;t change them after saving.</span>
+                )}
+                <span className={`flex-none text-xs tabular-nums ${reply.length >= FEEDBACK_REPLY_MAX ? "text-[#ff7b72] font-semibold" : "text-text-muted"}`}>
+                  {reply.length} / {FEEDBACK_REPLY_MAX}
+                </span>
+              </div>
+            </>
           )}
         </div>
 
@@ -153,40 +188,36 @@ function AdminBody({ item, onClose, onSave, onAskDelete }) {
       </div>
 
       <FooterRight>
-        {canDelete && (
-          <FbButton variant="ghostDanger" onClick={onAskDelete}>
+        {answered && (
+          <FbButton variant="ghostDanger" onClick={onAskDelete} className="mr-auto">
             <Trash2 size={16} />
             Delete
           </FbButton>
         )}
-        <span role="status" className="mr-auto pl-1 text-[13px] text-text-muted">
-          {saved ? "Saved" : ""}
-        </span>
-        <FbButton onClick={onClose}>Cancel</FbButton>
-        <FbButton variant="primary" onClick={save} disabled={saving} className="md:px-4">
-          {saving ? "Saving…" : "Save"}
-        </FbButton>
+        {buttons}
       </FooterRight>
-      <FooterSplit>
-        <FbButton onClick={onClose}>Close</FbButton>
-        <FbButton variant="primary" onClick={save} disabled={saving}>
-          {saving ? "Saving…" : "Save"}
-        </FbButton>
-      </FooterSplit>
+      <FooterSplit single={answered}>{buttons}</FooterSplit>
     </>
   );
 }
 
-// The admin's view of one message: who sent it, the message, a status control
-// and a reply box. `onSave(id, { status, reply })` resolves to an error text, or
-// nothing when it worked. Not planned needs a reply (the reason the user sees).
+// The admin's view of one message: who sent it, the message, the decision
+// (Noted or Not planned) and one reply. `onSave(id, { status, reply })` resolves
+// to an error text, or nothing when it worked. After saving, the message is
+// answered for good; only Delete remains.
 function AdminFeedbackDetails({ item, onClose, onSave, onAskDelete }) {
   if (!item) return null;
   return (
     <DetailsShell open type={item.type} onClose={onClose}>
-      {/* Keyed so the form restarts when a different message (or a refreshed
-          copy after saving) is shown. */}
-      <AdminBody key={item._id} item={item} onClose={onClose} onSave={onSave} onAskDelete={onAskDelete} />
+      {/* Keyed on the message and its status, so the form restarts whenever a
+          different message, or a new status after saving, is shown. */}
+      <AdminBody
+        key={`${item._id}-${item.status}`}
+        item={item}
+        onClose={onClose}
+        onSave={onSave}
+        onAskDelete={onAskDelete}
+      />
     </DetailsShell>
   );
 }

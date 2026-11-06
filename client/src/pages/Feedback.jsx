@@ -12,7 +12,9 @@ import {
   FeedbackSkeleton,
   FeedbackStateBox,
 } from "../components/feedback/FeedbackStates.jsx";
+import InlineFeedbackForm from "../components/feedback/InlineFeedbackForm.jsx";
 import NewFeedbackModal from "../components/feedback/NewFeedbackModal.jsx";
+import ClampedText from "../components/feedback/ClampedText.jsx";
 import StatusBadge from "../components/feedback/StatusBadge.jsx";
 import UserFeedbackDetails from "../components/feedback/UserFeedbackDetails.jsx";
 
@@ -54,7 +56,11 @@ function FeedbackCard({ item, onOpen, onAskDelete }) {
           </button>
         )}
       </div>
-      <p className="m-0 line-clamp-3 text-sm leading-[1.55] text-text-primary [overflow-wrap:anywhere]">{item.message}</p>
+      <ClampedText
+        readMore
+        text={item.message}
+        className="m-0 line-clamp-3 text-sm leading-[1.55] text-text-primary [overflow-wrap:anywhere]"
+      />
       {item.reply && (
         <div className="flex flex-col gap-[3px] rounded-lg bg-bg-primary px-3 py-2.5">
           <span className="text-xs font-medium text-text-muted">Reply from admin</span>
@@ -127,15 +133,18 @@ function Feedback() {
   }
 
   return (
-    <div className="mx-auto max-w-[900px]">
+    <div>
       <div className="mb-5 flex min-h-9 items-center gap-3">
         <h1 className="m-0 flex-1 text-xl md:text-[22px] font-semibold tracking-tight text-text-primary">Feedback</h1>
-        <FbButton variant="primary" onClick={() => setNewOpen(true)} className="!pl-3">
+        <FbButton variant="primary" onClick={() => setNewOpen(true)} className="!pl-3 xl:hidden">
           <Plus size={16} />
           New feedback
         </FbButton>
       </div>
 
+      {/* Desktop: the list on the left, the New feedback form on the right. */}
+      <div className="xl:grid xl:grid-cols-[minmax(0,860px)_380px] xl:items-start xl:gap-6">
+      <div className="min-w-0">
       {loading ? (
         <FeedbackSkeleton />
       ) : failed ? (
@@ -151,7 +160,7 @@ function Feedback() {
         <FeedbackStateBox
           icon={MessageSquareText}
           title="No feedback yet"
-          hint="Found a problem or have an idea? Use New feedback. Your messages and their replies will show up here."
+          hint="Found a problem or have an idea? Send us a message. Your messages and their replies will show up here."
         />
       ) : (
         <div className="flex max-w-[860px] flex-col gap-4">
@@ -163,6 +172,12 @@ function Feedback() {
           {data.pages > 1 && <FeedbackPager page={data.page} pages={data.pages} total={data.total} onPage={setPage} />}
         </div>
       )}
+      </div>
+
+      <aside className="sticky top-0 hidden xl:block">
+        <InlineFeedbackForm remaining={data.remaining} limit={data.limit} onSent={onSent} />
+      </aside>
+      </div>
 
       <NewFeedbackModal
         open={newOpen}

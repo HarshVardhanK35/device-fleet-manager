@@ -2,10 +2,11 @@ import mongoose from "mongoose";
 import { LIMITS, maxLengthWhenChanged } from "../utils/fieldLimits.js";
 
 export const FEEDBACK_TYPES = ["issue", "suggestion", "other"];
-export const FEEDBACK_STATUSES = ["sent", "seen", "in-progress", "done", "not-planned"];
+// The admin decides once: "noted" (we will work on it) or "not-planned".
+export const FEEDBACK_STATUSES = ["sent", "seen", "noted", "not-planned"];
 
-// One message from a signed-in user to the admin. The admin moves it through
-// the statuses and can answer in `reply`; `userUnread` lights the user's red
+// One message from a signed-in user to the admin. The admin answers it once, with
+// one status and one `reply`; `userUnread` lights the user's red
 // dot until they open their Feedback page.
 const feedbackSchema = new mongoose.Schema(
   {

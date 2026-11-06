@@ -21,6 +21,8 @@ function StyledSelect({
   disabled = false,
   touchSize = false,
   align = "start",
+  placeholder,
+  invalid = false,
 }) {
   const roundedClass =
     roundedSide === "left"
@@ -89,7 +91,7 @@ function StyledSelect({
       <Select.Trigger
         ref={triggerRef}
         aria-label={label}
-        className={`group inline-flex items-center ${justifyClass} gap-2 ${bgClassName} border border-border-muted text-text-primary text-sm ${widthClass} ${padClass} ${heightClass} outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass} ${
+        className={`group inline-flex items-center ${justifyClass} gap-2 ${bgClassName} border border-border-muted text-text-primary text-sm ${widthClass} ${padClass} ${heightClass} outline-none transition-colors focus-visible:border-accent-blue focus-visible:z-10 data-[state=open]:border-accent-blue data-[state=open]:z-10 ${roundedClass} ${invalid ? "!border-[#f85149]" : ""} ${
           disabled
             ? "opacity-45 cursor-not-allowed"
             : "hover:bg-bg-hover hover:border-border-hover"
@@ -100,7 +102,7 @@ function StyledSelect({
           className={`${iconHideClass} text-text-muted group-hover:text-text-primary transition-colors`}
         />
         <span className={`${labelShowClass} truncate`}>
-          <Select.Value />
+          <Select.Value placeholder={placeholder} />
         </span>
         <Select.Icon className={chevronShowClass}>
           <ChevronDown
@@ -206,6 +208,8 @@ export default StyledSelect;
 // ancestor's fixed on-screen viewport, not real empty space below the
 // trigger, and was clipping the list much shorter than the room actually
 // available in a settings panel).
+// `placeholder` (optional) is shown while nothing is chosen; `invalid` gives the
+// trigger a red border (form validation).
 // `align` (optional, "start" default | "end") — which trigger edge the
 // dropdown lines up with; "end" for a trigger at the right edge of the screen.
 // Used by: components/ContentFilterSortBar.jsx,

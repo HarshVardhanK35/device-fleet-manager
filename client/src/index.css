@@ -201,6 +201,16 @@ input[type="number"] {
 .cw-panel-in { animation: cw-slide-in 240ms ease-out both; }
 .cw-panel-in-left { animation: cw-slide-in-left 240ms ease-out both; }
 .cw-pop-in { animation: cw-pop 200ms ease-out both; }
+/* Message details: pops in on tablet and phone, slides in from the right on
+   desktop (where it is a panel beside the page). */
+@keyframes cw-drawer-in {
+  from { opacity: 0; transform: translateX(56px); }
+  to { opacity: 1; transform: none; }
+}
+.cw-details-in { animation: cw-pop 200ms ease-out both; }
+@media (min-width: 1024px) {
+  .cw-details-in { animation: cw-drawer-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
 .cw-scrim-in { animation: cw-fade 180ms ease-out both; }
 
 /* CastWise loading mark (components/BrandLoader.jsx), the Orbit design: the

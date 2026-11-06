@@ -143,7 +143,7 @@ function AdminUsers() {
   );
 
   return (
-    <div className="@container mx-auto max-w-[1400px]">
+    <div className="@container">
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-3">
