@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { Type, Clock, Image as ImageIcon, Trash2 } from "lucide-react";
 
-import AppSettingsShell from "../shared/AppSettingsShell.jsx";
-import AppPreviewFrame from "../shared/AppPreviewFrame.jsx";
-import SettingsCard from "../shared/SettingsCard.jsx";
-import Field from "../shared/Field.jsx";
-import SegmentedControl from "../shared/SegmentedControl.jsx";
-import ToggleSwitch from "../shared/ToggleSwitch.jsx";
-import SliderField from "../shared/SliderField.jsx";
-import BackgroundAudioField from "../shared/BackgroundAudioField.jsx";
+import AppSettingsShell from "../shared/settings/AppSettingsShell.jsx";
+import AppPreviewFrame from "../shared/preview/AppPreviewFrame.jsx";
+import SettingsCard from "../shared/settings/SettingsCard.jsx";
+import Field from "../shared/fields/Field.jsx";
+import SegmentedControl from "../shared/fields/SegmentedControl.jsx";
+import ToggleSwitch from "../shared/fields/ToggleSwitch.jsx";
+import SliderField from "../shared/fields/SliderField.jsx";
+import BackgroundAudioField from "../shared/fields/BackgroundAudioField.jsx";
 import StyledSelect from "../../components/ui/StyledSelect.jsx";
 import ContentPickerModal from "../../components/content/ContentPickerModal.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
-import { useAppSettingsForm } from "../shared/useAppSettingsForm.js";
+import { useAppSettingsForm } from "../shared/settings/useAppSettingsForm.js";
 
 // Matches the approved Media RSS mock's own font list exactly.
 const FONTS = [
@@ -425,7 +425,7 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
 export default RssSettingsScreen;
 
 // Media RSS app's settings screen — built the same way as weather-modal.jsx
-// and clock-modal.jsx, sharing apps/shared/useAppSettingsForm.js for form
+// and clock-modal.jsx, sharing apps/shared/settings/useAppSettingsForm.js for form
 // state, the dirty-check, and the save flow.
 //
 // Feed URL is the FIRST card (unlike Weather/Clock, where the

@@ -8,6 +8,12 @@ export async function generatePairingCode() {
   const res = await fetch(`${API_BASE}/pairing/generate`, {
     method: "POST",
   });
+  // 429: too many codes requested from this connection (20 per hour); the
+  // body says when the server will give codes again (`retryAt`).
+  if (res.status === 429) {
+    const body = await res.json().catch(() => ({}));
+    return { rateLimited: true, retryAt: body.retryAt };
+  }
   return res.json();
 }
 

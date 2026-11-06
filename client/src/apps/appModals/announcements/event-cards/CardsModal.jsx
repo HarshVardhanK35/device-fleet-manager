@@ -3,9 +3,9 @@ import { Image as ImageIcon, Trash2, Type } from "lucide-react";
 
 import ColumnModal, { FieldLabel, ManagedForm } from "../../../shared/columnModal/ColumnModal.jsx";
 import { INPUT_CLASS, TEXTAREA_CLASS } from "../../../shared/columnModal/columnModalStyles.js";
-import SliderField from "../../../shared/SliderField.jsx";
-import ToggleSwitch from "../../../shared/ToggleSwitch.jsx";
-import BackgroundAudioField from "../../../shared/BackgroundAudioField.jsx";
+import SliderField from "../../../shared/fields/SliderField.jsx";
+import ToggleSwitch from "../../../shared/fields/ToggleSwitch.jsx";
+import BackgroundAudioField from "../../../shared/fields/BackgroundAudioField.jsx";
 import StyledSelect from "../../../../components/ui/StyledSelect.jsx";
 import ContentPickerModal from "../../../../components/content/ContentPickerModal.jsx";
 import { AUDIO_OPTIONS } from "../common/audioOptions.js";

@@ -1,10 +1,11 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import { useAuth } from "../../context/useAuth.js";
 
 function ProtectedRoute({ children }) {
   const { token, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     // AuthContext is still trying to silently refresh from the httpOnly
@@ -14,7 +15,7 @@ function ProtectedRoute({ children }) {
   }
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   }
 
   return children;

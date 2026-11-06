@@ -4,6 +4,7 @@ import { MoreHorizontal } from "lucide-react";
 const VARIANT_CLASSES = {
   default: "text-text-muted hover:bg-bg-hover hover:text-text-primary",
   warning: "text-accent-amber hover:bg-accent-amber/10",
+  success: "text-accent-green hover:bg-accent-green/10",
   danger: "text-accent-red hover:bg-accent-red/10",
 };
 
@@ -34,7 +35,7 @@ function ActionMenu({
         <DropdownMenu.Content
           align={align}
           sideOffset={6}
-          className="w-[160px] p-1 bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] z-50"
+          className="min-w-[160px] w-max p-1 bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] z-50"
         >
           {items.map((item, index) =>
             item.type === "separator" ? (
@@ -46,6 +47,7 @@ function ActionMenu({
               <DropdownMenu.Item
                 key={item.label}
                 disabled={item.disabled}
+                title={item.title}
                 onSelect={() => {
                   // Deferred: if item.onClick causes the trigger element
                   // itself to unmount (e.g. deleting the row this menu
@@ -64,6 +66,7 @@ function ActionMenu({
               >
                 {item.icon && <item.icon size={16} />}
                 <span className="flex-1">{item.label}</span>
+                {item.hint && <span className="text-xs tabular-nums text-text-muted">{item.hint}</span>}
               </DropdownMenu.Item>
             ),
           )}

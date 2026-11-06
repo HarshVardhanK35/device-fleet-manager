@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
 import { apiFetch, API_BASE } from "./apiClient.js";
 
 export async function getDevices() {
@@ -29,6 +30,15 @@ export async function releaseDevice(id) {
   });
 }
 
+// Asks a screen that is online to start its playlist again from the first
+// item. Answers { message: "Refresh signal sent", retryInSeconds }, or an
+// error message (offline, or { retryInSeconds } when asked again too soon).
+export async function refreshDevice(id) {
+  return apiFetch(`${API_BASE}/devices/${id}/refresh`, {
+    method: "POST",
+  });
+}
+
 // Unauthenticated — called from pages/Screens.jsx, which has no logged-in
 // user (same reasoning as api/pairing.js's generatePairingCode/
 // getPairingStatus and DevicePlayback.jsx's own plain-fetch /connect
@@ -36,7 +46,8 @@ export async function releaseDevice(id) {
 // Mongo _id — Phase 3 fix, 2026-10-12: these routes are fully public, so
 // the identifier they trust has to be unguessable and revocable.
 export async function checkDeviceExists(token) {
-  const res = await fetch(`${API_BASE}/devices/${token}/exists`);
+  // Gives up after 8 seconds, so a half-dead network can't leave a screen waiting.
+  const res = await fetchWithTimeout(`${API_BASE}/devices/${token}/exists`, {}, 8000);
   return res.json();
 }
 

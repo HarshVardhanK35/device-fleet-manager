@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { GripVertical, Plus } from "lucide-react";
 
-import SettingsCard from "../../../shared/SettingsCard.jsx";
+import SettingsCard from "../../../shared/settings/SettingsCard.jsx";
 import { ClearAllControl, ManagedRow } from "../../../shared/columnModal/ColumnModal.jsx";
-import { useDragReorder } from "../../../shared/useDragReorder.js";
+import { useDragReorder } from "../../../shared/columnModal/useDragReorder.js";
 import CardsModal from "./CardsModal.jsx";
 import { useCardsList } from "./useCardsList.js";
 import { TYPE_ICON } from "./eventCardsIcons.js";

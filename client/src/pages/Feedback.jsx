@@ -14,6 +14,7 @@ import {
 } from "../components/feedback/FeedbackStates.jsx";
 import InlineFeedbackForm from "../components/feedback/InlineFeedbackForm.jsx";
 import NewFeedbackModal from "../components/feedback/NewFeedbackModal.jsx";
+import RefreshButton from "../components/ui/RefreshButton.jsx";
 import ClampedText from "../components/feedback/ClampedText.jsx";
 import StatusBadge from "../components/feedback/StatusBadge.jsx";
 import UserFeedbackDetails from "../components/feedback/UserFeedbackDetails.jsx";
@@ -106,6 +107,23 @@ function Feedback() {
   }, [page, reload]);
 
   const refetch = () => setReload((n) => n + 1);
+
+  // The Refresh button: fetch the current page again (the button spins until it is back).
+  async function refresh() {
+    try {
+      const res = await getMyFeedback({ page });
+      if (!Array.isArray(res?.items)) return;
+      setData(res);
+      setFailed(false);
+      if (res.items.some((i) => i.userUnread)) {
+        markFeedbackRead()
+          .then(notifyFeedbackChanged)
+          .catch(() => {});
+      }
+    } catch {
+      // keep what is on screen
+    }
+  }
   const openItem = data.items.find((i) => i._id === openId) || null;
 
   function retry() {
@@ -136,6 +154,7 @@ function Feedback() {
     <div>
       <div className="mb-5 flex min-h-9 items-center gap-3">
         <h1 className="m-0 flex-1 text-xl md:text-[22px] font-semibold tracking-tight text-text-primary">Feedback</h1>
+        <RefreshButton onRefresh={refresh} />
         <FbButton variant="primary" onClick={() => setNewOpen(true)} className="!pl-3 xl:hidden">
           <Plus size={16} />
           New feedback

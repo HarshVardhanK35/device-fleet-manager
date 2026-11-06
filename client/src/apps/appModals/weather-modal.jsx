@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { Clock, Type } from "lucide-react";
 
-import AppSettingsShell from "../shared/AppSettingsShell.jsx";
-import AppPreviewFrame from "../shared/AppPreviewFrame.jsx";
-import SettingsCard from "../shared/SettingsCard.jsx";
-import Field from "../shared/Field.jsx";
-import SegmentedControl from "../shared/SegmentedControl.jsx";
-import ComingSoonToggle from "../shared/ComingSoonToggle.jsx";
-import BackgroundAudioField from "../shared/BackgroundAudioField.jsx";
-import LocationSearchField from "../shared/LocationSearchField.jsx";
+import AppSettingsShell from "../shared/settings/AppSettingsShell.jsx";
+import AppPreviewFrame from "../shared/preview/AppPreviewFrame.jsx";
+import SettingsCard from "../shared/settings/SettingsCard.jsx";
+import Field from "../shared/fields/Field.jsx";
+import SegmentedControl from "../shared/fields/SegmentedControl.jsx";
+import ComingSoonToggle from "../shared/fields/ComingSoonToggle.jsx";
+import BackgroundAudioField from "../shared/fields/BackgroundAudioField.jsx";
+import LocationSearchField from "../shared/fields/LocationSearchField.jsx";
 import StyledSelect from "../../components/ui/StyledSelect.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
-import { useAppSettingsForm } from "../shared/useAppSettingsForm.js";
+import { useAppSettingsForm } from "../shared/settings/useAppSettingsForm.js";
 
 // Matches the chosen mock's own font list exactly (variant B's decorative
 // set), per his explicit call to pixel-match it rather than use the
@@ -229,7 +229,7 @@ function WeatherSettingsScreen({ open, onOpenChange, onSaved, existingContent })
 export default WeatherSettingsScreen;
 
 // Weather app's settings screen — built almost entirely from shared pieces:
-// apps/shared/useAppSettingsForm.js (form state, dirty-check, save flow —
+// apps/shared/settings/useAppSettingsForm.js (form state, dirty-check, save flow —
 // shared with every app's settings screen, not just this one) plus the UI
 // pieces in apps/shared/ (AppSettingsShell, AppPreviewFrame, SettingsCard,
 // Field, SegmentedControl, ComingSoonToggle, BackgroundAudioField). What's

@@ -22,6 +22,7 @@ import {
   FeedbackSkeleton,
   FeedbackStateBox,
 } from "../components/feedback/FeedbackStates.jsx";
+import RefreshButton from "../components/ui/RefreshButton.jsx";
 import ClampedText from "../components/feedback/ClampedText.jsx";
 import StatusBadge from "../components/feedback/StatusBadge.jsx";
 
@@ -54,9 +55,9 @@ function TableRow({ item, onOpen }) {
         }
       }}
       aria-label={`${s.fullName}, ${STATUS_LABEL[item.status]}, ${formatFeedbackDate(item.createdAt)}`}
-      className={`grid ${COLUMNS} h-[62px] cursor-pointer items-center gap-4 px-4 transition-colors duration-150 ${
-        attn ? "bg-[#0f1828]" : "bg-bg-primary"
-      } hover:bg-[#131a23]`}
+      className={`grid ${COLUMNS} min-h-16 cursor-pointer items-center gap-4 rounded-[10px] border border-transparent px-4 py-2 transition-[border-color,transform] duration-150 hover:translate-x-0.5 hover:border-border-muted ${
+        attn ? "bg-[#0f1828]" : "bg-bg-panel"
+      }`}
     >
       <div className="flex min-w-0 items-center gap-2.5">
         <AttentionDot on={attn} />
@@ -144,6 +145,19 @@ function AdminInbox() {
   }, [filter, page, reload]);
 
   const refetch = () => setReload((n) => n + 1);
+
+  // The Refresh button: fetch the current list again (the button spins until it is back).
+  async function refresh() {
+    try {
+      const res = await getInboxFeedback({ status: filter === "all" ? "" : filter, page });
+      if (!Array.isArray(res?.items)) return;
+      setData(res);
+      setFailed(false);
+      notifyFeedbackChanged();
+    } catch {
+      // keep what is on screen
+    }
+  }
   const counts = data.counts || { all: 0 };
   const openItem = data.items.find((i) => i._id === openId) || null;
 
@@ -193,11 +207,14 @@ function AdminInbox() {
 
   return (
     <div>
-      <div className="mb-4 flex min-h-9 items-baseline gap-3">
-        <h1 className="m-0 text-xl md:text-[22px] font-semibold tracking-tight text-text-primary">Inbox</h1>
-        <span className="text-sm text-text-muted">
-          {counts.all} {counts.all === 1 ? "message" : "messages"}
-        </span>
+      <div className="mb-4 flex min-h-9 items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-baseline gap-3">
+          <h1 className="m-0 text-xl md:text-[22px] font-semibold tracking-tight text-text-primary">Inbox</h1>
+          <span className="text-sm text-text-muted">
+            {counts.all} {counts.all === 1 ? "message" : "messages"}
+          </span>
+        </div>
+        <RefreshButton onRefresh={refresh} />
       </div>
 
       <div role="group" aria-label="Filter by status" className="scrollbar-hidden -mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
@@ -247,19 +264,17 @@ function AdminInbox() {
         />
       ) : (
         <div className="flex flex-col gap-4">
-          <div role="table" aria-label="Messages" className="hidden lg:block overflow-hidden rounded-[10px] border border-border-muted">
-            <div role="row" className={`grid ${COLUMNS} h-[38px] items-center gap-4 bg-bg-panel px-4 text-xs font-medium text-text-muted`}>
+          <div role="table" aria-label="Messages" className="hidden lg:flex flex-col gap-1.5">
+            <div role="row" className={`grid ${COLUMNS} gap-4 px-[17px] pb-2 text-xs text-text-muted`}>
               <span className="pl-[18px]">Sender</span>
               <span>Type</span>
               <span>Message</span>
               <span>Status</span>
               <span>Date</span>
             </div>
-            <div className="flex flex-col gap-px bg-border-muted">
-              {data.items.map((item) => (
-                <TableRow key={item._id} item={item} onOpen={open} />
-              ))}
-            </div>
+            {data.items.map((item) => (
+              <TableRow key={item._id} item={item} onOpen={open} />
+            ))}
           </div>
           <div className="flex flex-col gap-2.5 lg:hidden">
             {data.items.map((item) => (

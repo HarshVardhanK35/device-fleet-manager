@@ -1,7 +1,7 @@
 import { Type } from "lucide-react";
 
-import SettingsCard from "../../../shared/SettingsCard.jsx";
-import Field from "../../../shared/Field.jsx";
+import SettingsCard from "../../../shared/settings/SettingsCard.jsx";
+import Field from "../../../shared/fields/Field.jsx";
 import StyledSelect from "../../../../components/ui/StyledSelect.jsx";
 
 // The "Font" settings card — one family dropdown over a template's own list.

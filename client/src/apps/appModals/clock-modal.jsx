@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
 import { Calendar, Type, Trash2, Plus } from "lucide-react";
 
-import AppSettingsShell from "../shared/AppSettingsShell.jsx";
-import AppPreviewFrame from "../shared/AppPreviewFrame.jsx";
-import SettingsCard from "../shared/SettingsCard.jsx";
-import Field from "../shared/Field.jsx";
-import SegmentedControl from "../shared/SegmentedControl.jsx";
-import ToggleSwitch from "../shared/ToggleSwitch.jsx";
-import ComingSoonToggle from "../shared/ComingSoonToggle.jsx";
-import BackgroundAudioField from "../shared/BackgroundAudioField.jsx";
-import LocationSearchField from "../shared/LocationSearchField.jsx";
+import AppSettingsShell from "../shared/settings/AppSettingsShell.jsx";
+import AppPreviewFrame from "../shared/preview/AppPreviewFrame.jsx";
+import SettingsCard from "../shared/settings/SettingsCard.jsx";
+import Field from "../shared/fields/Field.jsx";
+import SegmentedControl from "../shared/fields/SegmentedControl.jsx";
+import ToggleSwitch from "../shared/fields/ToggleSwitch.jsx";
+import ComingSoonToggle from "../shared/fields/ComingSoonToggle.jsx";
+import BackgroundAudioField from "../shared/fields/BackgroundAudioField.jsx";
+import LocationSearchField from "../shared/fields/LocationSearchField.jsx";
 import StyledSelect from "../../components/ui/StyledSelect.jsx";
 import CancelButton from "../../components/ui/CancelButton.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
-import { useAppSettingsForm } from "../shared/useAppSettingsForm.js";
+import { useAppSettingsForm } from "../shared/settings/useAppSettingsForm.js";
 
 // Matches the approved Clock Widget mock's own font list exactly.
 const FONTS = [
@@ -322,7 +322,7 @@ function ClockSettingsScreen({ open, onOpenChange, onSaved, existingContent }) {
 export default ClockSettingsScreen;
 
 // Clock app's settings screen — built the same way as weather-modal.jsx,
-// both sharing apps/shared/useAppSettingsForm.js for form state, the
+// both sharing apps/shared/settings/useAppSettingsForm.js for form state, the
 // dirty-check, and the save flow.
 //
 // Used by: pages/Content.jsx (wired from AppsPickerModal's onSelectApp and

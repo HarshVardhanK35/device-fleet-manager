@@ -8,6 +8,7 @@ import {
   connectDevice,
   takeOverDevice,
   releaseDevice,
+  refreshDevice,
   deviceExists,
   unpairDevice,
   disconnectDevice,
@@ -33,6 +34,7 @@ router.get("/:token/exists", deviceExists);
 router.delete("/:token/unpair", unpairDevice);
 router.post("/:id/take-over", protect, takeOverDevice);
 router.post("/:id/release", protect, releaseDevice);
+router.post("/:id/refresh", protect, refreshDevice);
 router.put("/:id", protect, updateDevice);
 router.delete("/:id", protect, deleteDevice);
 

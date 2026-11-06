@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-import SettingsCard from "../../../shared/SettingsCard.jsx";
-import Field from "../../../shared/Field.jsx";
-import SegmentedControl from "../../../shared/SegmentedControl.jsx";
-import ToggleSwitch from "../../../shared/ToggleSwitch.jsx";
+import SettingsCard from "../../../shared/settings/SettingsCard.jsx";
+import Field from "../../../shared/fields/Field.jsx";
+import SegmentedControl from "../../../shared/fields/SegmentedControl.jsx";
+import ToggleSwitch from "../../../shared/fields/ToggleSwitch.jsx";
 import FontCard from "../common/FontCard.jsx";
 import AudioCard from "../common/AudioCard.jsx";
 import ProductsSection from "./ProductsSection.jsx";

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
 
 import { useFeedbackForm } from "../../hooks/useFeedbackForm.js";
+import CancelButton from "../ui/CancelButton.jsx";
+import ScrollBox from "../layout/ScrollBox.jsx";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import FeedbackFields from "./FeedbackFields.jsx";
 import { FbButton, FooterRight, FooterSplit } from "./FeedbackButtons.jsx";
@@ -31,20 +32,15 @@ function NewFeedbackBody({ remaining, limit, onClose, onSent, portalContainer })
     <>
       <div className="flex items-center justify-between pl-5 pr-3 pt-3 pb-1">
         <Dialog.Title className="m-0 text-[17px] font-semibold text-text-primary">New feedback</Dialog.Title>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="w-11 h-11 md:w-9 md:h-9 rounded-md grid place-items-center text-text-muted hover:bg-bg-hover hover:text-text-primary transition-colors"
-        >
-          <X size={18} />
-        </button>
+        <CancelButton onClick={onClose} title="Close" />
       </div>
       <Dialog.Description className="sr-only">Send a message to the admin</Dialog.Description>
 
-      <div className="px-5 pt-2 pb-5 overflow-y-auto">
-        <FeedbackFields form={form} id="fb-modal" portalContainer={portalContainer} />
-      </div>
+      <ScrollBox>
+        <div className="px-5 pt-2 pb-5">
+          <FeedbackFields form={form} id="fb-modal" portalContainer={portalContainer} />
+        </div>
+      </ScrollBox>
 
       <FooterRight>{buttons}</FooterRight>
       <FooterSplit>{buttons}</FooterSplit>

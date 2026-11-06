@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { createContent, updateContent } from "../../api/content.js";
+import { createContent, updateContent } from "../../../api/content.js";
 
 // Apps have no duration field in their own settings screen yet (unlike
 // image/video, which have one) — backend requires durationInMillis for

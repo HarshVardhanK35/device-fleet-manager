@@ -1,7 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
-
 import { TYPE_LABEL } from "../../utils/feedbackMeta.js";
+import CancelButton from "../ui/CancelButton.jsx";
 
 // The frame of a message's details, for both sides:
 //   phone    full screen
@@ -18,20 +17,13 @@ function DetailsShell({ open, type, onClose, children }) {
             "cw-details-in fixed z-50 inset-0 flex flex-col overflow-hidden outline-none " +
             "bg-bg-primary border-border-muted shadow-2xl " +
             "md:m-auto md:h-fit md:w-[620px] md:max-h-[calc(100dvh-176px)] md:rounded-xl md:border md:bg-bg-panel " +
-            "lg:inset-auto lg:right-4 lg:top-[72px] lg:bottom-4 lg:m-0 lg:h-auto lg:max-h-none lg:w-[480px] lg:rounded-2xl lg:border lg:bg-bg-panel"
+            "lg:inset-auto lg:right-4 lg:top-[124px] lg:bottom-4 lg:m-0 lg:h-auto lg:max-h-none lg:w-[480px] lg:rounded-2xl lg:border lg:bg-bg-panel"
           }
         >
           <div className="flex items-center gap-2 border-b border-border-muted py-2.5 pl-5 pr-3">
             <Dialog.Title className="m-0 text-[15px] font-semibold text-text-primary">Message</Dialog.Title>
             <span className="mr-auto text-[13px] text-text-muted">· {TYPE_LABEL[type] || ""}</span>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="w-11 h-11 md:w-9 md:h-9 rounded-md grid place-items-center text-text-muted hover:bg-bg-hover hover:text-text-primary transition-colors"
-            >
-              <X size={18} />
-            </button>
+            <CancelButton onClick={onClose} title="Close" />
           </div>
           <Dialog.Description className="sr-only">Message details</Dialog.Description>
           {children}

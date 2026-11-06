@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 
-import { fetchAppBundle as fetchAppBundleBytes } from "../../api/apps.js";
+import { fetchAppBundle as fetchAppBundleBytes } from "../../../api/apps.js";
+import { appBundleKey, isSaved, readText, saveText } from "../../../offline/mediaCache.js";
 
 // Fetches and unzips a built app bundle (e.g. Weather's staging/prod
 // weather.zip from resolveAppUrl.js), returning the extracted index.html
@@ -24,20 +25,38 @@ import { fetchAppBundle as fetchAppBundleBytes } from "../../api/apps.js";
 // bundle surviving a page reload would be wrong, not just wasteful.
 const bundleCache = new Map();
 
-export async function loadAppBundle(zipUrl) {
+//
+// `remember` is for a real screen (playback): the extracted HTML is also
+// saved in the browser's storage after every online load, and used when the
+// download fails (offline), so an app still starts with no internet.
+export async function loadAppBundle(zipUrl, { remember = false } = {}) {
   const cached = bundleCache.get(zipUrl);
-  if (cached) return cached;
-
-  const bytes = await fetchAppBundleBytes(zipUrl);
-  const zip = await JSZip.loadAsync(bytes);
-  const indexFile = zip.file("index.html");
-  if (!indexFile) {
-    throw new Error("App bundle zip has no index.html");
+  if (cached) {
+    // Already in memory; make sure the saved copy exists too (it may have been cleaned up).
+    if (remember && !(await isSaved(appBundleKey(zipUrl)))) {
+      saveText(appBundleKey(zipUrl), cached, "text/html").catch(() => {});
+    }
+    return cached;
   }
 
-  const html = await indexFile.async("string");
-  bundleCache.set(zipUrl, html);
-  return html;
+  try {
+    const bytes = await fetchAppBundleBytes(zipUrl);
+    const zip = await JSZip.loadAsync(bytes);
+    const indexFile = zip.file("index.html");
+    if (!indexFile) {
+      throw new Error("App bundle zip has no index.html");
+    }
+
+    const html = await indexFile.async("string");
+    bundleCache.set(zipUrl, html);
+    if (remember) saveText(appBundleKey(zipUrl), html, "text/html").catch(() => {});
+    return html;
+  } catch (error) {
+    // Offline: the copy saved the last time this app loaded online.
+    const saved = remember ? await readText(appBundleKey(zipUrl)).catch(() => null) : null;
+    if (saved) return saved;
+    throw error;
+  }
 }
 
 // Returns true for anything this function should actually unzip (a built

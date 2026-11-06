@@ -1,3 +1,5 @@
+import { saveReturnTo } from "../utils/sessionExpiry.js";
+
 // Falls back to the local backend when unset, same pattern as the MQTT env
 // vars in components/DevicePlayback.jsx — deployed builds get the real
 // backend URL baked in at build time via Vite.
@@ -42,6 +44,18 @@ export async function cachedGet(url) {
 export function setAccessToken(token) {
   clearApiCache();
   accessToken = token;
+  emitToken();
+}
+
+// The session-ending warning listens here, because a silent refresh inside
+// apiClient changes the token without AuthContext knowing.
+const tokenListeners = new Set();
+function emitToken() {
+  tokenListeners.forEach((listener) => listener(accessToken));
+}
+export function subscribeToken(listener) {
+  tokenListeners.add(listener);
+  return () => tokenListeners.delete(listener);
 }
 
 export function getAccessToken() {
@@ -72,6 +86,7 @@ async function tryRefresh() {
   const data = await res.json();
   if (data.token) {
     accessToken = data.token;
+    emitToken();
     return data.token;
   }
   return null;
@@ -95,8 +110,8 @@ async function request(url, options = {}, _retried = false) {
 
   if (res.status === 401) {
     // Access token expired mid-session — try one silent refresh using the
-    // httpOnly refresh cookie before giving up, so a 15-min access token
-    // doesn't interrupt the user every 15 minutes.
+    // httpOnly refresh cookie before giving up, so a short access token
+    // doesn't interrupt the user every few minutes.
     if (!_retried) {
       const newToken = await tryRefresh();
       if (newToken) {
@@ -104,6 +119,8 @@ async function request(url, options = {}, _retried = false) {
       }
     }
     accessToken = null;
+    emitToken();
+    saveReturnTo(window.location.pathname + window.location.search);
     window.location.href = "/login?expired=1";
     return null;
   }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { LayoutList } from "lucide-react";
 
-import SettingsCard from "../../../shared/SettingsCard.jsx";
+import SettingsCard from "../../../shared/settings/SettingsCard.jsx";
 import BoardsModal from "./BoardsModal.jsx";
 import { MAX_BOARDS } from "./rotatingNoticesConfig.js";
 

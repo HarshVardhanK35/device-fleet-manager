@@ -8,6 +8,7 @@ import {
   STATUS_STYLE,
   formatFeedbackDateTime,
 } from "../../utils/feedbackMeta.js";
+import ScrollBox from "../layout/ScrollBox.jsx";
 import DetailsShell from "./DetailsShell.jsx";
 import StatusBadge from "./StatusBadge.jsx";
 import { FbButton, FooterRight, FooterSplit } from "./FeedbackButtons.jsx";
@@ -78,7 +79,8 @@ function AdminBody({ item, onClose, onSave, onAskDelete }) {
 
   return (
     <>
-      <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
+      <ScrollBox>
+      <div className="flex flex-col gap-5 p-5">
         <div className="flex flex-col gap-[3px]">
           <span className="text-base font-semibold text-text-primary [overflow-wrap:anywhere]">{from.fullName}</span>
           {from.username && <span className="text-[13px] text-text-muted">@{from.username}</span>}
@@ -186,6 +188,7 @@ function AdminBody({ item, onClose, onSave, onAskDelete }) {
 
         {deleteInline}
       </div>
+      </ScrollBox>
 
       <FooterRight>
         {answered && (
