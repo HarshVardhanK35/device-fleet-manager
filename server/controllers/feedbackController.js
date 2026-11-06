@@ -161,7 +161,7 @@ export const getFeedbackIndicator = async (req, res) => {
 // ---------------- admin ----------------
 
 // GET /admin/feedback?status=&page=&limit=
-// The inbox. `status` is one of the five statuses (the "New" filter is
+// The inbox. `status` is one of the statuses (the "New" filter is
 // "sent"); omit it for All. `counts` feeds the filter chips.
 export const adminListFeedback = async (req, res) => {
   try {
@@ -206,9 +206,12 @@ export const adminListFeedback = async (req, res) => {
   }
 };
 
-// PATCH /admin/feedback/:id  { status?, reply? }
-// Any status change or reply edit lights the user's dot. "Not planned" needs a
-// reply (the reason shown to the user).
+// PATCH /admin/feedback/:id  { status, reply? }
+// One decision per message: Noted or Not planned, saved together with one reply
+// (required for Not planned, optional for Noted). Once saved nothing changes.
+// Seen is only set by opening a Sent message.
+const DECISIONS = ["noted", "not-planned"];
+
 export const adminUpdateFeedback = async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -220,23 +223,35 @@ export const adminUpdateFeedback = async (req, res) => {
     }
 
     const { status, reply } = req.body;
-    const nextStatus = status ?? feedback.status;
-    if (!FEEDBACK_STATUSES.includes(nextStatus)) {
+    if (!FEEDBACK_STATUSES.includes(status)) {
       return res.status(400).json({ message: "Unknown status" });
     }
-    const nextReply = reply === undefined ? feedback.reply : String(reply).trim();
-    if (nextStatus === "not-planned" && !nextReply) {
+
+    // Opening a Sent message marks it Seen.
+    if (status === "seen") {
+      if (feedback.status === "sent") {
+        feedback.status = "seen";
+        await feedback.save();
+        await feedback.populate("userId", "firstName lastName username email");
+      }
+      return res.status(200).json(feedback);
+    }
+
+    if (!DECISIONS.includes(status)) {
+      return res.status(400).json({ message: "That status can't be set" });
+    }
+    if (!["sent", "seen"].includes(feedback.status)) {
+      return res.status(400).json({ message: "This message already has an answer" });
+    }
+    const text = typeof reply === "string" ? reply.trim() : "";
+    if (status === "not-planned" && !text) {
       return res
         .status(400)
         .json({ message: "Add a reason when marking a message Not planned" });
     }
 
-    if (nextStatus === feedback.status && nextReply === feedback.reply) {
-      return res.status(200).json(feedback);
-    }
-
-    feedback.status = nextStatus;
-    feedback.reply = nextReply;
+    feedback.status = status;
+    feedback.reply = text;
     feedback.userUnread = true;
     await feedback.save();
     await feedback.populate("userId", "firstName lastName username email");
@@ -247,7 +262,7 @@ export const adminUpdateFeedback = async (req, res) => {
   }
 };
 
-// DELETE /admin/feedback/:id — only once it is Done or Not planned.
+// DELETE /admin/feedback/:id — only once it has an answer (not Sent or Seen).
 export const adminDeleteFeedback = async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -257,10 +272,10 @@ export const adminDeleteFeedback = async (req, res) => {
     if (!feedback) {
       return res.status(404).json({ message: "Feedback not found" });
     }
-    if (!["done", "not-planned"].includes(feedback.status)) {
+    if (["sent", "seen"].includes(feedback.status)) {
       return res
         .status(400)
-        .json({ message: "Only Done or Not planned messages can be deleted" });
+        .json({ message: "Answer this message before deleting it" });
     }
 
     await feedback.deleteOne();

@@ -6,19 +6,19 @@ import { TYPE_LABEL } from "../../utils/feedbackMeta.js";
 // The frame of a message's details, for both sides:
 //   phone    full screen
 //   tablet   centred modal, 620px wide
-//   desktop  right-hand drawer, 480px wide, under the header, with a soft dim
+//   desktop  a floating panel 16px from the right, like the Users page (no dim)
 // The body and footer are passed in. Closing runs `onClose` (Esc, the dim, X).
 function DetailsShell({ open, type, onClose, children }) {
   return (
     <Dialog.Root open={open} onOpenChange={(o) => !o && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="cw-scrim-in fixed inset-0 z-[49] bg-black/65 backdrop-blur-sm lg:top-14 lg:bg-black/45 lg:backdrop-blur-none max-md:hidden" />
+        <Dialog.Overlay className="cw-scrim-in fixed inset-0 z-[49] bg-black/65 backdrop-blur-sm lg:bg-transparent lg:backdrop-blur-none max-md:hidden" />
         <Dialog.Content
           className={
-            "cw-pop-in lg:[animation-name:cw-slide-in] fixed z-50 inset-0 flex flex-col overflow-hidden outline-none " +
+            "cw-details-in fixed z-50 inset-0 flex flex-col overflow-hidden outline-none " +
             "bg-bg-primary border-border-muted shadow-2xl " +
             "md:m-auto md:h-fit md:w-[620px] md:max-h-[calc(100dvh-176px)] md:rounded-xl md:border md:bg-bg-panel " +
-            "lg:inset-auto lg:right-0 lg:top-14 lg:bottom-0 lg:m-0 lg:h-auto lg:max-h-none lg:w-[480px] lg:rounded-none lg:border-0 lg:border-l"
+            "lg:inset-auto lg:right-4 lg:top-[72px] lg:bottom-4 lg:m-0 lg:h-auto lg:max-h-none lg:w-[480px] lg:rounded-2xl lg:border lg:bg-bg-panel"
           }
         >
           <div className="flex items-center gap-2 border-b border-border-muted py-2.5 pl-5 pr-3">
