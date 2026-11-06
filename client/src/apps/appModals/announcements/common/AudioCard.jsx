@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import SettingsCard from "../../../shared/SettingsCard.jsx";
-import BackgroundAudioField from "../../../shared/BackgroundAudioField.jsx";
+import SettingsCard from "../../../shared/settings/SettingsCard.jsx";
+import BackgroundAudioField from "../../../shared/fields/BackgroundAudioField.jsx";
 import { AUDIO_OPTIONS } from "./audioOptions.js";
 
 // The "Background audio" settings card. Owns its own play / mute state;

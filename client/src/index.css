@@ -88,6 +88,43 @@ body {
     transform: scale(1);
   }
 }
+/* /screens code screen footer: the notice sits on its own row above "waiting" and
+   the counter; on a wide screen all three share one row, notice in the middle. */
+.screens-foot {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas: "warn warn" "wait count";
+  justify-content: space-between;
+  align-items: end;
+}
+.screens-foot-warn { grid-area: warn; justify-self: start; }
+.screens-foot-wait { grid-area: wait; }
+.screens-foot-count { grid-area: count; }
+@container (min-aspect-ratio: 8/5) {
+  .screens-foot {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "wait warn count";
+    column-gap: 3cqw;
+    justify-content: stretch;
+  }
+  .screens-foot-warn { justify-self: center; max-width: 34em; }
+}
+
+/* The "how to go back" note on a full-screen /screens player: fades in, stays a few seconds, fades out. */
+@keyframes screens-hint {
+  0% { opacity: 0; }
+  8% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* The OFFLINE strip on a screen that lost its connection: a soft pulse. */
+.cw-offline-pulse { animation: cw-offline-pulse 1.8s ease-in-out infinite; }
+@keyframes cw-offline-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
 @keyframes screens-halo {
   0% {
     transform: scale(1);

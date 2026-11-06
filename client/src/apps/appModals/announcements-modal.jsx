@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Bell, List, PartyPopper, Lock, ChevronDown, ChevronUp } from "lucide-react";
 
-import AppSettingsShell from "../shared/AppSettingsShell.jsx";
-import AppPreviewFrame from "../shared/AppPreviewFrame.jsx";
+import AppSettingsShell from "../shared/settings/AppSettingsShell.jsx";
+import AppPreviewFrame from "../shared/preview/AppPreviewFrame.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
-import { useAppSettingsForm } from "../shared/useAppSettingsForm.js";
+import { useAppSettingsForm } from "../shared/settings/useAppSettingsForm.js";
 import RotatingNoticesFields from "./announcements/rotating-notices/RotatingNoticesSettings.jsx";
 import {
   ROTATING_NOTICES_INITIAL_FORM,

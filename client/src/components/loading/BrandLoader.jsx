@@ -11,7 +11,7 @@ const FLAT = { white: "#ffffff", dark: "#0d1117" };
 // (blue to green), "white" or "dark". `size` is a number (px) or any CSS length. Pass `label={null}` when it sits inside a button that already
 // says what is happening, so screen readers don't hear it twice.
 // Used by: LoadingOverlay.jsx, pages/Screens.jsx, pages/Player.jsx and the app
-// preview / playback frames (apps/shared/AppPreviewFrame.jsx, AppRenderer.jsx).
+// preview / playback frames (apps/shared/preview/AppPreviewFrame.jsx, AppRenderer.jsx).
 function BrandLoader({ size = 24, tone = "gradient", label = "Loading", className = "" }) {
   const uid = useId().replace(/:/g, "");
   const gradientId = `bl-g-${uid}`;

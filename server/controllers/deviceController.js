@@ -154,14 +154,75 @@ export const releaseDevice = async (req, res) => {
   }
 };
 
+const REFRESH_COOLDOWN_MS = 60 * 1000; // one "Refresh screen" per screen per minute
+
+// POST /devices/:id/refresh — the owner asks a screen that is online to start
+// its playlist again from the first item (it does not reload the page). Only
+// while the screen is online; at most one per minute per screen, so a screen
+// can't be restarted over and over (every restart also stops downloads in
+// progress). Sends the current manifest first, then the "refresh" signal.
+export const refreshDevice = async (req, res) => {
+  try {
+    const device = await Device.findById(req.params.id);
+    if (!device) {
+      return res.status(404).json({ message: "Screen not found" });
+    }
+
+    if (device.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not your screen" });
+    }
+
+    if (device.status !== "online") {
+      return res.status(409).json({ message: "This screen is offline" });
+    }
+
+    const now = Date.now();
+    const waitMs = REFRESH_COOLDOWN_MS - (now - (device.lastRefreshAt?.getTime() || 0));
+    if (waitMs > 0) {
+      const retryInSeconds = Math.ceil(waitMs / 1000);
+      return res
+        .status(429)
+        .json({ message: `Try again in ${retryInSeconds} s`, retryInSeconds });
+    }
+
+    // Claim the minute in one update, so two quick clicks can't both go through.
+    const claimed = await Device.updateOne(
+      {
+        _id: device._id,
+        $or: [
+          { lastRefreshAt: { $exists: false } },
+          { lastRefreshAt: { $lte: new Date(now - REFRESH_COOLDOWN_MS) } },
+        ],
+      },
+      { $set: { lastRefreshAt: new Date(now) } },
+    );
+    if (claimed.modifiedCount === 0) {
+      return res.status(429).json({ message: "Try again in a moment", retryInSeconds: 5 });
+    }
+
+    const manifest = await buildManifestForDevice(device._id);
+    publishManifestToDevice(device._id, manifest);
+    publishControlMessage(device._id, { action: "refresh" });
+    res.status(200).json({
+      message: "Refresh signal sent",
+      retryInSeconds: REFRESH_COOLDOWN_MS / 1000,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const deviceExists = async (req, res) => {
   try {
-    const exists = await Device.exists({ accessToken: req.params.token });
-    if (!exists) {
+    const device = await Device.findOne({ accessToken: req.params.token })
+      .select("name")
+      .lean();
+    if (!device) {
       return res.status(404).json({ exists: false });
     }
-    
-    res.status(200).json({ exists: true });
+
+    // The name is sent too, so a screen shows the current name after a rename.
+    res.status(200).json({ exists: true, name: device.name });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

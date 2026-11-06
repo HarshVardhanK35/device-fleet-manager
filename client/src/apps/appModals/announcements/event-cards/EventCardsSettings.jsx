@@ -1,5 +1,5 @@
-import SettingsCard from "../../../shared/SettingsCard.jsx";
-import ToggleSwitch from "../../../shared/ToggleSwitch.jsx";
+import SettingsCard from "../../../shared/settings/SettingsCard.jsx";
+import ToggleSwitch from "../../../shared/fields/ToggleSwitch.jsx";
 import CardsSection from "./CardsSection.jsx";
 import EffectsSection from "./EffectsSection.jsx";
 

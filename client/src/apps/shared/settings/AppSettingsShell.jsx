@@ -3,14 +3,14 @@ import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Pencil, ChevronDown, Check, X, Maximize2, Minimize2, TriangleAlert } from "lucide-react";
 
-import CancelButton from "../../components/ui/CancelButton.jsx";
-import ScrollBox from "../../components/layout/ScrollBox.jsx";
-import ActionMenu from "../../components/ui/ActionMenu.jsx";
-import RemoveConfirmModal from "../../components/modals/RemoveConfirmModal.jsx";
-import Logo from "../../components/layout/Logo.jsx";
-import { useMediaQuery } from "../../hooks/useCompactLayout.js";
-import { MAX_APP_NAME } from "../../utils/limits.js";
-import { PREVIEW_SIZES } from "./previewSizes.js";
+import CancelButton from "../../../components/ui/CancelButton.jsx";
+import ScrollBox from "../../../components/layout/ScrollBox.jsx";
+import ActionMenu from "../../../components/ui/ActionMenu.jsx";
+import RemoveConfirmModal from "../../../components/modals/RemoveConfirmModal.jsx";
+import Logo from "../../../components/layout/Logo.jsx";
+import { useMediaQuery } from "../../../hooks/useCompactLayout.js";
+import { MAX_APP_NAME } from "../../../utils/limits.js";
+import { PREVIEW_SIZES } from "../preview/previewSizes.js";
 
 // Rename an app. Small enough that it doesn't need its own file — it's only
 // ever used here. The cap (MAX_APP_NAME, 55) keeps a name to two lines in the

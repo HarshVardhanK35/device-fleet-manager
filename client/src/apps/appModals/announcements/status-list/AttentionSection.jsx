@@ -1,5 +1,5 @@
-import SettingsCard from "../../../shared/SettingsCard.jsx";
-import ToggleSwitch from "../../../shared/ToggleSwitch.jsx";
+import SettingsCard from "../../../shared/settings/SettingsCard.jsx";
+import ToggleSwitch from "../../../shared/fields/ToggleSwitch.jsx";
 import Hint from "../common/Hint.jsx";
 import { BANNER_CAP } from "./statusListConfig.js";
 

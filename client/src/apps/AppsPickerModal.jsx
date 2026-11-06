@@ -6,7 +6,7 @@ import CancelButton from "../components/ui/CancelButton.jsx";
 import AppThumb from "../components/ui/AppThumb.jsx";
 import ScrollBox from "../components/layout/ScrollBox.jsx";
 import StyledSelect from "../components/ui/StyledSelect.jsx";
-import ToggleSwitch from "./shared/ToggleSwitch.jsx";
+import ToggleSwitch from "./shared/fields/ToggleSwitch.jsx";
 import { buildAppSections, getCategoryList, getAppCounts } from "./appCategories.js";
 
 // Reuses StyledSelect — the same Filter/Sort dropdown component the Content

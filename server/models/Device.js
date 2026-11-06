@@ -24,6 +24,10 @@ const deviceSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // When the owner last sent this screen a "Refresh screen" (one per minute).
+    lastRefreshAt: {
+      type: Date,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

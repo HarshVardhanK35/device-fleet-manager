@@ -1,59 +1,16 @@
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
-import mqtt from "mqtt";
 
-import { API_BASE } from "../../api/apiClient.js";
-import AppRenderer from "../../apps/shared/AppRenderer.jsx";
-import { getOptimizedThumbnail } from "../../utils/cloudinaryTransform.js";
-
-const HEARTBEAT_MS = 10000; // matches services/deviceSimulator.js's interval
+import AppRenderer from "../../apps/shared/playback/AppRenderer.jsx";
+import { useScreenConnection } from "../../hooks/useScreenConnection.js";
+import { getSaved, stopDownloads, subscribeSaved, syncDownloads } from "../../offline/downloadManager.js";
+import { downloadItems, screenImageUrl } from "../../offline/playlistItems.js";
+import { registerOffline } from "../../offline/registerOffline.js";
+import { savePlaying } from "../../offline/savedManifest.js";
+import OfflineBanner from "./OfflineBanner.jsx";
+import ScreenImage from "./ScreenImage.jsx";
+import { findActiveAssignment, findLockedAssignment, nextPlayableIndex, playableFor } from "./playbackRules.js";
 
 const FALLBACK_ITEM_MS = 8000; // used only if a content item has no/invalid durationInMillis
-
-// A screen-sized copy of an image (not the multi-MB original).
-const SCREEN_IMAGE_WIDTH = 1920;
-const screenImageUrl = (url) => getOptimizedThumbnail(url, SCREEN_IMAGE_WIDTH);
-
-// Shows an image only once it has fully loaded and decoded, so it appears
-// whole instead of painting from top to bottom; the previous image stays up
-// until then. A short fade makes the swap soft.
-function ScreenImage({ url, alt }) {
-  const [shown, setShown] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const img = new Image();
-    img.src = url;
-    const ready = img.decode ? img.decode() : Promise.resolve();
-    ready
-      .catch(() => {})
-      .then(() => {
-        if (!cancelled) setShown(url);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [url]);
-
-  if (!shown) return null;
-  return (
-    <img
-      key={shown}
-      src={shown}
-      alt={alt}
-      style={{ maxWidth: "100%", maxHeight: "100vh", animation: "cw-fade 400ms ease-out both" }}
-    />
-  );
-}
-
-function findActiveAssignment(manifest, nowMs) {
-  return (
-    (manifest?.playlists || []).find((p) => {
-      const begin = new Date(p.beginDT).getTime();
-      const end = new Date(p.endDT).getTime();
-      return nowMs >= begin && nowMs <= end;
-    }) || null
-  );
-}
 
 function DevicePlayback(
   {
@@ -66,11 +23,17 @@ function DevicePlayback(
   },
   ref,
 ) {
-  const [manifest, setManifest] = useState(null);
-  const [connection, setConnection] = useState("connecting"); // connecting|connected|rejected|taken-over
   const [now, setNow] = useState(() => Date.now());
   const [contentIndex, setContentIndex] = useState(0);
+  const [savedKeys, setSavedKeys] = useState(getSaved);
+  const activeIdRef = useRef(null);
   const videoRef = useRef(null);
+  // The live link to the server: manifest, connection state, whether it can
+  // be reached (`online`), and which playlist may keep playing if it can't.
+  const { manifest, connection, online, offlineLock, bannerOn, refreshTick } = useScreenConnection(screenToken, {
+    activeIdRef,
+    setNow,
+  });
   // Consumed once, right after the initial content index is derived from it
   // below — a later prop change (e.g. parent re-render) must not re-seek an
   // already-playing video. State (not a ref) because it's set during
@@ -84,152 +47,37 @@ function DevicePlayback(
   const [itemStartedAt, setItemStartedAt] = useState(() => Date.now());
 
   useEffect(() => {
-    let cancelled = false;
-    let mqttClient = null;
-    let heartbeatTimer = null;
-    // The real Mongo _id, resolved once from /connect's response. MQTT
-    // topics are keyed by this (internal, never exposed to this client
-    // beyond this one response) — screenToken (the public, unguessable,
-    // revocable identifier) is only ever used for the HTTP connect/
-    // disconnect calls themselves. See Player.jsx's trailing comment for
-    // the full Phase 3 reasoning.
-    let resolvedId = null;
+    registerOffline();
+  }, []);
 
-    function stopHeartbeat() {
-      if (heartbeatTimer) {
-        clearInterval(heartbeatTimer);
-        heartbeatTimer = null;
-      }
+  useEffect(() => subscribeSaved(setSavedKeys), []);
+
+  const activeAssignment = online
+    ? findActiveAssignment(manifest, now)
+    : findLockedAssignment(manifest, offlineLock, now);
+
+  useEffect(() => {
+    activeIdRef.current = activeAssignment?.assignmentId ?? null;
+  });
+
+  // Save the playing playlist's files while online (and delete what nothing
+  // uses any more); stop while offline, so a half-downloaded file is dropped.
+  useEffect(() => {
+    if (!manifest) return;
+    if (!online) {
+      stopDownloads();
+      return;
     }
+    syncDownloads(downloadItems(activeAssignment?.content));
+  }, [manifest, activeAssignment, online, refreshTick]);
 
-    function startHeartbeat() {
-      stopHeartbeat();
-      // Heartbeat keeps the device "online" (see server/services/
-      // heartbeatListener.js + offlineChecker.js).
-      heartbeatTimer = setInterval(() => {
-        mqttClient.publish(
-          `devices/${resolvedId}/heartbeat`,
-          JSON.stringify({ status: "online", timestamp: new Date() }),
-        );
-      }, HEARTBEAT_MS);
-    }
+  useEffect(() => () => stopDownloads(), []);
 
-    // Claims the one-connection slot (POST /devices/:token/connect).
-    // Returns the real device _id on success (or null on rejection/
-    // failure) — used for the initial connect and again after a
-    // "reconnect" control message (release) brings a taken-over screen
-    // back — see the message handler below.
-    async function claimConnection() {
-      try {
-        const res = await fetch(`${API_BASE}/devices/${screenToken}/connect`, {
-          method: "POST",
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data.deviceId ?? null;
-      } catch {
-        // Backend unreachable — treat the same as rejected rather than
-        // silently connecting with no server-side registration.
-        return null;
-      }
-    }
-
-    (async () => {
-      // One active connection per device: claim the slot before doing
-      // anything else. A second tab/browser hitting the same screenToken
-      // while one is already connected gets rejected here and never
-      // subscribes or starts a heartbeat — see future-implementations.md's
-      // Preview-tab section for the full reasoning.
-      const realId = await claimConnection();
-      if (cancelled) return;
-
-      if (!realId) {
-        setConnection("rejected");
-        return;
-      }
-
-      resolvedId = realId;
-      setConnection("connected");
-
-      // ws: browser's websocket connection to the broker. Falls back to the
-      // local dev broker (no auth) when these aren't set, same pattern as
-      // the backend's mqttService.js — deployed builds get the real wss://
-      // URL + credentials baked in at build time via Vite env vars, since a
-      // static frontend build has no other way to vary this per environment.
-      const mqttUrl = import.meta.env.VITE_MQTT_WS_URL || "ws://localhost:9001";
-      console.log("Connecting to MQTT broker:", mqttUrl);
-
-      mqttClient = mqtt.connect(
-        mqttUrl,
-        {
-          username: import.meta.env.VITE_MQTT_USERNAME,
-          password: import.meta.env.VITE_MQTT_PASSWORD,
-        },
-      );
-
-      // subscription - to topic devices/<resolvedId>/manifest, plus a
-      // control topic the backend's take-over/release actions publish to
-      // (POST /devices/:id/take-over | /release -> publishControlMessage).
-      mqttClient.on("connect", () => {
-        console.log("MQTT connected:", mqttUrl);
-        mqttClient.subscribe(`devices/${resolvedId}/manifest`);
-        mqttClient.subscribe(`devices/${resolvedId}/control`);
-      });
-
-      // on subscribing - browser receives a message
-      mqttClient.on("message", (topic, message) => {
-        // message - buffer || message.toString() - converted to JSON || JSON.parse - converts JSON to JS object
-        const data = JSON.parse(message.toString());
-
-        if (topic.endsWith("/control")) {
-          if (data.action === "disconnect") {
-            // Taken over: go idle rather than fully ending the MQTT
-            // connection — it stays subscribed to this same control topic
-            // so a later "reconnect" (release) can actually reach it.
-            // Only the heartbeat stops, so the device correctly ages to
-            // "offline" server-side while taken over.
-            stopHeartbeat();
-            setConnection("taken-over");
-          } else if (data.action === "reconnect") {
-            claimConnection().then((reaccepted) => {
-              if (cancelled) return;
-              if (!reaccepted) {
-                setConnection("rejected");
-                return;
-              }
-              resolvedId = reaccepted;
-              setConnection("connected");
-              startHeartbeat();
-            });
-          }
-          return;
-        }
-
-        if (cancelled) return;
-        // Refresh "now" the moment a manifest actually arrives, not just at
-        // the next scheduled boundary check — otherwise a reset triggered
-        // by this manifest (see the prevAssignment block below) backdates
-        // itemStartedAt from a stale "now" (up to 60s old), making the
-        // rotation effect compute ~0ms remaining on item 0 and instantly
-        // skip past it, which looked like playback never restarted at all.
-        setNow(Date.now());
-        setManifest(data);
-      });
-
-      startHeartbeat();
-    })();
-
-    // whenever screenToken changes and component unmounts - clean up fn ends the connection
-    return () => {
-      cancelled = true;
-      stopHeartbeat();
-      if (mqttClient) mqttClient.end();
-    };
-
-    // whenever there is a change in "screenToken" - useEffect runs
-  }, [screenToken]);
-
-  const activeAssignment = findActiveAssignment(manifest, now);
+  // Remember which playlist is playing, so a restart with no internet knows
+  // which one it may keep playing.
+  useEffect(() => {
+    if (online && manifest) savePlaying(screenToken, activeAssignment?.assignmentId ?? null);
+  }, [online, manifest, activeAssignment, screenToken]);
 
   useImperativeHandle(ref, () => ({
     getPosition() {
@@ -287,37 +135,42 @@ function DevicePlayback(
     setItemStartedAt(canResume ? now - (initialPosition.elapsedMs || 0) : now);
   }
 
+  // "Refresh screen" from the app: start the playlist again from the first
+  // item (same adjust-during-render pattern as above).
+  const [seenRefresh, setSeenRefresh] = useState(refreshTick);
+  if (seenRefresh !== refreshTick) {
+    setSeenRefresh(refreshTick);
+    setPendingVideoSeek(null);
+    setContentIndex(0);
+    setItemStartedAt(now);
+  }
+
   // Rotates through the active playlist's content, each item for its own
   // durationInMillis, looping back to the start. Schedules only the time
   // *remaining* in the current item (duration minus however long it's
   // already been showing since itemStartedAt) rather than always the full
   // duration — this is what makes resuming mid-item actually pick up where
   // it left off instead of replaying the whole item from scratch.
+  // Offline, an item whose file was not saved is skipped at once.
   useEffect(() => {
     const items = activeAssignment?.content;
     const current = items?.[contentIndex];
     if (!current) return;
+    if (!items.some((item) => playableFor(online, savedKeys, item))) return;
+    const skip = !playableFor(online, savedKeys, current);
     const duration = current.durationInMillis > 0 ? current.durationInMillis : FALLBACK_ITEM_MS;
     const remaining = Math.max(duration - (Date.now() - itemStartedAt), 0);
-    const t = setTimeout(() => {
-      setContentIndex((i) => (i + 1) % items.length);
-      setItemStartedAt(Date.now());
-    }, remaining);
+    const t = setTimeout(
+      () => {
+        setContentIndex((i) => nextPlayableIndex(items, i, online, savedKeys));
+        setItemStartedAt(Date.now());
+      },
+      skip ? 0 : remaining,
+    );
     return () => clearTimeout(t);
-  }, [activeAssignment, contentIndex, itemStartedAt]);
+  }, [activeAssignment, contentIndex, itemStartedAt, online, savedKeys]);
 
-  // Download every image of the playing playlist ahead of time, so each is
-  // already in the browser cache when its turn comes.
-  const preloadedImages = useRef([]);
-  useEffect(() => {
-    preloadedImages.current = (activeAssignment?.content || [])
-      .filter((c) => c.type === "image" && c.mediaUrl)
-      .map((c) => {
-        const img = new Image();
-        img.src = screenImageUrl(c.mediaUrl);
-        return img;
-      });
-  }, [activeAssignment]);
+  const banner = bannerOn ? <OfflineBanner /> : null;
 
   if (connection === "rejected") {
     return rejectedView ?? <h1>This screen is already connected elsewhere.</h1>;
@@ -327,13 +180,36 @@ function DevicePlayback(
     return takenOverView ?? <h1>This screen was taken over from the app.</h1>;
   }
 
-  if (!manifest) return waitingView ?? <p>Waiting for manifest...</p>;
+  if (!manifest) {
+    return (
+      <>
+        {waitingView ?? <p>Waiting for manifest...</p>}
+        {banner}
+      </>
+    );
+  }
 
   const currentContent = activeAssignment?.content?.[contentIndex];
+  const hasPlayable = !!activeAssignment?.content?.some((item) => playableFor(online, savedKeys, item));
 
-  if (!currentContent) {
-    return nothingScheduledView ?? <h1>Nothing scheduled at this time</h1>;
+  if (!currentContent || !hasPlayable) {
+    return (
+      <>
+        <div style={{ textAlign: "center" }}>
+          {nothingScheduledView ?? <h1>Nothing scheduled at this time</h1>}
+          {!online && (
+            <p style={{ margin: "1em 0 0", opacity: 0.8 }}>
+              This screen can&apos;t reach CastWise. Check its internet connection.
+            </p>
+          )}
+        </div>
+        {banner}
+      </>
+    );
   }
+
+  // The next tick skips an item that is not saved (offline); show nothing meanwhile.
+  if (!playableFor(online, savedKeys, currentContent)) return banner;
 
   return (
     <>
@@ -342,7 +218,7 @@ function DevicePlayback(
       )}
       {currentContent.type === "video" && (
         <video
-          key={currentContent._id}
+          key={`${currentContent._id}-${refreshTick}`}
           ref={videoRef}
           src={currentContent.mediaUrl}
           autoPlay
@@ -354,45 +230,51 @@ function DevicePlayback(
               setPendingVideoSeek(null);
             }
           }}
-          style={{ maxWidth: "100%", maxHeight: "100vh" }}
+          style={{ width: "100vw", height: "100vh", objectFit: "contain" }}
         />
       )}
       {currentContent.type === "app" && (
         <AppRenderer key={itemStartedAt} configBlob={currentContent.configBlob} />
       )}
+      {banner}
     </>
   );
 }
 
 export default forwardRef(DevicePlayback);
 
-// The real device-facing playback logic: claims the one-connection slot
-// (POST /devices/:token/connect, keyed by Device.accessToken — a long
-// random public token, not the real Mongo _id, see Player.jsx's trailing
-// comment for the Phase 3 reasoning), subscribes to the real device's
-// devices/<_id>/manifest over MQTT-over-WebSocket (the real _id is
-// resolved once from /connect's response and used only for MQTT topics —
-// screenToken is never used there), publishes a heartbeat every 10s while
-// connected, and renders whatever's actually scheduled right now.
-// Schedule-aware: picks the assignment whose beginDT/endDT window covers
-// the current time (not just the first one in the manifest), re-checked
-// right at the next relevant boundary so it transitions between back-to-
-// back assignments on its own — and rotates through that assignment's
-// playlist content by each item's durationInMillis, looping. Shows
-// `nothingScheduledView` when no assignment currently covers "now".
-// Also subscribes to devices/<deviceId>/control, for the take-over/release
-// actions (PlayerSlots.jsx -> POST /devices/:id/take-over|release ->
-// publishControlMessage). "disconnect" goes idle (heartbeat stops, MQTT
-// connection stays up) rather than ending the connection outright — it
-// has to stay subscribed to this same topic to ever hear a later
-// "reconnect", which re-claims the connection slot and resumes normally.
-// Ending the connection on take-over would make release impossible to
-// deliver to an already-disconnected client.
+// The device-facing playback component: rotates through whatever is
+// scheduled for this screen right now and renders it. Schedule-aware: picks
+// the assignment whose beginDT/endDT window covers the current time (not
+// just the first one in the manifest), re-checked right at the next relevant
+// boundary so it transitions between back-to-back assignments on its own —
+// and rotates through that assignment's playlist content by each item's
+// durationInMillis, looping. Shows `nothingScheduledView` when no assignment
+// currently covers "now".
+// The live link to the server (claiming the one-connection slot, the MQTT
+// manifest and take-over / release messages, the heartbeat, offline
+// detection) is hooks/useScreenConnection.js; the "what plays now" rules are
+// playbackRules.js; the saved files are src/offline/*.
 // `rejectedView`/`waitingView`/`nothingScheduledView`/`takenOverView` let a
 // caller override the default messages to match its own page's visual
 // language — all optional.
 // Used by: pages/Player.jsx (route "/player/:token"), pages/Screens.jsx
 // (the "playing" phase, after pairing + the tap-to-start gesture).
+//
+// Offline (src/offline/*, public/player-sw.js):
+//   - While online it saves the playing playlist's files (smallest first) and
+//     the last manifest; items play from the saved copy when there is one, from
+//     the network (saving a copy in the background) when there isn't.
+//   - When the connection to the server drops it keeps playing the playlist it
+//     was on, only until that playlist's end time (never the next one), skips
+//     any item whose file is not saved, shows an OFFLINE strip after 15 s, and
+//     then "Nothing scheduled" plus a check-your-connection line. A screen
+//     that restarts with no internet does the same from the saved manifest.
+//   - "Refresh screen" (sent from the Player page while the screen is online)
+//     starts the playlist again from the first item and re-checks the saved
+//     files; it does not reload the page, so fullscreen stays.
+//   - When it reconnects it takes the live manifest; an updated playlist
+//     restarts from the beginning, an unchanged one keeps playing.
 //
 // Resume support: forwards a ref exposing getPosition() -> { assignmentId,
 // contentIndex, elapsedMs, videoTime }, read by a caller right before

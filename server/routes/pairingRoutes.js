@@ -13,7 +13,14 @@ const generateCodeLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many requests. Please try again later." },
+  // The reply carries the moment the limit resets, so a screen can show the
+  // exact time and wait for it instead of retrying.
+  handler: (req, res) => {
+    res.status(429).json({
+      message: "Too many requests. Please try again later.",
+      retryAt: req.rateLimit?.resetTime,
+    });
+  },
 });
 
 const router = express.Router();

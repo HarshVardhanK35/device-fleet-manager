@@ -5,9 +5,11 @@ import ConnectionBanner from "./components/error/ConnectionBanner.jsx";
 import RouteErrorBoundary from "./components/error/ErrorBoundary.jsx";
 import Layout from "./components/layout/Layout.jsx";
 import LoadingOverlay from "./components/loading/LoadingOverlay.jsx";
+import SessionExpiryWarning from "./components/auth/SessionExpiryWarning.jsx";
 import ProtectedRoute from "./components/auth/ProtectedRoute.jsx";
 import RouteFallback from "./components/loading/RouteFallback.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { ToastProvider } from "./context/ToastProvider.jsx";
 import { useAuth } from "./context/useAuth.js";
 import { pageLoaders } from "./pageLoaders.js";
 import { lazyRetry } from "./utils/lazyRetry.js";
@@ -85,8 +87,10 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ToastProvider>
         <TitleSync />
         <ConnectionBanner />
+        <SessionExpiryWarning />
         <RouteErrorBoundary fullScreen>
         <Suspense fallback={<RouteFallback fullScreen />}>
           <Routes>
@@ -110,6 +114,7 @@ function App() {
           </Routes>
         </Suspense>
         </RouteErrorBoundary>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { CircleCheck, List, OctagonX, TriangleAlert } from "lucide-react";
 
-import SettingsCard from "../../../shared/SettingsCard.jsx";
-import SegmentedControl from "../../../shared/SegmentedControl.jsx";
+import SettingsCard from "../../../shared/settings/SettingsCard.jsx";
+import SegmentedControl from "../../../shared/fields/SegmentedControl.jsx";
 import ProductsModal from "./ProductsModal.jsx";
 import { MAX_ITEMS, tierOf } from "./statusListConfig.js";
 

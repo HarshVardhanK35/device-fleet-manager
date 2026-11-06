@@ -1,6 +1,7 @@
 import { Trash2 } from "lucide-react";
 
 import { STATUS_EXPLAIN } from "../../utils/feedbackMeta.js";
+import ScrollBox from "../layout/ScrollBox.jsx";
 import DetailsShell from "./DetailsShell.jsx";
 import StatusBadge from "./StatusBadge.jsx";
 import { FbButton, FooterRight, FooterSplit } from "./FeedbackButtons.jsx";
@@ -15,7 +16,8 @@ function UserFeedbackDetails({ item, onClose, onAskDelete }) {
 
   return (
     <DetailsShell open type={item.type} onClose={onClose}>
-      <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
+      <ScrollBox>
+      <div className="flex flex-col gap-5 p-5">
         <div className="flex flex-col items-start gap-2 rounded-[10px] border border-border-muted bg-bg-primary px-4 py-3.5">
           <span className={CAPTION}>Status</span>
           <StatusBadge status={item.status} large />
@@ -43,6 +45,7 @@ function UserFeedbackDetails({ item, onClose, onAskDelete }) {
           </FbButton>
         )}
       </div>
+      </ScrollBox>
 
       <FooterRight>
         {canDelete && (

@@ -29,7 +29,7 @@ import Button from "../ui/Button.jsx";
 import ScrollBox from "../layout/ScrollBox.jsx";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import DateTimeField from "../ui/DateTimeField.jsx";
-import ToggleSwitch from "../../apps/shared/ToggleSwitch.jsx";
+import ToggleSwitch from "../../apps/shared/fields/ToggleSwitch.jsx";
 
 function pad(n) {
   return String(n).padStart(2, "0");

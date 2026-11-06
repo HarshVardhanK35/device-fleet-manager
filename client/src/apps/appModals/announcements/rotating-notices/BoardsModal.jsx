@@ -8,8 +8,8 @@ import ColumnModal, {
 } from "../../../shared/columnModal/ColumnModal.jsx";
 import { useManagedList } from "../../../shared/columnModal/useManagedList.js";
 import { INPUT_CLASS, TEXTAREA_CLASS } from "../../../shared/columnModal/columnModalStyles.js";
-import SliderField from "../../../shared/SliderField.jsx";
-import { useDragReorder } from "../../../shared/useDragReorder.js";
+import SliderField from "../../../shared/fields/SliderField.jsx";
+import { useDragReorder } from "../../../shared/columnModal/useDragReorder.js";
 import { MAX_BOARDS, BOARD_NAME_CAP, MESSAGE_CAPS, newBoard } from "./rotatingNoticesConfig.js";
 
 const EMPTY_FORM = { name: "", urgent: "", warning: "", info: "", duration: 10 };

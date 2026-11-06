@@ -211,7 +211,7 @@ function AdminUsers() {
       {sidePanel && openUser && (
         <>
           <div aria-hidden="true" onClick={() => setOpenId(null)} className="fixed inset-0 z-20" />
-          <aside className="cw-panel-in fixed top-[72px] right-4 bottom-4 z-30 w-[400px] flex flex-col overflow-hidden bg-bg-panel border border-border-muted rounded-2xl shadow-2xl">
+          <aside className="cw-panel-in fixed top-[124px] right-4 bottom-4 z-30 w-[400px] flex flex-col overflow-hidden bg-bg-panel border border-border-muted rounded-2xl shadow-2xl">
             {details}
           </aside>
         </>

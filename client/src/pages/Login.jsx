@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Mail, CircleAlert, Clock } from "lucide-react";
 
 import { login as loginApi, resendVerification } from "../api/auth.js";
@@ -12,6 +12,7 @@ import AuthHeading from "../components/auth/AuthHeading.jsx";
 import Button from "../components/ui/Button.jsx";
 import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
 import { useAsyncAction } from "../hooks/useAsyncAction.js";
+import { takeReturnTo } from "../utils/sessionExpiry.js";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -21,6 +22,7 @@ function Login() {
   // apiClient.js sends an ended session here with ?expired=1
   const [expired] = useState(() => new URLSearchParams(window.location.search).get("expired") === "1");
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, logout } = useAuth();
 
   // Explicitly navigating to /login while already logged in logs you out
@@ -35,7 +37,7 @@ function Login() {
 
     if (response.token) {
       login(response.token, response.user);
-      navigate("/");
+      navigate(takeReturnTo(location.state?.from));
     } else {
       setError(response.message || "Login failed");
     }
@@ -69,7 +71,7 @@ function Login() {
 
         {expired && !error && (
           <AuthErrorBanner icon={Clock} tone="amber">
-            Your session has ended. Please sign in again.
+            You were signed out because your session ended. Sign in to continue.
           </AuthErrorBanner>
         )}
 
