@@ -1,6 +1,7 @@
 import mqtt from "mqtt";
 
 const client = mqtt.connect("mqtt://localhost:1883");
+const prefix = process.env.MQTT_TOPIC_PREFIX || "";
 const deviceId = process.argv[2];
 
 if (!deviceId) {
@@ -12,11 +13,11 @@ if (!deviceId) {
 
 client.on("connect", () => {
   console.log("simulator connected");
-  client.subscribe(`devices/${deviceId}/manifest`);
+  client.subscribe(`${prefix}devices/${deviceId}/manifest`);
 
   setInterval(() => {
     client.publish(
-      `devices/${deviceId}/heartbeat`,
+      `${prefix}devices/${deviceId}/heartbeat`,
       JSON.stringify({ status: "online", timestamp: new Date() }),
     );
   }, 10000);
