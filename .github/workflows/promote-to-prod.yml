@@ -3,7 +3,7 @@ name: Promote to Production
 # Fires on a version tag (e.g. v1.0.0). Copies the exact image that
 # build-and-push.yml already built and staging already tested — tagged
 # "staging" — to a "prod" tag, with no rebuild. Then tells Render to
-# redeploy dfm-api/dfm-mqtt using that image. The frontend (dfm) is a
+# redeploy dfm-api using that image. The frontend (dfm) is a
 # Render Static Site, which can't deploy from a pre-built image, so it
 # still rebuilds from source via its own deploy hook — that's a Render
 # product limitation, not something this workflow can avoid.
@@ -32,17 +32,8 @@ jobs:
           --tag ghcr.io/harshvardhank35/dfm-api:prod
           ghcr.io/harshvardhank35/dfm-api:staging
 
-      - name: Promote MQTT image (staging -> prod, no rebuild)
-        run: >
-          docker buildx imagetools create
-          --tag ghcr.io/harshvardhank35/dfm-mqtt:prod
-          ghcr.io/harshvardhank35/dfm-mqtt:staging
-
       - name: Redeploy backend on Render
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
-
-      - name: Redeploy MQTT broker on Render
-        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_MQTT }}"
 
       - name: Deploy frontend (rebuilds from source — Static Sites can't use images)
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"

@@ -25,7 +25,7 @@ Live at **https://castwise.site** · Current version: **1.4.0**
 ```
 Browser (React)  <--REST/HTTPS-->  Server (Express)  <--Mongoose-->  MongoDB
        |                                 |
-       +----------- MQTT (WebSocket) ----+   via a Mosquitto / EMQX broker
+       +----------- MQTT (WebSocket) ----+   via an MQTT broker (EMQX Cloud)
 ```
 
 `Content` → `Playlist` → `Assignment` (playlist + screen + schedule) → **manifest composer** (one JSON manifest per screen) → published over MQTT (retained) → the player page subscribes and renders it. Each screen also publishes a heartbeat every 10 seconds; a screen is marked offline after 20 seconds without one.
@@ -56,12 +56,12 @@ The code is in `client/src/offline/` and `client/src/components/screens/DevicePl
 
 - **Backend:** Node.js, Express, MongoDB (Mongoose), MQTT, Cloudinary (media), Resend (email)
 - **Frontend:** React 19, Vite, React Router, Tailwind CSS v4, Radix UI
-- **Delivery:** MQTT over WebSocket (Mosquitto locally and on prod, EMQX Cloud on staging)
+- **Delivery:** MQTT over WebSocket (EMQX Cloud, one deployment shared by staging and prod, kept apart by a topic prefix; any broker with a WebSocket listener works locally)
 - **Hosting:** Render (staging and prod), GitHub Actions for builds and releases, Namecheap for the domain
 
 ## Running locally
 
-Prerequisites: Node.js 18+, npm, a MongoDB connection string (e.g. Atlas), an MQTT broker with a WebSocket listener (e.g. [Mosquitto](https://mosquitto.org/), port `1883` plus a WebSocket port such as `9001`; a `mosquitto/` folder with a config is included).
+Prerequisites: Node.js 18+, npm, a MongoDB connection string (e.g. Atlas), an MQTT broker with a WebSocket listener (for example a local [Mosquitto](https://mosquitto.org/) on port `1883` plus a WebSocket port such as `9001`, or an EMQX Cloud deployment).
 
 ### Server
 
@@ -80,6 +80,7 @@ MONGO_URI=<mongodb connection string>
 JWT_SECRET=<secret>
 REFRESH_TOKEN_SECRET=<secret>
 MQTT_URL=<broker url, e.g. mqtt://localhost:1883>
+MQTT_TOPIC_PREFIX=<optional, e.g. stg/ so environments can share one broker>
 MQTT_USERNAME=<optional>
 MQTT_PASSWORD=<optional>
 CLOUDINARY_CLOUD_NAME=<name>
@@ -103,6 +104,7 @@ npm run dev
 ```
 VITE_API_BASE=http://localhost:5000
 VITE_MQTT_WS_URL=<broker WebSocket url>
+VITE_MQTT_TOPIC_PREFIX=<optional, must match the server's MQTT_TOPIC_PREFIX>
 VITE_MQTT_USERNAME=<optional>
 VITE_MQTT_PASSWORD=<optional>
 VITE_MAPBOX_TOKEN=<token for the location search in the Weather and Clock settings>
@@ -138,7 +140,7 @@ The client mirrors these in `client/src/utils/limits.js`; the server enforces th
 
 ## Deployment
 
-Two environments, each with a frontend (static site), a backend and an MQTT broker on Render:
+Two environments, each with a frontend (static site) and a backend on Render, sharing one EMQX Cloud MQTT broker (staging topics start with `stg/`, set by `MQTT_TOPIC_PREFIX` on the backend and `VITE_MQTT_TOPIC_PREFIX` on the frontend; prod uses its own broker login and no prefix):
 
 - **Staging** — `staging.castwise.site`, built from every push to `master`; sends `X-Robots-Tag: noindex` so search engines skip it.
 - **Production** — `castwise.site`, promoted by pushing a `v*` tag, which copies the already-built, already-tested artifact (no rebuild).
