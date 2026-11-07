@@ -2,7 +2,7 @@
 
 Free digital signage for any screen. Put images, videos, notices and small live "apps" (weather, clock, news, announcements) on any TV, tablet or phone that has a browser, schedule them by screen and time window, and see which screens are online.
 
-Live at **https://castwise.site** · Current version: **1.3.1**
+Live at **https://castwise.site** · Current version: **1.4.0**
 
 > The repository and some internal names still say "Device Fleet Manager" / "DFM" (the original working name). Everything a user sees says CastWise and "screens".
 
@@ -11,12 +11,14 @@ Live at **https://castwise.site** · Current version: **1.3.1**
 - **Content library** — upload images and videos (Cloudinary), or add apps; each item has a name and a display duration.
 - **Playlists** — an ordered list of content. An image can appear up to 3 times in a playlist, anything else once.
 - **Assignments** — publish a playlist to one or more screens for a time window; conflicts with existing schedules are shown and can be overridden.
-- **Screens** — pair a TV or any browser with an 8-character code; screens show what is scheduled, rotate through the playlist and report a heartbeat. Up to 3 screens per account. A screen keeps playing when its internet drops (see Offline screens).
+- **Screens** — pair a TV or any browser with an 8-character code; screens show what is scheduled, rotate through the playlist and report a heartbeat. Up to 3 screens per account. A screen keeps playing when its internet drops (see Offline screens). From the Player page you can preview a screen, **take it over** (its physical screen disconnects, and the page keeps showing "Release screen" until you release it) and **refresh** it.
 - **Apps** — Weather, Clock, Media RSS and Announcements (Rotating Notices, Status List, Event Cards), each configured in a settings screen with a live preview.
+- **Refresh screen** — a screen's menu on the Player page restarts its playlist from the first item, only while the screen is online and at most once a minute per screen. It does not reload the page, so the screen stays in fullscreen.
 - **Dashboard** — screen status, recently created content, usage against the account limits.
 - **Feedback** — a signed-in user sends the admin up to 5 messages (issue, suggestion or other) from the Feedback page and sees the answer there.
 - **Admin** — an admin-only Users page (list, a user's screens by name and status, delete user) and an Inbox for feedback: the admin answers each message once, with a status (Noted or Not planned) and one reply. Admins never see anyone's content or playlists.
-- **Landing page** at `/` for signed-out visitors, with a live demo.
+- **Landing page** at `/` for signed-out visitors, with a live demo, a section on offline playback and a footer with the project's profiles.
+- **Notifications** — short toast messages at the bottom right confirm actions (for example "Refresh sent to Lobby").
 
 ## How it works
 
@@ -36,7 +38,7 @@ A screen keeps working when its internet drops. It needs one online run first, s
 
 - **What is saved** — the player page itself (a service worker, `client/public/player-sw.js`), the last manifest, and the files of the playlist that is playing: images, videos, app bundles and the images inside apps. Smallest files go first, small ones in parallel; a file is kept only if it arrived whole; files nothing uses any more are deleted; the browser is asked to keep the storage.
 - **While online** — a saved file plays from the saved copy, anything else plays from the network while a copy is saved in the background.
-- **When the connection drops** — the screen keeps playing the playlist it was on until that playlist's end time (never the next one), skips any item whose file is not saved, shows a pulsing OFFLINE strip after 15 seconds, and after the end time shows "Nothing scheduled" with a check-your-connection line. A screen that restarts with no internet does the same from the saved manifest.
+- **When the connection drops** — the screen keeps playing the playlist it was on until that playlist's end time (never the next one), skips any item whose file is not saved, shows a pulsing OFFLINE strip (it appears a minute after the drop, then for 10 seconds every minute while the screen stays offline), and after the end time shows "Nothing scheduled" with a check-your-connection line. A screen that restarts with no internet does the same from the saved manifest.
 - **When it reconnects** — it takes the live manifest; an updated playlist restarts from the beginning, an unchanged one keeps playing.
 - **App data** — Weather, RSS and the other apps keep showing their last data when the network fails (`@castwise/ignition` 1.4.0).
 
@@ -145,7 +147,7 @@ Staging and prod use separate databases. The app repos publish their own zips th
 
 ## Recent releases
 
-- **Unreleased (next version)** — Feedback (user page and admin Inbox), a session-ending warning, and offline screens (saved files and manifest, OFFLINE strip, offline rules), with `@castwise/ignition` 1.4.0 for app data.
+- **1.4.0** — Feedback (user page and an admin Inbox where each message gets one answer, Noted or Not planned), a warning before the session ends, the reworked `/screens` pairing page (current name, refresh icon, code-limit counter), offline screens (saved files and manifest, offline rules, OFFLINE strip) with `@castwise/ignition` 1.4.0 for app data, **Refresh screen** and a take-over state that survives leaving the page, toast notifications, a landing page with an Offline section and a four-column footer, and a code reorganisation (`apps/shared` folders; the player, `/screens` and Player pages split into hooks and components).
 - **1.3.1** — favicon PNGs and `favicon.ico` for Google, icon thumbnails for apps (Content, Playlists, Dashboard, pickers, Player), `hello@castwise.site` as the public address, LinkedIn / GitHub / X links in the landing footer.
 - **1.3.0** — search engine basics (title, description, canonical, share tags, `robots.txt`, `sitemap.xml`), "Free for up to 3 screens" on the landing page, images on screens appear whole (preloaded, screen-size copies), playlist duplicate rule, Edit playlist works as a draft until Save, several mobile layout fixes.
 - **1.2.0** — admin Users page, usernames for new accounts, Cloudinary size checks before upload, app editor mobile header, Content details panel as a floating panel on desktop.
