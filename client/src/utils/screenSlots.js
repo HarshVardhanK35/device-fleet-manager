@@ -44,9 +44,11 @@ export function mapDevice(d, playing = null) {
     name: d.name,
     type: d.type || "",
     pending: false,
-    status: d.status,
-    seen:
-      d.status === "online"
+    // "taken" comes from the server, so it survives leaving the page and coming back.
+    status: d.takenOver ? "taken" : d.status,
+    seen: d.takenOver
+      ? "Physical screen disconnected"
+      : d.status === "online"
         ? "Online now"
         : `Last seen ${timeAgo(d.lastSeenAt)}`,
     res: "—",

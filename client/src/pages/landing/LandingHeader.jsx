@@ -61,7 +61,8 @@ function LandingHeader({ theme, onToggleTheme }) {
             Sign in
           </Link>
           <Link className="btn btn-primary btn-sm" to="/register">
-            Get started
+            <span className="label-wide">Get started</span>
+            <span className="label-narrow">Sign up</span>
           </Link>
           <button
             className="icon-btn icon-btn--menu"

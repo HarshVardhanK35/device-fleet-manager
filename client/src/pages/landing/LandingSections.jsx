@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 import { SectionHead } from "./landingParts.jsx";
 import { ShotFrame } from "./shots/ShotScreens.jsx";
-import { CONTROLS, DEVICES, FEATURES, LOOKS, STEPS } from "./landingData.js";
+import { CONTROLS, DEVICES, FEATURES, LOOKS, OFFLINE_POINTS, STEPS } from "./landingData.js";
 
 // The content sections between the hero and the footer. Each is a
 // [data-reveal] section so useReveal can animate it on scroll.
@@ -94,6 +94,41 @@ export function WhatToShow() {
             );
           })}
         </div>
+      </div>
+    </section>
+  );
+}
+
+export function Offline() {
+  return (
+    <section className="section" id="offline" data-reveal aria-labelledby="offline-title">
+      <div className="wrap">
+        <SectionHead
+          eyebrow="Always on"
+          id="offline-title"
+          title="Keeps playing when the internet drops"
+          lead="Your screen saves what it is showing while it's online. If the connection goes, it carries on with its saved playlist, then comes back in sync."
+        />
+        <figure className="offline-visual">
+          <ShotFrame kind="offline" alt="a screen marked offline that keeps playing its saved notice" />
+        </figure>
+        <div className="controls" data-grid>
+          {OFFLINE_POINTS.map((p) => {
+            const Icon = p.icon;
+            return (
+              <div className="ctrl card" key={p.title}>
+                <span className="tile" aria-hidden="true">
+                  <Icon className="ic" />
+                </span>
+                <div className="ctrl-text">
+                  <h3>{p.title}</h3>
+                  <p className="body">{p.text}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="offline-note">A screen needs to play online once before it can work offline.</p>
       </div>
     </section>
   );

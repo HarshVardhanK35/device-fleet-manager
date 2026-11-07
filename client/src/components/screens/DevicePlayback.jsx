@@ -267,7 +267,7 @@ export default forwardRef(DevicePlayback);
 //     the network (saving a copy in the background) when there isn't.
 //   - When the connection to the server drops it keeps playing the playlist it
 //     was on, only until that playlist's end time (never the next one), skips
-//     any item whose file is not saved, shows an OFFLINE strip after 15 s, and
+//     any item whose file is not saved, shows an OFFLINE strip (10 s every minute), and
 //     then "Nothing scheduled" plus a check-your-connection line. A screen
 //     that restarts with no internet does the same from the saved manifest.
 //   - "Refresh screen" (sent from the Player page while the screen is online)
