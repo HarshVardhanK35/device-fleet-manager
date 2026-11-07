@@ -5,6 +5,10 @@ import { API_BASE } from "../api/apiClient.js";
 import { readManifest, readPlaying, saveManifest } from "../offline/savedManifest.js";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
 
+// Put in front of every topic ("stg/", "prod/") so two environments can share one
+// broker; must match the server's MQTT_TOPIC_PREFIX. Empty by default.
+const TOPIC_PREFIX = import.meta.env.VITE_MQTT_TOPIC_PREFIX || "";
+
 const HEARTBEAT_MS = 10000; // matches services/deviceSimulator.js's interval
 const CONNECT_TIMEOUT_MS = 10000; // the connect call gives up after this long
 const BANNER_EVERY_MS = 60000; // while offline the OFFLINE strip appears once a minute (first one a minute after the drop)
@@ -74,7 +78,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       heartbeatTimer = setInterval(() => {
         if (!mqttClient?.connected) return;
         mqttClient.publish(
-          `devices/${resolvedId}/heartbeat`,
+          `${TOPIC_PREFIX}devices/${resolvedId}/heartbeat`,
           JSON.stringify({ status: "online", timestamp: new Date() }),
         );
       }, HEARTBEAT_MS);
@@ -180,8 +184,8 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       mqttClient.on("connect", () => {
         console.log("MQTT connected:", mqttUrl);
         markOnline();
-        mqttClient.subscribe(`devices/${resolvedId}/manifest`);
-        mqttClient.subscribe(`devices/${resolvedId}/control`);
+        mqttClient.subscribe(`${TOPIC_PREFIX}devices/${resolvedId}/manifest`);
+        mqttClient.subscribe(`${TOPIC_PREFIX}devices/${resolvedId}/control`);
       });
       mqttClient.on("close", markOffline);
       mqttClient.on("offline", markOffline);
