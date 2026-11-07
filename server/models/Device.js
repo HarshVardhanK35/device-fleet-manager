@@ -24,6 +24,13 @@ const deviceSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // True from "Take over" until "Release" (or until the physical screen connects
+    // again), so the Player page can show "Release screen" after the owner has
+    // left the page and come back.
+    takenOver: {
+      type: Boolean,
+      default: false,
+    },
     // When the owner last sent this screen a "Refresh screen" (one per minute).
     lastRefreshAt: {
       type: Date,

@@ -7,8 +7,11 @@ import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
 
 const HEARTBEAT_MS = 10000; // matches services/deviceSimulator.js's interval
 const CONNECT_TIMEOUT_MS = 10000; // the connect call gives up after this long
-const OFFLINE_BANNER_MS = 15000; // the OFFLINE strip shows after this long without a connection
+const BANNER_EVERY_MS = 60000; // while offline the OFFLINE strip appears once a minute (first one a minute after the drop)
+const BANNER_SHOW_MS = 10000; // and stays, pulsing, this long
 const RECONNECT_WAIT_MS = 5000; // between tries while the server can't be reached at start
+const RELEASE_RETRY_MS = 3000; // between tries when a release is answered "already connected"
+const RELEASE_RETRIES = 10; // about 30 s, longer than the server's 20 s "still online" window
 
 // A screen's live link to the server: claims the one-connection slot, listens
 // for the manifest and the take-over / release messages over MQTT, sends the
@@ -17,7 +20,7 @@ const RECONNECT_WAIT_MS = 5000; // between tries while the server can't be reach
 //     connection   connecting | connected | rejected | taken-over
 //     online       false while the server can't be reached
 //     offlineLock  the assignment the screen may keep playing while offline
-//     bannerOn     true once the screen has been offline for 15 s
+//     bannerOn     true for 10 s every minute while the screen is offline
 //     refreshTick  goes up when the owner sends "Refresh screen"
 // `activeIdRef.current` is the assignment playing right now; `setNow` is told
 // the moment a new manifest arrives (see the comment where it is called).
@@ -98,6 +101,21 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       } catch {
         return { unreachable: true };
       }
+    }
+
+    // After a release, claim the slot again. If the server still counts the old
+    // connection (a heartbeat in flight when the screen was taken over), wait a
+    // few seconds and try again instead of giving up with "connected elsewhere".
+    async function reclaimAfterRelease() {
+      let result = await claimConnection();
+      for (let i = 0; i < RELEASE_RETRIES && result.conflict && !cancelled; i += 1) {
+        await new Promise((resolve) => {
+          retryTimer = setTimeout(resolve, RELEASE_RETRY_MS);
+        });
+        if (cancelled) break;
+        result = await claimConnection();
+      }
+      return result;
     }
 
     window.addEventListener("offline", markOffline);
@@ -182,6 +200,10 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
             // "offline" server-side while taken over.
             stopHeartbeat();
             setConnection("taken-over");
+            // Tell the server at once that this screen is offline. Otherwise it
+            // keeps counting it as connected for up to 20 s, and a release in
+            // those seconds is refused as "already connected elsewhere".
+            fetchWithTimeout(`${API_BASE}/devices/${screenToken}/disconnect`, { method: "POST" }, CONNECT_TIMEOUT_MS).catch(() => {});
           } else if (data.action === "refresh") {
             // "Refresh screen": the playlist starts again from the first item
             // (DevicePlayback watches refreshTick). `now` is refreshed first so the
@@ -189,7 +211,8 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
             setNow(Date.now());
             setRefreshTick((tick) => tick + 1);
           } else if (data.action === "reconnect") {
-            claimConnection().then((reaccepted) => {
+            reclaimAfterRelease().then((reaccepted) => {
+              console.log("[DEBUG-TEMP] release: connect again ->", reaccepted);
               if (cancelled) return;
               if (!reaccepted.id) {
                 setConnection("rejected");
@@ -236,12 +259,23 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
     // whenever there is a change in "screenToken" - useEffect runs
   }, [screenToken, activeIdRef, setNow]);
 
-  // The OFFLINE strip shows after the screen has been offline for a while.
+  // While the screen is offline the OFFLINE strip appears once a minute (the
+  // first one a minute after the drop) and stays, pulsing, for 10 s: at 1:00 to
+  // 1:10, 2:00 to 2:10 and so on. It goes away at once when the screen is back.
   useEffect(() => {
     if (online) return undefined;
-    const t = setTimeout(() => setBannerOn(true), OFFLINE_BANNER_MS);
+    let timer;
+    function hide() {
+      setBannerOn(false);
+      timer = setTimeout(show, BANNER_EVERY_MS - BANNER_SHOW_MS);
+    }
+    function show() {
+      setBannerOn(true);
+      timer = setTimeout(hide, BANNER_SHOW_MS);
+    }
+    timer = setTimeout(show, BANNER_EVERY_MS);
     return () => {
-      clearTimeout(t);
+      clearTimeout(timer);
       setBannerOn(false);
     };
   }, [online]);

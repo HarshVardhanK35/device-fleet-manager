@@ -1,4 +1,4 @@
-import { AnyDevice, ClosingCta, Control, HowItWorks, Looks, WhatToShow } from "./LandingSections.jsx";
+import { AnyDevice, ClosingCta, Control, HowItWorks, Looks, Offline, WhatToShow } from "./LandingSections.jsx";
 
 // Everything under the hero. It is its own file in the build (Landing.jsx
 // loads it lazily), so the header and the hero paint first and these sections,
@@ -9,6 +9,7 @@ function BelowFold() {
     <>
       <HowItWorks />
       <WhatToShow />
+      <Offline />
       <Control />
       <Looks />
       <AnyDevice />

@@ -94,7 +94,7 @@
   --content:     1200px;    /* max content width */
   --pad:         40px;      /* side padding; at 1440 the 1200 cap leaves 120px each side */
   --header-h:    64px;
-  --sec-pad:     128px;     /* vertical padding of every section */
+  --sec-pad:     80px;      /* vertical padding of every section */
   --hero-pt:     120px;     /* hero top padding */
   --head-gap:    56px;      /* section heading -> its grid */
 
@@ -118,7 +118,7 @@
 /* Tablet 600-1023 (designed at 820) */
 @media (max-width: 1023px) {
   .cw {
-    --sec-pad:   96px;
+    --sec-pad:   64px;
     --hero-pt:   88px;
     --h1:        60px;
     --h1-max:    700px;
@@ -138,7 +138,7 @@
 @media (max-width: 599px) {
   .cw {
     --pad:       24px;
-    --sec-pad:   72px;
+    --sec-pad:   48px;
     --hero-pt:   56px;
     --h1:        42px;
     --h1-max:    100%;
@@ -376,6 +376,16 @@
   .cw .header-actions .btn-quiet { display: none; }
   /* Sign in moves into the menu sheet */
   .cw .menu-sheet .menu-signin { display: flex; }
+
+  /* Narrow header: the buttons keep their size and "Sign up" stays on one line;
+     the logo row gives way (smaller gaps and name) instead. */
+  .cw .site-header > .wrap { gap: 8px; }
+  .cw .brand { gap: 8px; min-width: 0; }
+  .cw .brand-name { font-size: 16px; }
+  .cw .header-actions { gap: 6px; flex: none; }
+  .cw .header-actions .btn,
+  .cw .header-actions .icon-btn { flex: none; white-space: nowrap; }
+  .cw .header-actions .btn-sm { padding: 0 14px; }
 }
 
 /* 5. HERO ------------------------------------------------------------------ */
@@ -816,6 +826,11 @@
 }
 
 .cw .ctrl { display: flex; gap: 16px; padding: 24px; }
+
+/* Offline section: the illustration in a rounded frame, then three points and a note */
+.cw .offline-visual { margin: 0 auto; max-width: 760px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.cw .offline-visual .shot-ph { aspect-ratio: 16 / 9; border-radius: 0; }
+.cw .offline-note { margin: 20px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
 .cw .ctrl-text { display: flex; flex-direction: column; gap: 6px; }
 .cw .ctrl h3 { font-size: 17px; letter-spacing: -0.015em; }
 
@@ -940,7 +955,7 @@
 .cw .site-footer .brand { font-size: 14px; }
 .cw .site-footer .brand-name { font-size: 14px; letter-spacing: 0; }
 .cw .footer-brand { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-.cw .footer-brand p { margin: 0; max-width: 24ch; }
+.cw .footer-brand p { margin: 0; }
 .cw .footer-brand small { font-size: 13px; }
 .cw .footer-col { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
 .cw .footer-col h3 { margin: 0 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
@@ -1009,13 +1024,30 @@
 .cw .footer-note ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 .cw .footer-social { display: inline-flex; align-items: center; gap: 8px; }
 
+/* Tablet: the Product column goes; the brand, Support and Connect share one row. */
 @media (max-width: 899px) {
-  .cw .site-footer > .wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .cw .footer-brand { grid-column: 1 / -1; }
+  .cw .site-footer > .wrap { grid-template-columns: auto auto auto; justify-content: space-between; }
+  .cw .footer-col--product { display: none; }
 }
 
+/* Tablet: Support has a fixed width (room for its note box), so the three
+   sections sit with equal space between them and nothing shifts when a note opens. */
+@media (min-width: 600px) and (max-width: 899px) {
+  .cw .footer-col--support { width: 15rem; max-width: 100%; }
+}
+
+/* Phone: the brand on its own row, Support and Connect side by side below it. */
 @media (max-width: 599px) {
-  .cw .site-footer > .wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cw .site-footer > .wrap { grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; }
+  .cw .footer-brand { grid-column: 1 / -1; }
+  .cw .footer-col a { overflow-wrap: anywhere; }
+}
+
+/* The header's main button says "Get started" on wide screens and "Sign up" on a phone. */
+.cw .label-narrow { display: none; }
+@media (max-width: 599px) {
+  .cw .label-wide { display: none; }
+  .cw .label-narrow { display: inline; }
 }
 
 /* 10. SHARED: CARDS + IMAGE FILLERS --------------------------------------- */

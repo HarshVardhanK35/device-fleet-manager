@@ -48,7 +48,7 @@ function LandingFooter() {
           <small>&copy; {new Date().getFullYear()} CastWise</small>
         </div>
 
-        <nav className="footer-col" aria-label="Product">
+        <nav className="footer-col footer-col--product" aria-label="Product">
           <h3>Product</h3>
           <a href="#show">Features</a>
           <a href="#how">How it works</a>
@@ -56,7 +56,7 @@ function LandingFooter() {
           <Link to="/register">Sign up</Link>
         </nav>
 
-        <nav className="footer-col" aria-label="Support">
+        <nav className="footer-col footer-col--support" aria-label="Support">
           <h3>Support</h3>
           <button
             type="button"

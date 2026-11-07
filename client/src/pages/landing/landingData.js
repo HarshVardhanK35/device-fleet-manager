@@ -29,6 +29,9 @@ import {
   CalendarCheck,
   Link2,
   Laptop,
+  Download,
+  RefreshCw,
+  WifiOff,
 } from "lucide-react";
 
 // All landing-page copy, icon choices and which illustration (shot) each
@@ -38,6 +41,7 @@ import {
 export const NAV = [
   { href: "#how", label: "How it works" },
   { href: "#show", label: "What to show" },
+  { href: "#offline", label: "Offline" },
   { href: "#control", label: "Control" },
   { href: "#looks", label: "Looks" },
 ];
@@ -134,6 +138,12 @@ export const FEATURES = [
     text: "Upload pictures and clips and they play in turn. Good for promotions, menus and welcome screens.",
     alt: "your own photo playing full screen",
   },
+];
+
+export const OFFLINE_POINTS = [
+  { icon: Download, title: "Saves what's playing", text: "Images, videos and apps are stored on the screen while it's online." },
+  { icon: WifiOff, title: "Plays through an outage", text: "If the connection drops, the screen keeps playing its current playlist until it is scheduled to end." },
+  { icon: RefreshCw, title: "Back in sync", text: "When the connection returns, it picks up your latest changes. A Refresh screen button restarts a playlist from the first item." },
 ];
 
 export const CONTROLS = [

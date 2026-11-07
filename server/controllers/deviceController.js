@@ -68,6 +68,7 @@ export const connectDevice = async (req, res) => {
 
     device.status = "online";
     device.lastSeenAt = new Date();
+    device.takenOver = false; // the physical screen is connected again
     await device.save();
 
     const manifest = await buildManifestForDevice(device._id);
@@ -129,6 +130,7 @@ export const takeOverDevice = async (req, res) => {
       return res.status(403).json({ message: "Not your screen" });
     }
 
+    await Device.updateOne({ _id: device._id }, { $set: { takenOver: true } });
     publishControlMessage(device._id, { action: "disconnect" });
     res.status(200).json({ message: "Take-over signal sent" });
   } catch (error) {
@@ -147,6 +149,7 @@ export const releaseDevice = async (req, res) => {
       return res.status(403).json({ message: "Not your screen" });
     }
 
+    await Device.updateOne({ _id: device._id }, { $set: { takenOver: false } });
     publishControlMessage(device._id, { action: "reconnect" });
     res.status(200).json({ message: "Release signal sent" });
   } catch (error) {

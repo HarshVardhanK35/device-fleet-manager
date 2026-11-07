@@ -98,7 +98,8 @@ function LiveDemo() {
             {!started && (
               <button type="button" className="dm-start" onClick={start}>
                 <Play className="ic" aria-hidden="true" />
-                Play the demo
+                <span className="label-wide">Play the demo</span>
+                <span className="label-narrow">Play</span>
               </button>
             )}
           </div>

@@ -21,7 +21,7 @@ const BelowFold = lazy(() => import("./landing/BelowFold.jsx"));
 function BelowFoldPlaceholder() {
   return (
     <div aria-hidden="true" style={{ minHeight: "240vh" }}>
-      {["how", "show", "control", "looks", "devices"].map((id) => (
+      {["how", "show", "offline", "control", "looks", "devices"].map((id) => (
         <span key={id} id={id} />
       ))}
     </div>

@@ -106,3 +106,14 @@
 .cw .so-dev { position: relative; overflow: hidden; border: 2px solid var(--sc-border); border-radius: 1.4cqw; background: var(--sc-bg); }
 .cw .so-canvas { position: absolute; top: 0; left: 0; transform-origin: 0 0; container-type: size; background: var(--sc-bg); }
 .cw .so-portrait .dm-board__grid { grid-template-columns: 1fr; grid-template-rows: repeat(6, 1fr); }
+
+/* ---- Offline: a screen marked OFFLINE that keeps playing ---- */
+.cw .so-off { position: absolute; inset: 0; }
+.cw .so-off__pill { position: absolute; top: 3cqw; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 1.2cqw; padding: 1cqw 3cqw; border-radius: 99px; background: #da3633; color: #fff; font-size: max(8px, 2.6cqw); font-weight: 700; letter-spacing: .16em; }
+.cw .so-off__pill .dm-ic { width: 1.1em; height: 1.1em; }
+.cw .so-off__bar { position: absolute; left: 3cqw; bottom: 3cqw; display: inline-flex; align-items: center; gap: 1.2cqw; padding: 1cqw 2.4cqw; border-radius: 99px; background: rgba(13, 17, 23, .78); color: #e6edf3; font-size: max(7px, 2.2cqw); font-weight: 500; }
+.cw .so-off__bar .dm-ic { width: 1.1em; height: 1.1em; color: #3fb950; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cw .so-off__pill { animation: none; }
+}

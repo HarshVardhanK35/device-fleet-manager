@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Cloud, CloudRain, CloudSun, Coffee, Home, Image as ImageIcon, ListVideo, LogOut, MonitorPlay, Newspaper, PlaySquare, Sun, User } from "lucide-react";
+import { Cloud, CloudRain, CloudSun, Coffee, HardDriveDownload, Home, Image as ImageIcon, ListVideo, LogOut, MonitorPlay, Newspaper, PlaySquare, Sun, User, WifiOff } from "lucide-react";
 
 import Logo from "../../../components/layout/Logo.jsx";
 import "../demo/liveDemo.css";
@@ -262,6 +262,23 @@ function OrientationShot() {
   );
 }
 
+// A notice board that keeps playing while the screen is marked OFFLINE.
+function OfflineShot() {
+  return (
+    <div className="so-off">
+      <NoticeBoardScreen data={CAFE.notice} />
+      <span className="so-off__pill cw-offline-pulse">
+        <WifiOff className="dm-ic" aria-hidden="true" />
+        OFFLINE
+      </span>
+      <span className="so-off__bar">
+        <HardDriveDownload className="dm-ic" aria-hidden="true" />
+        Playing from the saved copy
+      </span>
+    </div>
+  );
+}
+
 const SHOTS = {
   board: () => <StatusBoardScreen data={CAFE.board} />,
   notices: () => <NoticeBoardScreen data={CAFE.notice} />,
@@ -275,6 +292,7 @@ const SHOTS = {
   fonts: FontsShot,
   effects: EffectsShot,
   orientation: OrientationShot,
+  offline: OfflineShot,
 };
 
 // One image spot: keeps the filler's aspect ratio from landing.css and draws
