@@ -25,6 +25,13 @@ const playlistSchema = new mongoose.Schema(
         ref: "Content",
       },
     ],
+    // Items that stay in the playlist but are not played (by content id).
+    skippedItems: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Content",
+      },
+    ],
   },
   { timestamps: true },
 );

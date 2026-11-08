@@ -60,8 +60,8 @@ export function useScreenSlots() {
       : [];
   }
 
-  // Manual refresh: fresh data from the server, keeping the selection (and any
-  // slot still waiting to be paired, which only exists locally).
+  // The Refresh button in the slot list: fresh data from the server, keeping the
+  // selection (and any slot still waiting to be paired, which only exists locally).
   async function refreshScreens() {
     const mapped = await fetchMappedScreens();
     setScreens((prev) => [...mapped, ...prev.filter((s) => s.pending)]);
@@ -154,6 +154,7 @@ export function useScreenSlots() {
     setSelectedId((prev) => (prev === id ? result._id : prev));
     setEditingId(result._id);
     setDraft({ name: result.name, type: result.type || "" });
+    toast(`${result.name || "Screen"} paired`);
   }
 
   function cancelPairing(id) {
@@ -208,6 +209,7 @@ export function useScreenSlots() {
       prev.map((s) => (s.id === id ? { ...s, name, type } : s)),
     );
     setEditingId(null);
+    toast("Screen updated");
   }
 
   async function removeScreen(id) {
@@ -225,6 +227,7 @@ export function useScreenSlots() {
     setRemoveError("");
     setScreens((prev) => prev.filter((s) => s.id !== id));
     setModal(null);
+    toast("Screen removed");
     if (selectedId === id) {
       const remaining = screens.filter((s) => s.id !== id);
       setSelectedId(remaining.length ? remaining[0].id : null);
@@ -286,6 +289,7 @@ export function useScreenSlots() {
       ),
     );
     setModal({ mode: "player", id });
+    toast("Screen taken over");
   }
 
   async function releaseScreen(id) {
@@ -307,6 +311,7 @@ export function useScreenSlots() {
       ),
     );
     setModal(null);
+    toast("Screen released");
   }
 
   return {
@@ -319,9 +324,9 @@ export function useScreenSlots() {
     selectedId,
     mobileView,
     setMobileView,
+    refreshScreens,
     selectScreen,
     addScreen,
-    refreshScreens,
     // pairing
     codeFor,
     pairErrorFor,

@@ -3,19 +3,23 @@ import { Plus, Hourglass } from "lucide-react";
 import ScreenThumb from "../ScreenThumb.jsx";
 import SelectableRow from "../../ui/SelectableRow.jsx";
 import SkeletonPlayerSlots from "../../loading/SkeletonPlayerSlots.jsx";
+import RefreshButton from "../../ui/RefreshButton.jsx";
+import PaneToggle from "../../layout/PaneToggle.jsx";
+import { COLLAPSED_PANE_CLASS } from "../../../hooks/usePaneCollapse.js";
 import { MAX_SCREENS } from "../../../utils/limits.js";
 import { pillLabel } from "../../../utils/screenStatus.js";
 
-// The left column of the Player page: the title, "n of 3 screens used", and
+// The left column of the Player page: the title with its Refresh button, "n of 3", and
 // the three slots (a screen, a screen waiting to be paired, or an empty
 // "Add a screen" slot).
-function SlotRail({ screens, loading, selectedId, used, full, mobileView, onSelect, onAdd }) {
+function SlotRail({ screens, loading, selectedId, used, full, mobileView, collapsed, onToggleCollapse, onSelect, onAdd, onRefresh }) {
   return (
     <div
-      className={`w-full lg:w-72 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted flex flex-col gap-2 ${
+      className={`relative w-full lg:w-72 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted flex flex-col gap-2 ${
         mobileView === "detail" ? "hidden lg:flex" : "flex"
-      }`}
+      } ${collapsed ? COLLAPSED_PANE_CLASS : ""}`}
     >
+      <PaneToggle collapsed={collapsed} onToggle={onToggleCollapse} />
       <div className="mb-1 pb-3 border-b border-bg-hover">
         <div className="flex items-center gap-2.5 flex-wrap">
           <h1 className="text-text-primary text-xl font-bold m-0">Player</h1>
@@ -23,8 +27,8 @@ function SlotRail({ screens, loading, selectedId, used, full, mobileView, onSele
             <span className={`font-semibold ${full ? "text-accent-amber" : "text-text-primary"}`}>
               {used} of {MAX_SCREENS}
             </span>
-            screens used
           </span>
+          <RefreshButton className="ml-auto" onRefresh={onRefresh} />
         </div>
         <p className="text-text-muted text-xs mt-1">Three slots per account. Pick one to manage it.</p>
       </div>

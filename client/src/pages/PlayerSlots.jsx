@@ -7,10 +7,13 @@ import SlotRail from "../components/screens/slots/SlotRail.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import SkeletonPanel from "../components/loading/SkeletonPanel.jsx";
 import { useScreenSlots } from "../hooks/useScreenSlots.js";
+import { usePaneCollapse } from "../hooks/usePaneCollapse.js";
 
 function PlayerSlots() {
   const slots = useScreenSlots();
   const { screens, loading, selected, selectedSlot, mobileView, setMobileView } = slots;
+  // Desktop: the slot list can be folded away to focus on one screen.
+  const [listCollapsed, toggleList] = usePaneCollapse("player");
 
   return (
     <div
@@ -27,8 +30,11 @@ function PlayerSlots() {
           used={slots.used}
           full={slots.full}
           mobileView={mobileView}
+          collapsed={listCollapsed}
+          onToggleCollapse={toggleList}
           onSelect={slots.selectScreen}
           onAdd={slots.addScreen}
+          onRefresh={slots.refreshScreens}
         />
 
         {/* detail pane */}
@@ -104,7 +110,6 @@ function PlayerSlots() {
               refreshLeft={slots.refreshLeft(selected.id)}
               releaseError={slots.releaseError}
               onBack={() => setMobileView("list")}
-              onRefresh={slots.refreshScreens}
               onPreview={() => slots.setModal({ mode: "preview", id: selected.id })}
               onRemove={() => slots.setModal({ mode: "remove", id: selected.id })}
               onTakeOver={() => slots.openTakeOver(selected.id)}

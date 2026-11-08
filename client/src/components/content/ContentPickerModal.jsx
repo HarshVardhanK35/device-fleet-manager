@@ -127,7 +127,8 @@ function PickerFormBody({
       list.sort((a, b) => a.name.localeCompare(b.name));
     } else {
       list.sort(
-        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0),
       );
     }
     return list;

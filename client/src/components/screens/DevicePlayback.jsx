@@ -30,7 +30,7 @@ function DevicePlayback(
   const videoRef = useRef(null);
   // The live link to the server: manifest, connection state, whether it can
   // be reached (`online`), and which playlist may keep playing if it can't.
-  const { manifest, connection, online, offlineLock, bannerOn, refreshTick } = useScreenConnection(screenToken, {
+  const { manifest, connection, online, offlineLock, bannerOn, backOnline, refreshTick } = useScreenConnection(screenToken, {
     activeIdRef,
     setNow,
   });
@@ -170,7 +170,7 @@ function DevicePlayback(
     return () => clearTimeout(t);
   }, [activeAssignment, contentIndex, itemStartedAt, online, savedKeys]);
 
-  const banner = bannerOn ? <OfflineBanner /> : null;
+  const banner = bannerOn ? <OfflineBanner /> : backOnline ? <OfflineBanner online /> : null;
 
   if (connection === "rejected") {
     return rejectedView ?? <h1>This screen is already connected elsewhere.</h1>;

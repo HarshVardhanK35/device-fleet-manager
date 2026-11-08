@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { createContent, updateContent } from "../../../api/content.js";
+import { useToast } from "../../../context/useToast.js";
 
 // Apps have no duration field in their own settings screen yet (unlike
 // image/video, which have one) — backend requires durationInMillis for
@@ -47,6 +48,7 @@ export function useAppSettingsForm({
   // app whose duration the user edits in the Content pane can keep it.
   computeDuration,
 }) {
+  const toast = useToast();
   // `base` is the last-saved snapshot; comparing `form` against it is what
   // drives the Save button's enabled/disabled state (dirty-check pattern).
   const [base, setBase] = useState(() => formFromContent(existingContent, initialForm));
@@ -79,13 +81,15 @@ export function useAppSettingsForm({
         configBlob: { ...form, appType },
       };
 
-      const saved = contentId
-        ? await updateContent(contentId, payload)
-        : await createContent(payload);
+      const creating = !contentId;
+      const saved = creating
+        ? await createContent(payload)
+        : await updateContent(contentId, payload);
 
       setContentId(saved._id);
       setBase(form);
       onSaved?.();
+      toast(creating ? "App added" : "Settings saved");
       return true;
     } catch {
       setSaveError("Couldn't save — check your connection and try again.");

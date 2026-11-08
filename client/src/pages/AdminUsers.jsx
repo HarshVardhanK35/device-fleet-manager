@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { getAdminUsers, deleteAdminUser } from "../api/admin.js";
 import { useAuth } from "../context/useAuth.js";
+import { useToast } from "../context/useToast.js";
 import { useMediaQuery } from "../hooks/useCompactLayout.js";
 import ContentSearchInput from "../components/content/ContentSearchInput.jsx";
 import DeleteUserDialog from "../components/admin/DeleteUserDialog.jsx";
@@ -65,6 +66,7 @@ function PagerButton({ disabled, onClick, children }) {
 
 function AdminUsers() {
   const { user: me } = useAuth();
+  const toast = useToast();
   const sidePanel = useMediaQuery("(min-width: 1280px)");
   const [data, setData] = useState({ users: [], total: 0, page: 1, pages: 1 });
   const [page, setPage] = useState(1);
@@ -124,6 +126,7 @@ function AdminUsers() {
     if (res?.message && !/deleted/i.test(res.message)) throw new Error(res.message);
     setDeleting(false);
     setOpenId(null);
+    toast("User deleted");
     // Last user on a later page gone: step back a page.
     if (data.users.length === 1 && page > 1) setPage((p) => p - 1);
     setReload((n) => n + 1);

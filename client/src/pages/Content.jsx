@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useToast } from "../context/useToast.js";
 
 import {
   getContent,
@@ -54,6 +55,7 @@ function quotaColorClass(value, max) {
 }
 
 function Content() {
+  const toast = useToast();
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const gridScrollRef = useRef(null);
@@ -316,6 +318,7 @@ function Content() {
         const isLast = i === validFiles.length - 1;
         if (isLast) {
           setUploadState((s) => (s ? { ...s, progress: 100, done: true } : s));
+          toast(validFiles.length > 1 ? `Uploaded ${validFiles.length} files` : "Uploaded");
         }
       } catch (err) {
         if (err.name === "AbortError") {
@@ -343,6 +346,7 @@ function Content() {
     await updateContent(id, data);
     setInspectedId(null);
     fetchContent();
+    toast("Saved");
   }
 
   async function handleConfirmSingleDelete() {
@@ -352,13 +356,16 @@ function Content() {
     );
     setSingleDeleteTarget(null);
     setInspectedId(null);
+    toast("Deleted");
   }
 
   async function handleBulkDeleteContent() {
+    const count = checkedIds.size;
     await Promise.all(Array.from(checkedIds).map((id) => deleteContent(id)));
     setContent((prev) => prev.filter((item) => !checkedIds.has(item._id)));
     setCheckedIds(new Set());
     setDeleteConfirmOpen(false);
+    toast(count === 1 ? "Deleted" : `Deleted ${count} items`);
   }
 
   function toggleSelectAll() {
@@ -402,8 +409,10 @@ function Content() {
     if (sortBy === "name") {
       list.sort((a, b) => a.name.localeCompare(b.name));
     } else {
+      // Last edited first (a new item counts as edited when it is created).
       list.sort(
-        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0),
       );
     }
     return list;

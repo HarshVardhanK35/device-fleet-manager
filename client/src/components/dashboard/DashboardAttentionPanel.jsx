@@ -6,9 +6,11 @@ import {
   CalendarOff,
   MonitorPlay,
   Filter,
+  Plus,
 } from "lucide-react";
 
 import StyledSelect from "../ui/StyledSelect.jsx";
+import { MAX_SCREENS } from "../../utils/limits.js";
 
 const FILTER_OPTIONS = [
   { value: "all", label: "All" },
@@ -60,10 +62,32 @@ function AttentionRow({ item }) {
   );
 }
 
-function DashboardAttentionPanel({ items, onOpenAssignments }) {
+// A screen slot not used yet; opens the Player page, where a screen is paired.
+function EmptySlotRow({ onOpen }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full grid grid-cols-[auto_1fr] items-center gap-3 md:gap-3.5 px-4 py-3 border-b border-border-muted last:border-b-0 text-left hover:bg-bg-hover transition-colors"
+    >
+      <span className="w-8 h-8 rounded-lg border border-dashed border-border-hover text-text-muted flex items-center justify-center flex-none">
+        <Plus size={16} />
+      </span>
+      <div className="min-w-0 flex flex-col gap-0.5">
+        <div className="font-medium text-text-muted">Empty slot</div>
+        <div className="text-xs text-text-muted">Pair a screen from the Player page</div>
+      </div>
+    </button>
+  );
+}
+
+function DashboardAttentionPanel({ items, onOpenAssignments, onOpenPlayer }) {
   const [filter, setFilter] = useState("all");
 
   const filtered = items.filter((i) => filter === "all" || i.kind === filter);
+  // With the "All" filter the unused slots are listed too (as many as the
+  // account may still pair), which also fills the panel's height.
+  const emptySlots = filter === "all" ? Math.max(MAX_SCREENS - items.length, 0) : 0;
 
   const issueCount = items.filter((i) => i.kind !== "ok").length;
   const hasIssues = issueCount > 0;
@@ -116,6 +140,9 @@ function DashboardAttentionPanel({ items, onOpenAssignments }) {
             {filtered.map((item) => (
               <AttentionRow key={item.device._id} item={item} />
             ))}
+            {Array.from({ length: emptySlots }, (_, i) => (
+              <EmptySlotRow key={`empty-${i}`} onOpen={onOpenPlayer} />
+            ))}
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-xs text-text-muted">
             Playing first, offline last
@@ -136,7 +163,7 @@ function DashboardAttentionPanel({ items, onOpenAssignments }) {
             No screens yet
           </div>
           <p className="text-text-muted text-sm m-0">
-            Pair a screen from the Screens page and it will show up here.
+            Pair a screen from the Player page and it will show up here.
           </p>
         </div>
       )}

@@ -2,6 +2,11 @@ import { Music2, Pause, Play, Volume2, VolumeX } from "lucide-react";
 
 import StyledSelect from "../../../components/ui/StyledSelect.jsx";
 
+// Background audio is switched off for now (the app is being wrapped up): the
+// whole field is shown but disabled, with a "Coming soon" note. Set this to
+// false to bring the working field back; nothing else needs to change.
+const COMING_SOON = true;
+
 // A dropdown to pick a background-audio file + inline Play/Pause and Mute
 // buttons. The parent screen owns all the actual state (which file,
 // playing, muted) — this component is just the UI for it, so it can be
@@ -22,6 +27,7 @@ function BackgroundAudioField({
   onOpenChange,
 }) {
   const noAudio = value === "None";
+  const off = COMING_SOON;
 
   return (
     <div className="flex flex-col gap-2">
@@ -33,6 +39,7 @@ function BackgroundAudioField({
             options={options.map((a) => ({ value: a, label: a }))}
             icon={Music2}
             label="Background audio"
+            disabled={off}
             portalContainer={portalContainer}
             bgClassName="bg-bg-primary"
             collapseOnMobile={false}
@@ -43,7 +50,7 @@ function BackgroundAudioField({
         <button
           type="button"
           aria-label={playing ? "Pause" : "Play"}
-          disabled={noAudio}
+          disabled={off || noAudio}
           onClick={onTogglePlay}
           className={`w-9 h-9 flex-none flex items-center justify-center rounded-lg border border-border-muted transition-colors ${
             playing ? "text-accent-blue" : "text-text-muted hover:bg-bg-hover"
@@ -54,7 +61,7 @@ function BackgroundAudioField({
         <button
           type="button"
           aria-label="Mute"
-          disabled={noAudio}
+          disabled={off || noAudio}
           onClick={onToggleMute}
           className={`w-9 h-9 flex-none flex items-center justify-center rounded-lg border border-border-muted transition-colors ${
             muted ? "text-accent-blue" : "text-text-muted hover:bg-bg-hover"
@@ -63,6 +70,14 @@ function BackgroundAudioField({
           {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
         </button>
       </div>
+      {off ? (
+        <span className="flex items-center gap-2 text-xs text-text-muted">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-bg-hover text-text-muted">
+            Coming soon
+          </span>
+          Background audio is not available yet.
+        </span>
+      ) : (
       <span className="text-xs text-text-muted">
         {noAudio
           ? "No background audio"
@@ -72,6 +87,7 @@ function BackgroundAudioField({
               : "Playing in preview"
             : "From content library"}
       </span>
+      )}
     </div>
   );
 }

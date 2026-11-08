@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 
 // A labeled range slider showing its current value inline (e.g. "Size  9",
 // "Opacity  60%"). Generic over any numeric range field — first used by
@@ -46,8 +47,9 @@ function SliderField({ label, value, onChange, min = 0, max = 100, step = 1, suf
             type="button"
             title="Click to enter an exact value"
             onClick={() => setEditing(true)}
-            className="bg-transparent border-0 border-b border-solid border-transparent text-text-muted text-xs hover:text-text-primary hover:border-accent-blue transition-colors"
+            className="inline-flex items-center gap-1 bg-transparent border-0 border-b border-solid border-transparent text-text-muted text-xs hover:text-text-primary hover:border-accent-blue transition-colors"
           >
+            <Pencil size={10} aria-hidden="true" />
             {String(value).padStart(2, "0")}
             {suffix}
           </button>

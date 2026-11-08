@@ -13,6 +13,7 @@ const HEARTBEAT_MS = 10000; // matches services/deviceSimulator.js's interval
 const CONNECT_TIMEOUT_MS = 10000; // the connect call gives up after this long
 const BANNER_EVERY_MS = 60000; // while offline the OFFLINE strip appears once a minute (first one a minute after the drop)
 const BANNER_SHOW_MS = 10000; // and stays, pulsing, this long
+const BACK_ONLINE_MS = 5000; // the green ONLINE strip when the connection returns, shown once
 const RECONNECT_WAIT_MS = 5000; // between tries while the server can't be reached at start
 const RELEASE_RETRY_MS = 3000; // between tries when a release is answered "already connected"
 const RELEASE_RETRIES = 10; // about 30 s, longer than the server's 20 s "still online" window
@@ -25,6 +26,8 @@ const RELEASE_RETRIES = 10; // about 30 s, longer than the server's 20 s "still 
 //     online       false while the server can't be reached
 //     offlineLock  the assignment the screen may keep playing while offline
 //     bannerOn     true for 10 s every minute while the screen is offline
+//     backOnline   true for 5 s, once, when the screen reconnects after the
+//                  OFFLINE strip had been shown (a short blip shows nothing)
 //     refreshTick  goes up when the owner sends "Refresh screen"
 // `activeIdRef.current` is the assignment playing right now; `setNow` is told
 // the moment a new manifest arrives (see the comment where it is called).
@@ -34,6 +37,9 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
   const [online, setOnline] = useState(true);
   const [offlineLock, setOfflineLock] = useState(null);
   const [bannerOn, setBannerOn] = useState(false);
+  const [backOnline, setBackOnline] = useState(false);
+  // Set once the OFFLINE strip has actually appeared in this offline spell.
+  const stripShownRef = useRef(false);
   // Goes up by one each time the owner sends "Refresh screen".
   const [refreshTick, setRefreshTick] = useState(0);
   const manifestSig = useRef(null);
@@ -43,6 +49,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
     let mqttClient = null;
     let heartbeatTimer = null;
     let retryTimer = null;
+    let backOnlineTimer = null;
     // The real Mongo _id, resolved once from /connect's response. MQTT
     // topics are keyed by this (internal, never exposed to this client
     // beyond this one response) — screenToken (the public, unguessable,
@@ -57,11 +64,20 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       if (cancelled) return;
       setOfflineLock((lock) => lock ?? activeIdRef.current ?? readPlaying(screenToken));
       setOnline(false);
+      clearTimeout(backOnlineTimer);
+      setBackOnline(false);
     }
 
     function markOnline() {
       setOnline(true);
       setOfflineLock(null);
+      // Back after the OFFLINE strip was shown: say so once, then never again.
+      if (stripShownRef.current) {
+        stripShownRef.current = false;
+        setBackOnline(true);
+        clearTimeout(backOnlineTimer);
+        backOnlineTimer = setTimeout(() => setBackOnline(false), BACK_ONLINE_MS);
+      }
     }
 
     function stopHeartbeat() {
@@ -216,7 +232,6 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
             setRefreshTick((tick) => tick + 1);
           } else if (data.action === "reconnect") {
             reclaimAfterRelease().then((reaccepted) => {
-              console.log("[DEBUG-TEMP] release: connect again ->", reaccepted);
               if (cancelled) return;
               if (!reaccepted.id) {
                 setConnection("rejected");
@@ -255,6 +270,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
     return () => {
       cancelled = true;
       clearTimeout(retryTimer);
+      clearTimeout(backOnlineTimer);
       window.removeEventListener("offline", markOffline);
       stopHeartbeat();
       if (mqttClient) mqttClient.end();
@@ -274,6 +290,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       timer = setTimeout(show, BANNER_EVERY_MS - BANNER_SHOW_MS);
     }
     function show() {
+      stripShownRef.current = true;
       setBannerOn(true);
       timer = setTimeout(hide, BANNER_SHOW_MS);
     }
@@ -284,7 +301,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
     };
   }, [online]);
 
-  return { manifest, connection, online, offlineLock, bannerOn, refreshTick };
+  return { manifest, connection, online, offlineLock, bannerOn, backOnline, refreshTick };
 }
 
 // Used by: components/screens/DevicePlayback.jsx.

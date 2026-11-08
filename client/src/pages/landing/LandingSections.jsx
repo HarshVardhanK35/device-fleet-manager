@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 import { SectionHead } from "./landingParts.jsx";
 import { ShotFrame } from "./shots/ShotScreens.jsx";
-import { CONTROLS, DEVICES, FEATURES, LOOKS, OFFLINE_POINTS, STEPS } from "./landingData.js";
+import { CONTROLS, DEVICES, FEATURES, LOOKS, OFFLINE_POINTS, SCREEN_ADDRESS, STEPS } from "./landingData.js";
 
 // The content sections between the hero and the footer. Each is a
 // [data-reveal] section so useReveal can animate it on scroll.
@@ -36,6 +36,7 @@ export function HowItWorks() {
             );
           })}
         </ol>
+        <p className="offline-note">The code works for 15 minutes. Each account can pair up to 3 screens.</p>
       </div>
     </section>
   );
@@ -215,7 +216,7 @@ export function AnyDevice() {
         <h2 className="h2" id="devices-title">
           Works on the screen you already have
         </h2>
-        <p className="lead">If it has a web browser, it can run CastWise. Open the page, enter the code, and it's ready.</p>
+        <p className="lead">If it has a web browser, it can run CastWise. Open {SCREEN_ADDRESS} on it, enter the code it shows in your account, and it's ready.</p>
         <ul className="devices" data-grid>
           {DEVICES.map((d) => {
             const Icon = d.icon;

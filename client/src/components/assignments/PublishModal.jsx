@@ -23,6 +23,7 @@ import { getAssignmentStatus, STATUS_PILL } from "../../utils/assignmentStatus.j
 import { formatScheduleDuration } from "../../utils/scheduleTime.js";
 import { formatDurationHuman } from "../../utils/durationInput.js";
 import { timeAgo } from "../../utils/timeAgo.js";
+import { useToast } from "../../context/useToast.js";
 import SelectCheckbox from "../ui/SelectCheckbox.jsx";
 import CancelButton from "../ui/CancelButton.jsx";
 import Button from "../ui/Button.jsx";
@@ -279,6 +280,7 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
     new Set(editingDeviceId ? [editingDeviceId] : []),
   );
   const [overrides, setOverrides] = useState(new Map());
+  const toast = useToast();
   const [submitting, setSubmitting] = useState(false);
 
   function toggleDevice(id) {
@@ -411,6 +413,8 @@ function PublishModalBody({ playlists, devices, assignment, onOpenChange, onPubl
       }
       onPublished();
       onOpenChange(false);
+      if (assignment) toast("Assignment saved");
+      else toast(selectedIds.size > 1 ? `Assignment created for ${selectedIds.size} screens` : "Assignment created");
     } finally {
       setSubmitting(false);
     }
