@@ -7,8 +7,8 @@ import ActionMenu from "../../ui/ActionMenu.jsx";
 import Button from "../../ui/Button.jsx";
 import FieldCount from "../../ui/FieldCount.jsx";
 import GhostButton from "../../ui/GhostButton.jsx";
-import RefreshButton from "../../ui/RefreshButton.jsx";
 import StatusPill from "../../ui/StatusPill.jsx";
+import Hint from "../../../apps/appModals/announcements/common/Hint.jsx";
 import { MAX_SCREEN_NAME, MAX_SCREEN_TYPE } from "../../../utils/limits.js";
 
 const FIELD =
@@ -29,7 +29,6 @@ function ScreenDetails({
   refreshLeft,
   releaseError,
   onBack,
-  onRefresh,
   onPreview,
   onRemove,
   onTakeOver,
@@ -48,7 +47,6 @@ function ScreenDetails({
       title={screen.name}
       badge={<StatusPill screen={screen} dot />}
       meta={`Slot ${slot} · ${screen.type || "No type set"}`}
-      refresh={<RefreshButton onRefresh={onRefresh} />}
       headerExtra={
         <ActionMenu
           label="Screen actions"
@@ -90,16 +88,11 @@ function ScreenDetails({
             <button
               type="button"
               onClick={onPreview}
-              className="aspect-video rounded-lg overflow-hidden border border-border-muted hover:border-border-hover transition-colors block w-full"
+              // 16:9 at least; on desktop it grows to the height of the column beside it
+              className="aspect-video lg:flex-1 rounded-lg overflow-hidden border border-border-muted hover:border-border-hover transition-colors block w-full"
             >
               <ScreenThumb playing={screen.playing} />
             </button>
-            <span className="text-text-muted text-xs">
-              Click to preview — the physical screen isn't affected.
-            </span>
-            <span className="text-text-muted text-xs">
-              Screen stuck or showing old content? ⋯ → Refresh screen.
-            </span>
           </div>
           <div className="flex-1 min-w-0 flex flex-col">
             {[
@@ -124,6 +117,11 @@ function ScreenDetails({
                 <span className="text-text-primary text-right">{value}</span>
               </div>
             ))}
+            {/* pinned to the bottom of the column, level with the preview's bottom edge */}
+            <div className="mt-auto pt-4 flex flex-col gap-2">
+              <Hint text="Click the preview to watch it — the physical screen isn't affected." />
+              <Hint text="Screen stuck or showing old content? ⋯ → Refresh screen." />
+            </div>
           </div>
         </div>
 
@@ -178,8 +176,13 @@ function ScreenDetails({
                 Take over this screen
               </span>
               <span className="text-text-muted text-xs leading-relaxed">
-                Opens the full player here and disconnects the physical screen at once — only one connection per
-                screen is allowed.
+                <span className="lg:hidden">
+                  Plays the screen here and disconnects the real one. Only one connection per screen.
+                </span>
+                <span className="hidden lg:inline">
+                  Opens the full player here and disconnects the physical screen at once — only one connection per
+                  screen is allowed.
+                </span>
               </span>
             </div>
             {screen.status !== "taken" ? (

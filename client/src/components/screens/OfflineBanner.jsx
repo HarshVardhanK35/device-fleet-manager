@@ -2,11 +2,13 @@
 // DevicePlayback shows it only after the screen has been offline for a few
 // seconds, so a short network blip never flashes it; it pulses softly until the
 // connection is back (the .cw-offline-pulse animation in index.css).
-function OfflineBanner() {
+// `online` turns it into the green "ONLINE" strip shown once, for a few seconds,
+// when a screen that had been showing OFFLINE gets its connection back (no pulse).
+function OfflineBanner({ online = false }) {
   return (
     <div
       role="status"
-      className="cw-offline-pulse"
+      className={online ? undefined : "cw-offline-pulse"}
       style={{
         position: "fixed",
         top: "2vmin",
@@ -15,7 +17,7 @@ function OfflineBanner() {
         zIndex: 50,
         padding: "0.8vmin 3vmin",
         borderRadius: 999,
-        background: "#da3633",
+        background: online ? "#238636" : "#da3633",
         color: "#fff",
         fontSize: "max(14px, 2.4vmin)",
         fontWeight: 700,
@@ -23,7 +25,7 @@ function OfflineBanner() {
         pointerEvents: "none",
       }}
     >
-      OFFLINE
+      {online ? "ONLINE" : "OFFLINE"}
     </div>
   );
 }

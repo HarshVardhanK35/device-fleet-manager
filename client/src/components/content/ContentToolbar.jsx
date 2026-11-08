@@ -9,6 +9,8 @@ function ContentToolbar({
   actionLabel,
   actionIcon,
   onAction,
+  actionIconOnly,
+  beforeAction,
   boxed,
   endSlot,
   filterCounts,
@@ -35,6 +37,8 @@ function ContentToolbar({
         actionLabel={actionLabel}
         actionIcon={actionIcon}
         onAction={onAction}
+        actionIconOnly={actionIconOnly}
+        beforeAction={beforeAction}
         boxed={boxed}
         endSlot={endSlot}
       />

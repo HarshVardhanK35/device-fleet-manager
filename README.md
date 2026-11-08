@@ -2,7 +2,7 @@
 
 Free digital signage for any screen. Put images, videos, notices and small live "apps" (weather, clock, news, announcements) on any TV, tablet or phone that has a browser, schedule them by screen and time window, and see which screens are online.
 
-Live at **https://castwise.site** · Current version: **1.4.0**
+Live at **https://castwise.site** · Current version: **1.4.1**
 
 > The repository and some internal names still say "Device Fleet Manager" / "DFM" (the original working name). Everything a user sees says CastWise and "screens".
 
@@ -81,6 +81,7 @@ JWT_SECRET=<secret>
 REFRESH_TOKEN_SECRET=<secret>
 MQTT_URL=<broker url, e.g. mqtt://localhost:1883>
 MQTT_TOPIC_PREFIX=<optional, e.g. stg/ so environments can share one broker>
+TRUST_PROXY_HOPS=<optional, default 1; 5 when the frontend forwards /api to the backend (see Deployment)>
 MQTT_USERNAME=<optional>
 MQTT_PASSWORD=<optional>
 CLOUDINARY_CLOUD_NAME=<name>
@@ -126,18 +127,6 @@ node services/deviceSimulator.js <deviceId>
 
 Subscribes to that screen's manifest topic, logs what arrives and sends heartbeats.
 
-## Limits (the same for every account)
-
-| | |
-|---|---|
-| Screens | 3 |
-| Images | 30 (10 MB each, up to 25 megapixels) |
-| Video storage | 150 MB (100 MB per file) |
-| Feedback | 5 messages per account in total (deleting one does not give the slot back) |
-| Names | content 60, playlist 60, app 55, screen 30, screen type 20, first and last name 20 |
-
-The client mirrors these in `client/src/utils/limits.js`; the server enforces them.
-
 ## Deployment
 
 Two environments, each with a frontend (static site) and a backend on Render, sharing one EMQX Cloud MQTT broker (staging topics start with `stg/`, set by `MQTT_TOPIC_PREFIX` on the backend and `VITE_MQTT_TOPIC_PREFIX` on the frontend; prod uses its own broker login and no prefix):
@@ -145,10 +134,13 @@ Two environments, each with a frontend (static site) and a backend on Render, sh
 - **Staging** — `staging.castwise.site`, built from every push to `master`; sends `X-Robots-Tag: noindex` so search engines skip it.
 - **Production** — `castwise.site`, promoted by pushing a `v*` tag, which copies the already-built, already-tested artifact (no rebuild).
 
+**API through the frontend:** on both sites the frontend forwards `/api/*` to its backend (a Render rewrite rule placed above the catch-all `/*` to `/index.html` rule) and is built with `VITE_API_BASE=https://<site>/api`, so the browser only talks to its own site. That keeps the refresh cookie (`SameSite=Strict`) working, which is what "Stay signed in" and the silent renewal need. The backend then runs with `TRUST_PROXY_HOPS=5` (the client, Cloudflare twice and two Render addresses sit in front of it), so the rate limits count each client's own address.
+
 Staging and prod use separate databases. The app repos publish their own zips the same way (a `staging` release on every push, a `prod` release on a version tag).
 
 ## Recent releases
 
+- **1.4.1** — prod moves to EMQX Cloud (one deployment shared with staging, kept apart by a topic prefix; Mosquitto removed), the API is served through each frontend so "Stay signed in" works on the deployed sites, the rate limits count each client's real address (`TRUST_PROXY_HOPS`), **Skip** for playlist items (kept in the playlist, not played; `skippedItems`), the item details panel opens from a playlist, a green ONLINE strip when a screen reconnects, toast notifications for every save, add and delete, the session warning opens only for an idle user (an active one is renewed quietly), a collapsible list on the Playlists, Assignments and Player pages (desktop), a playlist summary on assignment cards, Media RSS explains its duration, items sort by last edit, background audio shown as coming soon, icon-only Refresh buttons, a tidier Player page (refresh in the list, hints with bulb icons, shorter take-over text on small screens), and the Playlists page split into a hook and components.
 - **1.4.0** — Feedback (user page and an admin Inbox where each message gets one answer, Noted or Not planned), a warning before the session ends, the reworked `/screens` pairing page (current name, refresh icon, code-limit counter), offline screens (saved files and manifest, offline rules, OFFLINE strip) with `@castwise/ignition` 1.4.0 for app data, **Refresh screen** and a take-over state that survives leaving the page, toast notifications, a landing page with an Offline section and a four-column footer, and a code reorganisation (`apps/shared` folders; the player, `/screens` and Player pages split into hooks and components).
 - **1.3.1** — favicon PNGs and `favicon.ico` for Google, icon thumbnails for apps (Content, Playlists, Dashboard, pickers, Player), `hello@castwise.site` as the public address, LinkedIn / GitHub / X links in the landing footer.
 - **1.3.0** — search engine basics (title, description, canonical, share tags, `robots.txt`, `sitemap.xml`), "Free for up to 3 screens" on the landing page, images on screens appear whole (preloaded, screen-size copies), playlist duplicate rule, Edit playlist works as a draft until Save, several mobile layout fixes.

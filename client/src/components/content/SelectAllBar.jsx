@@ -10,6 +10,8 @@ function SelectAllBar({
   actionLabel = "Delete",
   actionIcon: ActionIcon = Trash2,
   onAction,
+  actionIconOnly = false,
+  beforeAction,
   endSlot,
   boxed = false,
   className = "",
@@ -52,15 +54,19 @@ function SelectAllBar({
 
       <div className="flex-1" />
       {endSlot}
+      {beforeAction}
 
       <button
         onClick={onAction}
         disabled={checkedCount === 0}
         aria-label={actionLabel}
-        className="inline-flex items-center justify-center gap-1.5 h-9 w-9 md:w-auto px-0 md:px-3 rounded-lg border border-accent-red/40 text-accent-red text-sm font-medium hover:bg-accent-red/10 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+        title={actionIconOnly ? actionLabel : undefined}
+        className={`inline-flex items-center justify-center gap-1.5 h-9 rounded-lg border border-accent-red/40 text-accent-red text-sm font-medium hover:bg-accent-red/10 disabled:opacity-40 disabled:hover:bg-transparent transition-colors ${
+          actionIconOnly ? "w-9 px-0" : "w-9 md:w-auto px-0 md:px-3"
+        }`}
       >
         <ActionIcon size={16} />
-        <span className="hidden md:inline">{actionLabel}</span>
+        {!actionIconOnly && <span className="hidden md:inline">{actionLabel}</span>}
       </button>
     </div>
   );
@@ -73,7 +79,9 @@ export default SelectAllBar;
 // (shown when `onClear` is passed and something's checked), an optional
 // `endSlot` node (e.g. a hint), and a destructive action button (icon +
 // label, customizable via `actionLabel`/`actionIcon`/`onAction`) whose
-// label collapses away below `md` (icon always stays). `boxed` wraps the
+// label collapses away below `md` (icon always stays); `actionIconOnly` keeps
+// just the icon (label becomes the tooltip) and `beforeAction` is an optional
+// node placed left of it (Playlists puts its Skip button there). `boxed` wraps the
 // whole row in a bordered/padded pill that tints blue once something's
 // checked — used by Playlists, left off (plain inline row) for Content.
 // Used by: pages/Content.jsx (Delete), pages/Playlists.jsx (Remove).

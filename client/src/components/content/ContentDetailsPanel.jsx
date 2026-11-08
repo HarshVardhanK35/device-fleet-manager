@@ -4,6 +4,7 @@ import { Trash2, Pencil, Settings2 } from "lucide-react";
 import Button from "../ui/Button.jsx";
 import AppThumb from "../ui/AppThumb.jsx";
 import { appTypeOf } from "../../utils/appType.js";
+import { rssSecondsPerItem } from "../../apps/rssTiming.js";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
 import CancelButton from "../ui/CancelButton.jsx";
@@ -45,6 +46,8 @@ function deriveCustomUnit(sec) {
 // truthy — the key forces a remount (fresh initial state) whenever a
 // different item is inspected, instead of syncing props into state via a
 // useEffect (an anti-pattern: see react-hooks/set-state-in-effect).
+// `onDelete` is optional: the Playlists page leaves it out, so the library item
+// can't be deleted from there (the button is not shown).
 // `onOpenAppSettings` (app items only) opens that app's own full settings
 // modal (location, refresh interval, etc.) — this panel only ever edits
 // name + duration, the two fields every content type shares.
@@ -135,6 +138,13 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
     });
   });
 
+  // Enter in the name or custom-duration field saves, same as the Save button.
+  function saveOnEnter(e) {
+    if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+    e.preventDefault();
+    if (!customInvalid && !saving) handleSave();
+  }
+
   // xl and up: a floating panel over the page (the tiles keep their size); below
   // that: a centred modal over a blurred page.
   const sidePanel = useMediaQuery("(min-width: 1280px)");
@@ -171,6 +181,7 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
               value={name}
               maxLength={item.type === "app" ? MAX_APP_NAME : MAX_CONTENT_NAME}
               onChange={(e) => setName(e.target.value)}
+              onKeyDown={saveOnEnter}
               className="bg-bg-primary border border-border-muted hover:border-border-hover text-text-primary px-2 py-1.5 rounded-lg w-full outline-none transition-colors focus-visible:ring-1 focus-visible:ring-accent-blue"
             />
           </div>
@@ -223,6 +234,7 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
                       value={customRaw}
                       onChange={(e) => setCustomRaw(e.target.value)}
                       onBlur={handleCustomBlur}
+                      onKeyDown={saveOnEnter}
                       className="w-0 flex-1 bg-transparent text-text-primary text-sm font-bold outline-none text-right"
                     />
                     <button
@@ -291,7 +303,9 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
                   {formatDurationHuman(Math.round((item.durationInMillis || 0) / 1000))}
                 </span>
                 <p className="text-text-muted text-xs mt-1 mb-0">
-                  Auto-calculated from this app&apos;s settings.
+                  {item.configBlob?.appType === "rss" && item.configBlob?.itemCount
+                    ? `Auto-calculated: ${item.configBlob.itemCount} items × ${rssSecondsPerItem(item.configBlob)} s per item. Change the item count or scroll speed in Edit app settings.`
+                    : "Auto-calculated from this app's settings."}
                 </p>
               </div>
             </div>
@@ -300,13 +314,17 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
       </ScrollBox>
 
       <div className="flex-none flex items-center justify-between px-4 py-2.5 border-t border-border-muted">
-        <button
-          onClick={() => onDelete(item)}
-          className="w-9 h-9 rounded-md border border-accent-red/40 text-accent-red hover:bg-accent-red/10 flex items-center justify-center transition-colors"
-          title="Delete"
-        >
-          <Trash2 size={16} />
-        </button>
+        {onDelete ? (
+          <button
+            onClick={() => onDelete(item)}
+            className="w-9 h-9 rounded-md border border-accent-red/40 text-accent-red hover:bg-accent-red/10 flex items-center justify-center transition-colors"
+            title="Delete"
+          >
+            <Trash2 size={16} />
+          </button>
+        ) : (
+          <span />
+        )}
         <div className="flex gap-2">
           <button
             onClick={onClose}

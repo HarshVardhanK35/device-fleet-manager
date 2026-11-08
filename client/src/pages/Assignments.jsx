@@ -17,6 +17,9 @@ import {
   TIMELINE_DOT,
 } from "../utils/assignmentStatus.js";
 import { pluralizeCount } from "../utils/pluralize.js";
+import { useToast } from "../context/useToast.js";
+import PaneToggle from "../components/layout/PaneToggle.jsx";
+import { COLLAPSED_PANE_CLASS, usePaneCollapse } from "../hooks/usePaneCollapse.js";
 import AssignmentCard from "../components/assignments/AssignmentCard.jsx";
 import RefreshButton from "../components/ui/RefreshButton.jsx";
 import ConfirmDeleteModal from "../components/modals/ConfirmDeleteModal.jsx";
@@ -29,6 +32,9 @@ import SelectableRow from "../components/ui/SelectableRow.jsx";
 
 function Assignments() {
   const navigate = useNavigate();
+  const toast = useToast();
+  // Desktop: the screens list can be folded away to focus on one screen.
+  const [listCollapsed, toggleList] = usePaneCollapse("assignments");
   const [devices, setDevices] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -94,6 +100,7 @@ function Assignments() {
       })),
     );
     setDeleteTarget(null);
+    toast("Assignment deleted");
   }
 
   const selectedDevice = devices.find((d) => d._id === selectedId);
@@ -112,11 +119,15 @@ function Assignments() {
       <div className="flex gap-4 lg:min-h-[calc(100dvh-88px)]">
         {/* left pane */}
         <div
-          className={`w-full lg:w-80 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted ${
+          className={`relative w-full lg:w-80 lg:flex-shrink-0 lg:pr-4 lg:border-r lg:border-border-muted ${
             mobileView === "detail" ? "hidden lg:block" : ""
-          }`}
+          } ${listCollapsed ? COLLAPSED_PANE_CLASS : ""}`}
         >
-          <h1 className="text-text-primary text-xl font-bold">Assignments</h1>
+          <PaneToggle collapsed={listCollapsed} onToggle={toggleList} />
+          <div className="flex items-center gap-2">
+            <h1 className="text-text-primary text-xl font-bold">Assignments</h1>
+            <RefreshButton className="ml-auto" onRefresh={() => load(false)} />
+          </div>
           <p className="text-text-muted text-sm mb-4 whitespace-nowrap">
             <span className="sm:hidden">Choose what each screen plays, and when.</span>
             <span className="hidden sm:inline">Choose which playlist each screen plays, and when.</span>
@@ -126,12 +137,9 @@ function Assignments() {
             <h2 className="text-text-muted text-xs font-semibold uppercase tracking-wide">
               Your Screens
             </h2>
-            <div className="flex items-center gap-3">
-              <span className="text-text-muted text-xs">
-                {onlineCount} of {devices.length} online
-              </span>
-              <RefreshButton onRefresh={() => load(false)} />
-            </div>
+            <span className="text-text-muted text-xs">
+              {onlineCount} of {devices.length} online
+            </span>
           </div>
 
           {loading ? (

@@ -38,16 +38,11 @@ import feedRoutes from "./routes/feedRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 
 const app = express(); // creates express application
-// How many proxies sit in front of the API: 1 when it is called directly, 2 when the
-// frontend forwards /api to it (Render rewrite), so the rate limits see the real
-// client address. Set TRUST_PROXY_HOPS on the Render service.
+// How many proxies sit in front of the API: 1 when it is called directly, 5 when the
+// frontend forwards /api to it (Render rewrite: the client, Cloudflare twice, then
+// two Render addresses), so the rate limits see the real client address. Set
+// TRUST_PROXY_HOPS on the Render service.
 app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS) || 1);
-
-// TEMP DEBUG: which address the server sees behind the rewrite (remove once checked)
-app.use("/pairing/generate", (req, res, next) => {
-  console.log("[DEBUG-TEMP] pairing/generate ip =", req.ip, "| x-forwarded-for =", req.headers["x-forwarded-for"]);
-  next();
-});
 
 // gets the PORT from .env or fallback keeps server runnable without a .env file
 const PORT = process.env.PORT || 3000;

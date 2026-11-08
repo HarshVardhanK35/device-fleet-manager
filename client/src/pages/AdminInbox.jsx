@@ -7,6 +7,7 @@ import {
   updateInboxFeedback,
 } from "../api/feedback.js";
 import { notifyFeedbackChanged } from "../hooks/useFeedbackIndicator.js";
+import { useToast } from "../context/useToast.js";
 import {
   INBOX_CHIPS,
   STATUS_LABEL,
@@ -119,6 +120,7 @@ function InboxCard({ item, onOpen }) {
 }
 
 function AdminInbox() {
+  const toast = useToast();
   const [data, setData] = useState({ items: [], total: 0, page: 1, pages: 1, counts: { all: 0 } });
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -190,6 +192,7 @@ function AdminInbox() {
     setData((d) => ({ ...d, items: d.items.map((i) => (i._id === res._id ? res : i)) }));
     refetch();
     notifyFeedbackChanged();
+    toast("Reply saved");
     return "";
   }
 
@@ -201,6 +204,7 @@ function AdminInbox() {
     if (data.items.length === 1 && page > 1) setPage((p) => p - 1);
     refetch();
     notifyFeedbackChanged();
+    toast("Feedback deleted");
   }
 
   const chipLabel = INBOX_CHIPS.find((c) => c[0] === filter)?.[1] || "";

@@ -55,8 +55,12 @@ export const USE_CASES = [
   { value: "School", icon: GraduationCap },
 ];
 
+// The page a screen opens to get its pairing code. Fixed to the public address
+// so every environment shows the same text.
+export const SCREEN_ADDRESS = "castwise.site/screens";
+
 export const STEPS = [
-  { icon: Link2, title: "Pair a screen", text: "Open CastWise on the screen and type the short code it shows into your account." },
+  { icon: Link2, title: "Pair a screen", text: `Open ${SCREEN_ADDRESS} on the screen. It shows a short code. Type that code into Player in your account.` },
   { icon: LayoutGrid, title: "Add what to show", text: "Pick a menu, a notice, the weather or your own photos." },
   { icon: CalendarCheck, title: "Choose when it plays", text: "Set start and end times, or let it run all day." },
 ];

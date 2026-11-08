@@ -11,12 +11,17 @@ import { saveReturnTo, tokenExpiry, tokenMinutes } from "../../utils/sessionExpi
 import Button from "../ui/Button.jsx";
 
 const WARN_SECONDS = 5 * 60; // the warning opens this long before the session ends
+const ACTIVE_MS = 2 * 60 * 1000; // someone who did anything in the last 2 minutes is not idle
+const ACTIVITY_EVENTS = ["pointerdown", "keydown", "wheel", "scroll", "touchstart"];
 
 const formatLeft = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-// "Your session ends in m:ss": opens 5 minutes before the access token expires.
-// Stay signed in renews it with the refresh cookie; at 0:00 the user is sent to
-// the sign-in page with the reason. Checks the real clock every second and when
+// "Your session ends in m:ss": opens 5 minutes before the access token expires,
+// but only for someone who is idle. While the user is active (a click, a key, a
+// scroll or a touch in the last 2 minutes) the token is renewed quietly with the
+// refresh cookie instead, so a busy session never sees the modal. If that quiet
+// renewal fails, the modal opens. Stay signed in renews it with the refresh
+// cookie; at 0:00 the user is sent to the sign-in page with the reason. Checks the real clock every second and when
 // a hidden tab comes back (hidden tabs slow their timers down).
 function SessionWatcher() {
   const { logout } = useAuth();
@@ -25,6 +30,17 @@ function SessionWatcher() {
   const [error, setError] = useState("");
   const [minutes, setMinutes] = useState(() => tokenMinutes(getAccessToken()));
   const ending = useRef(false);
+  const lastActive = useRef(0);
+  const renewing = useRef(false);
+  const renewFailed = useRef(false);
+
+  useEffect(() => {
+    const mark = () => {
+      lastActive.current = Date.now();
+    };
+    ACTIVITY_EVENTS.forEach((name) => window.addEventListener(name, mark, { passive: true, capture: true }));
+    return () => ACTIVITY_EVENTS.forEach((name) => window.removeEventListener(name, mark, { capture: true }));
+  }, []);
 
   useEffect(
     () =>
@@ -37,9 +53,33 @@ function SessionWatcher() {
 
   useEffect(() => {
     if (!expiry) return undefined;
+    async function renewQuietly() {
+      renewing.current = true;
+      try {
+        const res = await refreshAccessToken();
+        if (res?.token) setAccessToken(res.token);
+        else renewFailed.current = true;
+      } catch {
+        renewFailed.current = true;
+      } finally {
+        renewing.current = false;
+      }
+    }
+
     function check() {
       const seconds = Math.ceil((expiry - Date.now()) / 1000);
-      setLeft(seconds > WARN_SECONDS ? null : Math.max(seconds, 0));
+      if (seconds > WARN_SECONDS) {
+        renewFailed.current = false;
+        setLeft(null);
+        return;
+      }
+      const active = Date.now() - lastActive.current < ACTIVE_MS;
+      if (active && !renewFailed.current) {
+        if (!renewing.current) renewQuietly();
+        setLeft(null);
+        return;
+      }
+      setLeft(Math.max(seconds, 0));
     }
     const id = setInterval(check, 1000);
     document.addEventListener("visibilitychange", check);
@@ -135,5 +175,5 @@ function SessionExpiryWarning() {
 
 export default SessionExpiryWarning;
 
-// Opens 5 minutes before the access token expires (15 min sessions).
+// Opens 5 minutes before the access token expires (15 min sessions), only when idle.
 // Used by: App.jsx.

@@ -12,7 +12,7 @@ const TYPES = [
 ];
 
 const SORTS = [
-  { value: "recent", label: "Recently added" },
+  { value: "recent", label: "Recently updated" },
   { value: "name", label: "Name A-Z" },
 ];
 

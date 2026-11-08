@@ -4,6 +4,7 @@ import { createFeedback } from "../api/feedback.js";
 import { useAsyncAction } from "./useAsyncAction.js";
 import { notifyFeedbackChanged } from "./useFeedbackIndicator.js";
 import { FEEDBACK_MESSAGE_MAX } from "../utils/feedbackMeta.js";
+import { useToast } from "../context/useToast.js";
 
 // The state and the Send action of the New feedback form, shared by the modal
 // (tablet and phone) and the inline card on desktop. Both draw their fields
@@ -11,6 +12,7 @@ import { FEEDBACK_MESSAGE_MAX } from "../utils/feedbackMeta.js";
 //   remaining / limit  how many of the account's messages are left (from the server)
 //   onSent             called after a message was saved
 export function useFeedbackForm({ remaining, limit, onSent }) {
+  const toast = useToast();
   const [type, setTypeValue] = useState("");
   const [message, setMessageValue] = useState("");
   const [typeErr, setTypeErr] = useState(false);
@@ -59,6 +61,7 @@ export function useFeedbackForm({ remaining, limit, onSent }) {
     setJustSent(true);
     notifyFeedbackChanged();
     onSent();
+    toast("Feedback sent");
   });
 
   return {

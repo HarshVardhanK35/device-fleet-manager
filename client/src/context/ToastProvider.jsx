@@ -22,17 +22,17 @@ export function ToastProvider({ children }) {
     setToasts((list) => list.filter((t) => t.id !== id));
   }
 
-  function showToast(message, tone = "success") {
+  function showToast(message, tone = "success", shortMessage) {
     const id = nextId.current++;
-    setToasts((list) => [...list, { id, message, tone }].slice(-MAX_TOASTS));
+    setToasts((list) => [...list, { id, message, shortMessage, tone }].slice(-MAX_TOASTS));
     setTimeout(() => dismiss(id), SHOW_MS);
   }
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 left-4 right-4 z-[100] flex flex-col items-end gap-2 md:left-auto md:w-[380px]">
-        {toasts.map(({ id, message, tone }) => {
+      <div className="pointer-events-none fixed bottom-[88px] left-4 right-4 z-[100] flex flex-col items-center gap-2 md:items-end md:bottom-4 md:left-auto md:w-[380px]">
+        {toasts.map(({ id, message, shortMessage, tone }) => {
           const { Icon, color } = TONES[tone] || TONES.success;
           return (
             <button
@@ -40,10 +40,21 @@ export function ToastProvider({ children }) {
               type="button"
               role="status"
               onClick={() => dismiss(id)}
-              className="cw-pop-in pointer-events-auto flex w-full items-start gap-2.5 rounded-lg border border-border-muted bg-bg-panel px-4 py-3 text-left text-sm text-text-primary shadow-2xl"
+              // Phones: one line, shown just above the bottom action bar (e.g.
+              // "Add content"), so that button stays uncovered.
+              className="cw-pop-in pointer-events-auto flex w-fit max-w-full min-h-[46px] items-center gap-2.5 rounded-lg border border-border-muted bg-bg-panel px-4 py-2 text-left text-sm text-text-primary shadow-2xl md:items-start md:py-3"
             >
-              <Icon size={18} className={`mt-px flex-none ${color}`} />
-              <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{message}</span>
+              <Icon size={18} className={`flex-none ${color} md:mt-px`} />
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {shortMessage ? (
+                  <>
+                    <span className="md:hidden">{shortMessage}</span>
+                    <span className="hidden md:inline">{message}</span>
+                  </>
+                ) : (
+                  message
+                )}
+              </span>
             </button>
           );
         })}

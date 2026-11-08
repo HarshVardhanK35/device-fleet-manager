@@ -20,7 +20,9 @@ export function computePlaying(assignments, deviceId) {
     return now >= begin && now <= end;
   });
 
-  const items = active?.playlistId?.contentItems;
+  // Skipped items are not played, so they are not "what is playing" either.
+  const skipped = new Set((active?.playlistId?.skippedItems ?? []).map(String));
+  const items = active?.playlistId?.contentItems?.filter((item) => !skipped.has(String(item._id)));
   const first = items?.[0];
   if (!first) return null;
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MessageSquareText, Plus, Trash2 } from "lucide-react";
 
 import { deleteMyFeedback, getMyFeedback, markFeedbackRead } from "../api/feedback.js";
+import { useToast } from "../context/useToast.js";
 import { notifyFeedbackChanged } from "../hooks/useFeedbackIndicator.js";
 import { TYPE_LABEL, STATUS_LABEL, formatFeedbackDate } from "../utils/feedbackMeta.js";
 import ConfirmDeleteFeedback from "../components/feedback/ConfirmDeleteFeedback.jsx";
@@ -74,6 +75,7 @@ function FeedbackCard({ item, onOpen, onAskDelete }) {
 }
 
 function Feedback() {
+  const toast = useToast();
   const [data, setData] = useState({ items: [], total: 0, page: 1, pages: 1, remaining: 0, limit: 5 });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -148,6 +150,7 @@ function Feedback() {
     if (data.items.length === 1 && page > 1) setPage((p) => p - 1);
     refetch();
     notifyFeedbackChanged();
+    toast("Feedback deleted");
   }
 
   return (

@@ -225,6 +225,7 @@ function Dashboard() {
           <DashboardAttentionPanel
             items={attentionItems}
             onOpenAssignments={() => navigate("/assignments")}
+            onOpenPlayer={() => navigate("/player")}
           />
         </div>
 

@@ -18,13 +18,19 @@ async function buildManifestForDevice(deviceId) {
     deviceId: device._id,
     deviceName: device.name,
     generatedAt: new Date(),
-    playlists: assignments.map((assignment) => ({
-      assignmentId: assignment._id,
-      beginDT: assignment.beginDT,
-      endDT: assignment.endDT,
-      playlistName: assignment.playlistId.name,
-      content: assignment.playlistId.contentItems,
-    })),
+    playlists: assignments.map((assignment) => {
+      // Skipped items stay in the playlist but are not sent to the screen.
+      const skipped = new Set(assignment.playlistId.skippedItems.map(String));
+      return {
+        assignmentId: assignment._id,
+        beginDT: assignment.beginDT,
+        endDT: assignment.endDT,
+        playlistName: assignment.playlistId.name,
+        content: assignment.playlistId.contentItems.filter(
+          (item) => !skipped.has(String(item._id)),
+        ),
+      };
+    }),
   };
 }
 

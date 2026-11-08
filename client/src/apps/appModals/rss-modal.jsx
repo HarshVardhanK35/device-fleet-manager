@@ -12,6 +12,9 @@ import BackgroundAudioField from "../shared/fields/BackgroundAudioField.jsx";
 import StyledSelect from "../../components/ui/StyledSelect.jsx";
 import ContentPickerModal from "../../components/content/ContentPickerModal.jsx";
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
+import Hint from "./announcements/common/Hint.jsx";
+import { rssSecondsPerItem } from "../rssTiming.js";
+import { formatDurationHuman } from "../../utils/durationInput.js";
 import { useAppSettingsForm } from "../shared/settings/useAppSettingsForm.js";
 
 // Matches the approved Media RSS mock's own font list exactly.
@@ -41,25 +44,13 @@ const AUDIO_OPTIONS = ["None"];
 
 const REFRESH_OPTIONS = ["5 min", "15 min", "30 min", "1 hour"];
 
-// Per-item dwell time, matching the real values already baked into the
-// widget's own rendering — TickerLayout.vue's SCROLL_DURATION (a Ticker
-// item advances once its headline finishes scrolling, timed per speed) and
-// RssWidget.vue's ROTATION_MS (Split always advances on a flat 8s timer,
-// independent of the speed setting — Split's own settings UI doesn't even
-// expose a speed control). Keep these in sync if either widget file's
-// timing ever changes — there's no shared constant across the two repos.
-const TICKER_SECONDS_PER_ITEM = { slow: 45, medium: 30, fast: 15 };
-const SPLIT_SECONDS_PER_ITEM = 8;
-
 // The RSS app rotates through `itemCount` feed items instead of showing one
 // static screen like Weather/Clock — its real on-screen time is itemCount ×
 // per-item dwell time, not a flat guess. Computed fresh on every Save so it
 // always reflects the current layout/speed/itemCount, not just whatever was
 // true when the tile was first created.
 function computeRssDuration(form) {
-  const perItem =
-    form.layout === "ticker" ? TICKER_SECONDS_PER_ITEM[form.speed] : SPLIT_SECONDS_PER_ITEM;
-  return form.itemCount * perItem * 1000;
+  return form.itemCount * rssSecondsPerItem(form) * 1000;
 }
 
 const INITIAL_FORM = {
@@ -300,6 +291,9 @@ function RssSettingsScreen({ open, onOpenChange, onSaved, existingContent, libra
                 labelFor={(o) => o[0].toUpperCase() + o.slice(1)}
               />
             </Field>
+            <Hint
+              text={`Each ${form.layout === "ticker" ? "headline" : "item"} stays ${rssSecondsPerItem(form)} s. ${form.itemCount} items × ${rssSecondsPerItem(form)} s = ${formatDurationHuman(form.itemCount * rssSecondsPerItem(form))} in total, set automatically in Content.`}
+            />
           </SettingsCard>
 
           <SettingsCard kicker="Brand logo">
