@@ -2,7 +2,7 @@ import { useRef } from "react";
 
 import BrandLoader from "../../loading/BrandLoader.jsx";
 import DevicePlayback from "../DevicePlayback.jsx";
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 const LONG_PRESS_MS = 900;
 

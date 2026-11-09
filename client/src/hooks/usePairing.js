@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import { generatePairingCode, getPairingStatus } from "../api/pairing.js";
 import { checkDeviceExists } from "../api/devices.js";
 import { forgetScreen } from "../offline/forgetScreen.js";
+import { logError, logEvent, logWarn } from "../utils/screenLog/screenLog.js";
 import {
   clearStoredPairing,
   readRetryAt,
   readStoredPairing,
   storePairing,
   storeRetryAt,
-} from "../utils/screenStorage.js";
+} from "../utils/screens/screenStorage.js";
 
 export const CODE_SECONDS = 15 * 60;
 const STATUS_POLL_MS = 2000;
@@ -30,6 +31,10 @@ export function usePairing() {
   const [retryAt, setRetryAt] = useState(null);
   const limited = retryAt !== null;
   const [retryLeft, setRetryLeft] = useState(0); // seconds until retryAt, for the counter
+
+  useEffect(() => {
+    logEvent("pairing", `Screen page is now in the "${phase}" state`);
+  }, [phase]);
 
   function startLimit(until) {
     setRetryAt(until);
@@ -52,8 +57,10 @@ export function usePairing() {
       const stored = readStoredPairing();
       if (stored) {
         try {
+          logEvent("pairing", `This browser remembers a pairing (screen "${stored.screenName}"); asking the server whether it still exists`);
           const check = await checkDeviceExists(stored.screenToken);
           if (cancelled) return;
+          logEvent("pairing", check?.exists ? "The server confirms this screen still exists" : "The server says this screen no longer exists; starting a new pairing");
           if (check?.exists) {
             setScreenToken(stored.screenToken);
             // The name may have been changed in the app since this screen paired.
@@ -72,6 +79,7 @@ export function usePairing() {
           // who it is, so go on to "tap to start"; playback then runs from the
           // files and manifest saved earlier (see DevicePlayback.jsx).
           if (cancelled) return;
+          logWarn("pairing", "The server could not be reached; going on as the remembered screen (it plays from what was saved)");
           setScreenToken(stored.screenToken);
           setScreenName(stored.screenName || "");
           setPhase("tap");
@@ -92,6 +100,7 @@ export function usePairing() {
         const data = await generatePairingCode();
         if (cancelled) return;
         if (data?.rateLimited) {
+          logWarn("pairing", `The server will not give a pairing code now (limit reached); next try at ${data.retryAt || "in about an hour"}`);
           const until = data.retryAt ? new Date(data.retryAt).getTime() : Date.now() + 60 * 60 * 1000;
           storeRetryAt(until);
           startLimit(until);
@@ -99,12 +108,14 @@ export function usePairing() {
           return;
         }
         if (!data?.code) throw new Error(data?.message || "generate failed");
+        logEvent("pairing", `Pairing code shown (expires ${data.expiresAt})`);
         setRetryAt(null);
         setCode(data.code);
         const remaining = Math.round((new Date(data.expiresAt).getTime() - Date.now()) / 1000);
         setSecondsLeft(Math.max(0, remaining));
         setPhase("code");
-      } catch {
+      } catch (error) {
+        logError("pairing", `Could not get a pairing code (${error.message}); trying again in 3 s`);
         if (!cancelled) setTimeout(attempt, 3000);
       }
     }
@@ -149,6 +160,7 @@ export function usePairing() {
       try {
         const data = await getPairingStatus(code);
         if (cancelled || data?.status !== "claimed") return;
+        logEvent("pairing", `The code was claimed from the app: this screen is now "${data.screenName || ""}"`);
         setScreenName(data.screenName || "");
         setScreenToken(data.screenToken || null);
         if (data.screenToken) {

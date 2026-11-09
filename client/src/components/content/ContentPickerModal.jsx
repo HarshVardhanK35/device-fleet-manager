@@ -11,14 +11,14 @@ import ContentFilterSortBar from "./ContentFilterSortBar.jsx";
 import PickerSelectionStatus from "./PickerSelectionStatus.jsx";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
-import { getTypeMeta } from "../../utils/contentTypeMeta.js";
-import { formatDuration } from "../../utils/formatDuration.js";
+import { getTypeMeta } from "../../utils/content/contentTypeMeta.js";
+import { formatDuration } from "../../utils/format/formatDuration.js";
 import FieldCount from "../ui/FieldCount.jsx";
-import { MAX_IMAGE_COPIES, MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from "../../utils/limits.js";
+import { MAX_IMAGE_COPIES, MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from "../../utils/validation/limits.js";
 import BlurImage from "../ui/BlurImage.jsx";
 import AppThumb from "../ui/AppThumb.jsx";
-import { appTypeOf } from "../../utils/appType.js";
-import { DUPLICATE_PLAYLIST_NAME, normalizeName } from "../../utils/playlistNames.js";
+import { appTypeOf } from "../../utils/content/appType.js";
+import { DUPLICATE_PLAYLIST_NAME, normalizeName } from "../../utils/playlists/playlistNames.js";
 
 // One library item as a compact row (the picker's List view) — about three
 // times more items per screen than tiles, for big libraries.
@@ -526,7 +526,7 @@ export default ContentPickerModal;
 // (filter/sort) + search used on the Content page. Selection is ORDERED
 // (an array, not a Set) — each picked tile shows its pick-order number in
 // place of a checkmark, since playlist content plays in the order it was
-// added. `takenNames` (normalised, see utils/playlistNames.js) are the playlist names
+// added. `takenNames` (normalised, see utils/playlists/playlistNames.js) are the playlist names
 // already used: typing one shows a red line under Name and blocks the button.
 // `onSubmit(name, description, orderedIds)` may be async: the submit
 // button then shows `busyLabel` (e.g. "Creating…") until it settles.

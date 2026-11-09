@@ -13,9 +13,9 @@ import { getAssignments } from "../api/assignments.js";
 import { getPlaylists } from "../api/playlists.js";
 import { getContent } from "../api/content.js";
 
-import { getDeviceSummary } from "../utils/assignmentStatus.js";
-import { timeAgo } from "../utils/timeAgo.js";
-import { pluralizeCount, pluralizeWord } from "../utils/pluralize.js";
+import { getDeviceSummary } from "../utils/assignments/assignmentStatus.js";
+import { timeAgo } from "../utils/format/timeAgo.js";
+import { pluralizeCount, pluralizeWord } from "../utils/format/pluralize.js";
 
 import StatTile from "../components/dashboard/StatTile.jsx";
 import LimitsPanel from "../components/dashboard/LimitsPanel.jsx";

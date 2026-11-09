@@ -5,7 +5,7 @@ import ScrollBox from "../layout/ScrollBox.jsx";
 import GhostButton from "../ui/GhostButton.jsx";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
-import { getTypeMeta } from "../../utils/contentTypeMeta.js";
+import { getTypeMeta } from "../../utils/content/contentTypeMeta.js";
 
 function RemoveConfirmModal({
   open,

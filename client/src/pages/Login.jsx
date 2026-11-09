@@ -12,7 +12,7 @@ import AuthHeading from "../components/auth/AuthHeading.jsx";
 import Button from "../components/ui/Button.jsx";
 import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
 import { useAsyncAction } from "../hooks/useAsyncAction.js";
-import { takeReturnTo } from "../utils/sessionExpiry.js";
+import { takeReturnTo } from "../utils/session/sessionExpiry.js";
 
 function Login() {
   const [email, setEmail] = useState("");

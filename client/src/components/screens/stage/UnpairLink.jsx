@@ -1,4 +1,4 @@
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 // The small "Unpair this screen" link under the tap and stopped screens.
 function UnpairLink({ onClick }) {

@@ -4,8 +4,8 @@ import ActionMenu from "../ui/ActionMenu.jsx";
 import SelectCheckbox from "../ui/SelectCheckbox.jsx";
 import SelectableRow from "../ui/SelectableRow.jsx";
 import { useLongPress } from "../../hooks/useLongPress.js";
-import { formatDuration } from "../../utils/formatDuration.js";
-import { pluralizeCount } from "../../utils/pluralize.js";
+import { formatDuration } from "../../utils/format/formatDuration.js";
+import { pluralizeCount } from "../../utils/format/pluralize.js";
 
 // One round's length: skipped slots (by position) are left out.
 function getPlaylistRuntimeMs(playlist) {

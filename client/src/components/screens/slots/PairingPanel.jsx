@@ -5,7 +5,7 @@ import Button from "../../ui/Button.jsx";
 import GhostButton from "../../ui/GhostButton.jsx";
 import StatusPill from "../../ui/StatusPill.jsx";
 import LoadingOverlay from "../../loading/LoadingOverlay.jsx";
-import { PAIRING_CODE_LENGTH } from "../../../utils/screenSlots.js";
+import { PAIRING_CODE_LENGTH } from "../../../utils/screens/screenSlots.js";
 
 // The right-hand pane for a slot that is waiting to be paired: the 8-box code
 // field, its hint, and the Pair screen button.

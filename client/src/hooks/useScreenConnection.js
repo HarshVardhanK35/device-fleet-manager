@@ -3,7 +3,9 @@ import mqtt from "mqtt";
 
 import { API_BASE } from "../api/apiClient.js";
 import { readManifest, readPlaying, saveManifest } from "../offline/savedManifest.js";
-import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
+import { fetchWithTimeout } from "../utils/screens/fetchWithTimeout.js";
+import { logError, logEvent, logWarn } from "../utils/screenLog/screenLog.js";
+import { answerPullLogs } from "../utils/screenLog/screenLogPull.js";
 
 // Put in front of every topic ("stg/", "prod/") so two environments can share one
 // broker; must match the server's MQTT_TOPIC_PREFIX. Empty by default.
@@ -60,15 +62,18 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
 
     // The connection to the server is lost: keep playing the playlist that
     // is playing now (or the one saved as playing, after a restart).
-    function markOffline() {
+    function markOffline(reason = "the connection was lost") {
       if (cancelled) return;
-      setOfflineLock((lock) => lock ?? activeIdRef.current ?? readPlaying(screenToken));
+      const lockId = activeIdRef.current ?? readPlaying(screenToken);
+      logWarn("connect", `Offline: ${reason}. It may keep playing playlist ${lockId || "(none known)"} until that playlist ends`);
+      setOfflineLock((lock) => lock ?? lockId);
       setOnline(false);
       clearTimeout(backOnlineTimer);
       setBackOnline(false);
     }
 
     function markOnline() {
+      logEvent("connect", "Online: the connection to the server is back");
       setOnline(true);
       setOfflineLock(null);
       // Back after the OFFLINE strip was shown: say so once, then never again.
@@ -114,11 +119,19 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
           { method: "POST" },
           CONNECT_TIMEOUT_MS,
         );
-        if (res.status === 409 || res.status === 404) return { rejected: true };
-        if (!res.ok) return { unreachable: true };
+        if (res.status === 409 || res.status === 404) {
+          logWarn("connect", `Connect refused by the server (HTTP ${res.status}): ${res.status === 409 ? "another screen holds this connection" : "this screen no longer exists"}`);
+          return { rejected: true };
+        }
+        if (!res.ok) {
+          logWarn("connect", `Connect failed: the server answered HTTP ${res.status}`);
+          return { unreachable: true };
+        }
         const data = await res.json();
+        logEvent("connect", data.deviceId ? "Connect accepted by the server" : "Connect answered without a screen id");
         return data.deviceId ? { id: data.deviceId } : { rejected: true };
-      } catch {
+      } catch (error) {
+        logWarn("connect", `Connect failed: no answer from the server (${error.name}: ${error.message})`);
         return { unreachable: true };
       }
     }
@@ -138,7 +151,8 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       return result;
     }
 
-    window.addEventListener("offline", markOffline);
+    const onBrowserOffline = () => markOffline("the browser reported no network");
+    window.addEventListener("offline", onBrowserOffline);
 
     (async () => {
       // One active connection per device: claim the slot before doing
@@ -155,11 +169,12 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
         if (cancelled) return;
         if (!result.unreachable) break;
         const savedManifest = readManifest(screenToken);
+        logWarn("connect", `Server unreachable at start; ${savedManifest ? `playing the saved manifest (${savedManifest.playlists?.length ?? 0} playlist(s))` : "no saved manifest to play"}; trying again in ${RECONNECT_WAIT_MS / 1000} s`);
         if (savedManifest) {
           manifestSig.current = manifestSig.current ?? JSON.stringify(savedManifest.playlists);
           setManifest((current) => current ?? savedManifest);
         }
-        markOffline();
+        markOffline("the server could not be reached");
         await new Promise((resolve) => {
           retryTimer = setTimeout(resolve, RECONNECT_WAIT_MS);
         });
@@ -172,6 +187,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       }
 
       resolvedId = result.id;
+      logEvent("connect", "Connected as this screen; opening the message link (MQTT)");
       setConnection("connected");
 
       // ws: browser's websocket connection to the broker. Falls back to the
@@ -202,9 +218,12 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
         markOnline();
         mqttClient.subscribe(`${TOPIC_PREFIX}devices/${resolvedId}/manifest`);
         mqttClient.subscribe(`${TOPIC_PREFIX}devices/${resolvedId}/control`);
+        logEvent("connect", "Listening for the manifest and for control messages");
       });
-      mqttClient.on("close", markOffline);
-      mqttClient.on("offline", markOffline);
+      mqttClient.on("close", () => markOffline("the message link (MQTT) closed"));
+      mqttClient.on("offline", () => markOffline("the message link (MQTT) went offline"));
+      mqttClient.on("error", (error) => logError("connect", `MQTT error: ${error.message}`));
+      mqttClient.on("reconnect", () => logEvent("connect", "MQTT is trying to reconnect"));
 
       // on subscribing - browser receives a message
       mqttClient.on("message", (topic, message) => {
@@ -212,7 +231,12 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
         const data = JSON.parse(message.toString());
 
         if (topic.endsWith("/control")) {
-          if (data.action === "disconnect") {
+          logEvent("control", `Control message: ${data.action}`);
+          if (data.action === "pullLogs") {
+            answerPullLogs(mqttClient, resolvedId, data.requestId).catch((error) =>
+              logError("logs", `Pull logs failed: ${error.message}`),
+            );
+          } else if (data.action === "disconnect") {
             // Taken over: go idle rather than fully ending the MQTT
             // connection — it stays subscribed to this same control topic
             // so a later "reconnect" (release) can actually reach it.
@@ -249,7 +273,20 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
         // The same manifest again (the broker hands the last one over every
         // time the screen reconnects): keep playing, don't restart.
         const sig = JSON.stringify(data.playlists);
-        if (sig === manifestSig.current) return;
+        if (sig === manifestSig.current) {
+          logEvent("manifest", "Manifest arrived again, unchanged: keeps playing");
+          return;
+        }
+        logEvent(
+          "manifest",
+          `New manifest: ${(data.playlists || []).length} playlist(s)`,
+          (data.playlists || []).map((p) => ({
+            name: p.playlistName,
+            items: (p.content || []).length,
+            from: p.beginDT,
+            until: p.endDT,
+          })),
+        );
         manifestSig.current = sig;
         saveManifest(screenToken, data);
         // Refresh "now" the moment a manifest actually arrives, not just at
@@ -271,7 +308,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       cancelled = true;
       clearTimeout(retryTimer);
       clearTimeout(backOnlineTimer);
-      window.removeEventListener("offline", markOffline);
+      window.removeEventListener("offline", onBrowserOffline);
       stopHeartbeat();
       if (mqttClient) mqttClient.end();
     };
@@ -286,10 +323,12 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
     if (online) return undefined;
     let timer;
     function hide() {
+      logEvent("banner", "OFFLINE strip hidden (it comes back every minute)");
       setBannerOn(false);
       timer = setTimeout(show, BANNER_EVERY_MS - BANNER_SHOW_MS);
     }
     function show() {
+      logWarn("banner", "OFFLINE strip shown");
       stripShownRef.current = true;
       setBannerOn(true);
       timer = setTimeout(hide, BANNER_SHOW_MS);

@@ -9,7 +9,7 @@ import ActionMenu from "../../../components/ui/ActionMenu.jsx";
 import RemoveConfirmModal from "../../../components/modals/RemoveConfirmModal.jsx";
 import Logo from "../../../components/layout/Logo.jsx";
 import { useMediaQuery } from "../../../hooks/useCompactLayout.js";
-import { MAX_APP_NAME } from "../../../utils/limits.js";
+import { MAX_APP_NAME } from "../../../utils/validation/limits.js";
 import { PREVIEW_SIZES } from "../preview/previewSizes.js";
 
 // Rename an app. Small enough that it doesn't need its own file — it's only

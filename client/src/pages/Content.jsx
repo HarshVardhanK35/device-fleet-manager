@@ -27,8 +27,8 @@ import SelectableContentTile from "../components/content/SelectableContentTile.j
 import SkeletonGrid from "../components/loading/SkeletonGrid.jsx";
 import ScrollBox from "../components/layout/ScrollBox.jsx";
 import ScrollToTopButton from "../components/layout/ScrollToTopButton.jsx";
-import { getVideoDurationMs } from "../utils/getVideoDuration.js";
-import { pluralizeCount } from "../utils/pluralize.js";
+import { getVideoDurationMs } from "../utils/content/getVideoDuration.js";
+import { pluralizeCount } from "../utils/format/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
 import { useCompactLayout } from "../hooks/useCompactLayout.js";
 import {
@@ -39,10 +39,10 @@ import {
   MAX_VIDEO_BYTES,
   MAX_VIDEO_FILE_BYTES,
   formatMB,
-} from "../utils/limits.js";
-import { readImageSize } from "../utils/imageSize.js";
+} from "../utils/validation/limits.js";
+import { readImageSize } from "../utils/content/imageSize.js";
 
-// The quota numbers (utils/limits.js) are a pre-upload UX check only — avoid
+// The quota numbers (utils/validation/limits.js) are a pre-upload UX check only — avoid
 // wasting a Cloudinary upload on something already known to be rejected. The
 // real enforcement is the backend.
 

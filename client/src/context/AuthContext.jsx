@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getMe, refreshAccessToken, logout as logoutApi } from "../api/auth.js";
 import { setAccessToken } from "../api/apiClient.js";
 import { AuthContext } from "./authContextInstance.js";
-import { clearSessionHint, hasSessionHint, setSessionHint } from "../utils/sessionHint.js";
+import { clearSessionHint, hasSessionHint, setSessionHint } from "../utils/session/sessionHint.js";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -73,7 +73,7 @@ export function AuthProvider({ children }) {
 // silently exchanges the httpOnly refresh cookie for a fresh access token
 // so a page reload doesn't log the user out; apiClient.js does the same
 // exchange again transparently whenever a request 401s mid-session.
-// A "had a session" flag in localStorage (utils/sessionHint.js, no token)
+// A "had a session" flag in localStorage (utils/session/sessionHint.js, no token)
 // lets a first-time or signed-out visitor skip that call entirely, which
 // matters when the backend is asleep. Used by: App.jsx (wraps everything), ProtectedRoute.jsx, Layout.jsx,
 // Login.jsx.

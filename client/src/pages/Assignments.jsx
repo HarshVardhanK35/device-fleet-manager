@@ -10,13 +10,13 @@ import {
 } from "../api/assignments.js";
 import { getPlaylists } from "../api/playlists.js";
 
-import { timeAgo } from "../utils/timeAgo.js";
+import { timeAgo } from "../utils/format/timeAgo.js";
 import {
   getAssignmentStatus,
   getDeviceSummary,
   TIMELINE_DOT,
-} from "../utils/assignmentStatus.js";
-import { pluralizeCount } from "../utils/pluralize.js";
+} from "../utils/assignments/assignmentStatus.js";
+import { pluralizeCount } from "../utils/format/pluralize.js";
 import { useToast } from "../context/useToast.js";
 import PaneToggle from "../components/layout/PaneToggle.jsx";
 import { COLLAPSED_PANE_CLASS, usePaneCollapse } from "../hooks/usePaneCollapse.js";

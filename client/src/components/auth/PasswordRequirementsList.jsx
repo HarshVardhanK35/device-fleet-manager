@@ -43,7 +43,7 @@ function PasswordRequirementsList({ rules, variant = "inline" }) {
 
 export default PasswordRequirementsList;
 
-// Renders the password-rule checklist built by utils/passwordRules.js's
+// Renders the password-rule checklist built by utils/validation/passwordRules.js's
 // getPasswordRules(). Was duplicated (array + render) identically in
 // Register.jsx ("inline" layout) and ResetPassword.jsx ("boxed" layout).
 // Used by: pages/Register.jsx, pages/ResetPassword.jsx.

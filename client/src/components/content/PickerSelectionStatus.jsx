@@ -1,4 +1,4 @@
-import { formatDuration } from "../../utils/formatDuration.js";
+import { formatDuration } from "../../utils/format/formatDuration.js";
 
 function PickerSelectionStatus({
   nameRequired,

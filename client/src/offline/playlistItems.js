@@ -1,6 +1,6 @@
 import { loadAppBundle, isAppBundleUrl } from "../apps/shared/playback/loadAppBundle.js";
 import { resolveAppUrlByName } from "../apps/resolveAppUrl.js";
-import { getOptimizedThumbnail } from "../utils/cloudinaryTransform.js";
+import { getOptimizedThumbnail } from "../utils/content/cloudinaryTransform.js";
 import { appBundleKey } from "./mediaCache.js";
 
 // A screen-sized copy of an image (not the multi-MB original). This is the

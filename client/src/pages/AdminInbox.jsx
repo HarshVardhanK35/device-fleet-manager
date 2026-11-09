@@ -14,7 +14,7 @@ import {
   TYPE_LABEL,
   formatFeedbackDate,
   needsAttention,
-} from "../utils/feedbackMeta.js";
+} from "../utils/feedback/feedbackMeta.js";
 import AdminFeedbackDetails from "../components/feedback/AdminFeedbackDetails.jsx";
 import ConfirmDeleteFeedback from "../components/feedback/ConfirmDeleteFeedback.jsx";
 import {

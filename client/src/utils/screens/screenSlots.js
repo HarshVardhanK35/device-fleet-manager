@@ -1,4 +1,4 @@
-import { timeAgo } from "./timeAgo.js";
+import { timeAgo } from "../format/timeAgo.js";
 
 // Must match the backend's code length (server/controllers/pairingController.js's
 // ALPHABET loop) — both sides of the same pairing flow have to agree on the

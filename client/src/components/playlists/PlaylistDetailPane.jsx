@@ -12,7 +12,7 @@ import SkeletonGrid from "../loading/SkeletonGrid.jsx";
 import Button from "../ui/Button.jsx";
 import EmptyState from "../ui/EmptyState.jsx";
 import RefreshButton from "../ui/RefreshButton.jsx";
-import { pluralizeCount } from "../../utils/pluralize.js";
+import { pluralizeCount } from "../../utils/format/pluralize.js";
 
 // The right pane of the Playlists page: the open playlist (title, loop badge,
 // unsaved-order controls, the select / skip / remove toolbar and the grid of

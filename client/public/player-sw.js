@@ -16,7 +16,19 @@ const FONTS = "cw-fonts-v1"; // Google Fonts used by the apps
 const KEEP = [SHELL, MEDIA, FONTS];
 const PAGE_WAIT_MS = 4000; // a page request that hangs this long falls back to the saved page
 
+// The service worker cannot write into the page's log, so it sends short lines to the open
+// pages (src/offline/registerOffline.js records them as [sw] lines).
+function note(level, message) {
+  self.clients
+    .matchAll({ includeUncontrolled: true })
+    .then((clients) => clients.forEach((client) => client.postMessage({ type: "CW_LOG", level, message })))
+    .catch(() => {});
+}
+const short = (url) => (url.length > 100 ? `…${url.slice(-97)}` : url);
+const seen = new Set(); // saved copies already reported once
+
 self.addEventListener("install", () => {
+  note("info", "Service worker installing");
   self.skipWaiting();
 });
 
@@ -27,6 +39,7 @@ self.addEventListener("activate", (event) => {
         if (name.startsWith("cw-") && !KEEP.includes(name)) await caches.delete(name);
       }
       await self.clients.claim();
+      note("info", "Service worker active and controlling this page");
     })(),
   );
 });
@@ -62,8 +75,9 @@ async function pageHandler(req) {
     ]);
     if (res.ok) cache.put("/__shell", res.clone());
     return res;
-  } catch {
+  } catch (error) {
     const saved = await cache.match("/__shell");
+    note(saved ? "warn" : "error", `The player page could not be fetched (${error.message}); ${saved ? "opened from the saved copy" : "NO saved copy, the page will not open"}`);
     return saved || Response.error();
   }
 }
@@ -73,9 +87,14 @@ async function assetHandler(req) {
   const cache = await caches.open(SHELL);
   const saved = await cache.match(req);
   if (saved) return saved;
-  const res = await fetch(req);
-  if (res.ok) cache.put(req, res.clone());
-  return res;
+  try {
+    const res = await fetch(req);
+    if (res.ok) cache.put(req, res.clone());
+    return res;
+  } catch (error) {
+    note("error", `A page file could not be fetched and is not saved: ${short(req.url)} (${error.message})`);
+    throw error;
+  }
 }
 
 // A video or audio file: the network first, the saved copy only when the network fails
@@ -85,10 +104,14 @@ async function assetHandler(req) {
 async function streamHandler(req) {
   try {
     return await fetch(req);
-  } catch {
+  } catch (error) {
     const cache = await caches.open(MEDIA);
     const saved = await cache.match(req.url);
-    if (!saved) return Response.error();
+    if (!saved) {
+      note("error", `Video/audio could not be fetched (${error.message}) and there is NO saved copy: ${short(req.url)}. It will stop.`);
+      return Response.error();
+    }
+    note("warn", `Video/audio fetch failed (${error.message}); playing the saved copy instead: ${short(req.url)}`);
     const range = req.headers.get("range");
     return range ? rangeResponse(range, saved) : saved;
   }
@@ -98,7 +121,18 @@ async function streamHandler(req) {
 async function mediaHandler(req) {
   const cache = await caches.open(MEDIA);
   const saved = await cache.match(req.url);
-  if (!saved) return fetch(req);
+  if (!saved) {
+    try {
+      return await fetch(req);
+    } catch (error) {
+      note("error", `Image could not be fetched (${error.message}) and is NOT saved: ${short(req.url)}`);
+      throw error;
+    }
+  }
+  if (!seen.has(req.url)) {
+    seen.add(req.url);
+    note("info", `Image served from the saved copy: ${short(req.url)}`);
+  }
   const range = req.headers.get("range");
   return range ? rangeResponse(range, saved) : saved;
 }

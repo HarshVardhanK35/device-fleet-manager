@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { TYPE_LABEL } from "../../utils/feedbackMeta.js";
+import { TYPE_LABEL } from "../../utils/feedback/feedbackMeta.js";
 import CancelButton from "../ui/CancelButton.jsx";
 
 // The frame of a message's details, for both sides:

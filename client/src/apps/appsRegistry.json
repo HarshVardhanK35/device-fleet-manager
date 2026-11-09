@@ -4,7 +4,7 @@
     "name": "Weather",
     "category": "Live Data",
     "thumbnail": null,
-    "devUrl": " http://localhost:5174/",
+    "devUrl": "",
     "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-weather/releases/download/staging/weather.zip",
     "prodZipUrl": "https://github.com/HarshVardhanK35/castwise-weather/releases/download/prod/weather.zip"
   },
@@ -13,7 +13,7 @@
     "name": "Clock",
     "category": "Utility",
     "thumbnail": null,
-    "devUrl": "http://localhost:5180/",
+    "devUrl": "",
     "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-clock/releases/download/staging/clock.zip",
     "prodZipUrl": "https://github.com/HarshVardhanK35/castwise-clock/releases/download/prod/clock.zip"
   },
@@ -22,7 +22,7 @@
     "name": "RSS",
     "category": "News",
     "thumbnail": null,
-    "devUrl": "http://localhost:5181/",
+    "devUrl": "",
     "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-rss/releases/download/staging/rss.zip",
     "prodZipUrl": "https://github.com/HarshVardhanK35/castwise-rss/releases/download/prod/rss.zip"
   },
@@ -31,7 +31,7 @@
     "name": "Announcements",
     "category": "Utility",
     "thumbnail": null,
-    "devUrl": "http://localhost:5182/",
+    "devUrl": "",
     "stagingZipUrl": "https://github.com/HarshVardhanK35/castwise-announcements/releases/download/staging/announcements.zip",
     "prodZipUrl": "https://github.com/HarshVardhanK35/castwise-announcements/releases/download/prod/announcements.zip"
   }

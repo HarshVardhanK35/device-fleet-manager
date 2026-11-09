@@ -1,4 +1,4 @@
-import { Eye, MoreHorizontal, Pencil, RefreshCw, Trash2, Plug } from "lucide-react";
+import { Eye, FileDown, MoreHorizontal, Pencil, RefreshCw, Trash2, Plug } from "lucide-react";
 
 import ScreenThumb from "../ScreenThumb.jsx";
 import ReleaseScreenButton from "../ReleaseScreenButton.jsx";
@@ -9,7 +9,7 @@ import FieldCount from "../../ui/FieldCount.jsx";
 import GhostButton from "../../ui/GhostButton.jsx";
 import StatusPill from "../../ui/StatusPill.jsx";
 import Hint from "../../../apps/appModals/announcements/common/Hint.jsx";
-import { MAX_SCREEN_NAME, MAX_SCREEN_TYPE } from "../../../utils/limits.js";
+import { MAX_SCREEN_NAME, MAX_SCREEN_TYPE } from "../../../utils/validation/limits.js";
 
 const FIELD =
   "h-9 px-2.5 rounded-lg border border-border-muted bg-bg-primary text-text-primary text-sm outline-none focus-visible:border-accent-blue";
@@ -19,6 +19,7 @@ const FIELD =
 // "Take over this screen" box.
 //   edit     { editing, draft, error, onChange(field, value), onStart, onDiscard, onSave }
 //   nameRef  the Name input's ref (scrolled to and focused when editing starts)
+//   pulling      true while "Pull logs" waits for the screen's answer
 //   refreshLeft  seconds until "Refresh screen" may be used again (0 = now); it
 //                is only available while the screen is online
 function ScreenDetails({
@@ -27,6 +28,7 @@ function ScreenDetails({
   edit,
   nameRef,
   refreshLeft,
+  pulling,
   releaseError,
   onBack,
   onPreview,
@@ -35,6 +37,7 @@ function ScreenDetails({
   onOpenPlayer,
   onRelease,
   onRefreshScreen,
+  onPullLogs,
 }) {
   const name = edit.editing ? edit.draft.name : screen.name;
   const type = edit.editing ? edit.draft.type : screen.type || "";
@@ -66,6 +69,15 @@ function ScreenDetails({
                 : refreshLeft > 0
                   ? `You can refresh it again in ${refreshLeft} s`
                   : "Restarts the playlist from the first item on this screen",
+            },
+            {
+              label: pulling ? "Pulling logs…" : "Pull logs",
+              icon: FileDown,
+              onClick: onPullLogs,
+              disabled: refreshOffline || pulling,
+              title: refreshOffline
+                ? "This screen is offline"
+                : "Saves this screen's log and browser details as a .zip on this device",
             },
             { type: "separator" },
             { label: "Remove screen", icon: Trash2, variant: "danger", onClick: onRemove },

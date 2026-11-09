@@ -5,7 +5,7 @@ import Logo from "./Logo.jsx";
 import ScrollBox from "./ScrollBox.jsx";
 
 import { useAuth } from "../../context/useAuth.js";
-import { getInitials } from "../../utils/getInitials.js";
+import { getInitials } from "../../utils/format/getInitials.js";
 import { prefetchRoute } from "../../pageLoaders.js";
 import { useFeedbackIndicator } from "../../hooks/useFeedbackIndicator.js";
 

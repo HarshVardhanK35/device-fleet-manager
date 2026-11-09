@@ -8,9 +8,9 @@ import GhostButton from "../ui/GhostButton.jsx";
 import RemovableContentTile from "../content/RemovableContentTile.jsx";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import FieldCount from "../ui/FieldCount.jsx";
-import { MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from "../../utils/limits.js";
+import { MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from "../../utils/validation/limits.js";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
-import { DUPLICATE_PLAYLIST_NAME, normalizeName } from "../../utils/playlistNames.js";
+import { DUPLICATE_PLAYLIST_NAME, normalizeName } from "../../utils/playlists/playlistNames.js";
 
 // Owns name/description/contentItems state. Rendered only while `open` is
 // true, so it mounts fresh off `playlist` every time the modal opens —

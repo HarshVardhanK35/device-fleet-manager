@@ -1,4 +1,4 @@
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 // One character of the pairing code, in its own box.
 function CodeBox({ ch }) {

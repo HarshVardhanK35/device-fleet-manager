@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import StyledSelect from "../ui/StyledSelect.jsx";
-import { MAX_SCREENS } from "../../utils/limits.js";
+import { MAX_SCREENS } from "../../utils/validation/limits.js";
 
 const FILTER_OPTIONS = [
   { value: "all", label: "All" },

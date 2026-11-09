@@ -10,7 +10,7 @@ import PasswordField from "../components/auth/PasswordField.jsx";
 import PasswordRequirementsList from "../components/auth/PasswordRequirementsList.jsx";
 import PasswordMatchHint from "../components/auth/PasswordMatchHint.jsx";
 import Button from "../components/ui/Button.jsx";
-import { getPasswordRules } from "../utils/passwordRules.js";
+import { getPasswordRules } from "../utils/validation/passwordRules.js";
 
 function ResetPassword() {
   const [searchParams] = useSearchParams();

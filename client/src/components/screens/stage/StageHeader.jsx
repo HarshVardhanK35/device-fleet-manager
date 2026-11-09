@@ -1,7 +1,7 @@
 import { RefreshCw } from "lucide-react";
 
 import Logo from "../../layout/Logo.jsx";
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 // The top row of the /screens page: logo and name on the left, and (when
 // `onRefresh` is given) a refresh icon on the right.

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 
+import { usePlaybackLog } from "../../hooks/usePlaybackLog.js";
 import { useScreenConnection } from "../../hooks/useScreenConnection.js";
 import { getSaved, stopDownloads, subscribeSaved, syncDownloads } from "../../offline/downloadManager.js";
 import { downloadItems } from "../../offline/playlistItems.js";
@@ -7,6 +8,7 @@ import { registerOffline } from "../../offline/registerOffline.js";
 import { savePlaying } from "../../offline/savedManifest.js";
 import OfflineBanner from "./OfflineBanner.jsx";
 import PlaybackLayers from "./PlaybackLayers.jsx";
+import { logAdvance } from "./playbackLog.js";
 import { findActiveAssignment, findLockedAssignment, nextPlayableIndex, playableFor } from "./playbackRules.js";
 
 const FALLBACK_ITEM_MS = 8000; // used only if a content item has no/invalid durationInMillis
@@ -74,6 +76,20 @@ function DevicePlayback(
 
   useEffect(() => {
     activeIdRef.current = activeAssignment?.assignmentId ?? null;
+  });
+
+  usePlaybackLog({
+    screenToken,
+    online,
+    connection,
+    manifest,
+    activeAssignment,
+    contentIndex,
+    savedKeys,
+    itemStartedAt,
+    turn,
+    refreshTick,
+    now,
   });
 
   // Save the playing playlist's files while online (and delete what nothing
@@ -180,7 +196,9 @@ function DevicePlayback(
     const remaining = Math.max(duration - (Date.now() - itemStartedAt), 0);
     const t = setTimeout(
       () => {
-        setContentIndex((i) => nextPlayableIndex(items, i, online, savedKeys));
+        const next = nextPlayableIndex(items, contentIndex, online, savedKeys);
+        logAdvance(items, contentIndex, next, skip);
+        setContentIndex(next);
         setItemStartedAt(Date.now());
         setTurn((t) => t + 1);
       },
