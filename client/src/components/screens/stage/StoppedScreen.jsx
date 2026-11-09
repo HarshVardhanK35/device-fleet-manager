@@ -1,36 +1,38 @@
 import { Play, RotateCcw, Square } from "lucide-react";
 
 import UnpairLink from "./UnpairLink.jsx";
+import { useStageCss } from "../../../utils/stageCss.js";
 
 // "Playback stopped" with Continue / Restart (after a long press) and Unpair.
 function StoppedScreen({ screenName, onContinue, onRestart, onUnpair }) {
+  const css = useStageCss();
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(20px,5cqmin,260px)" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: css("clamp(20px,5cqmin,260px)") }}>
       <div
         style={{
-          width: "clamp(44px,11cqmin,560px)",
-          aspectRatio: 1,
+          width: css("clamp(44px,11cqmin,560px)"),
+          height: css("clamp(44px,11cqmin,560px)"),
           borderRadius: "50%",
-          border: "clamp(1.5px,0.36cqmin,16px) solid var(--color-neutral-400)",
+          border: css("clamp(1.5px,0.36cqmin,16px) solid var(--color-neutral-400)"),
           display: "grid",
           placeItems: "center",
         }}
       >
         <Square
-          style={{ width: "clamp(18px,4.4cqmin,220px)", height: "clamp(18px,4.4cqmin,220px)", color: "var(--color-neutral-200)" }}
+          style={{ width: css("clamp(18px,4.4cqmin,220px)"), height: css("clamp(18px,4.4cqmin,220px)"), color: "var(--color-neutral-200)" }}
           fill="currentColor"
         />
       </div>
-      <div style={{ fontSize: "clamp(24px,6.4cqmin,330px)", fontWeight: 500, letterSpacing: "-0.02em" }}>
+      <div style={{ fontSize: css("clamp(24px,6.4cqmin,330px)"), fontWeight: 500, letterSpacing: "-0.02em" }}>
         Playback stopped
       </div>
       {screenName && (
-        <div style={{ fontSize: "clamp(16px,3.4cqmin,170px)", color: "var(--color-accent-200)", marginTop: "calc(-1 * clamp(6px,1.6cqmin,80px))" }}>
+        <div style={{ fontSize: css("clamp(16px,3.4cqmin,170px)"), color: "var(--color-accent-200)", marginTop: css("calc(-1 * clamp(6px,1.6cqmin,80px))") }}>
           {screenName}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: "clamp(12px,2.8cqmin,140px)" }}>
+      <div style={{ display: "flex", gap: css("clamp(12px,2.8cqmin,140px)") }}>
         <button
           type="button"
           onClick={onContinue}
@@ -38,13 +40,13 @@ function StoppedScreen({ screenName, onContinue, onRestart, onUnpair }) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "clamp(8px,1.8cqmin,90px)",
-            padding: "clamp(12px,2.8cqmin,140px) clamp(22px,5.4cqmin,270px)",
+            gap: css("clamp(8px,1.8cqmin,90px)"),
+            padding: css("clamp(12px,2.8cqmin,140px) clamp(22px,5.4cqmin,270px)"),
             borderRadius: 999,
-            border: "clamp(2px,0.42cqmin,20px) solid var(--color-accent-400)",
-            background: "color-mix(in srgb, var(--color-accent) 16%, var(--color-section))",
+            border: css("clamp(2px,0.42cqmin,20px) solid var(--color-accent-400)"),
+            background: css("color-mix(in srgb, var(--color-accent) 16%, var(--color-section))"),
             color: "var(--color-neutral-100)",
-            fontSize: "clamp(16px,3.6cqmin,180px)",
+            fontSize: css("clamp(16px,3.6cqmin,180px)"),
             fontWeight: 500,
             cursor: "pointer",
           }}
@@ -60,13 +62,13 @@ function StoppedScreen({ screenName, onContinue, onRestart, onUnpair }) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "clamp(8px,1.8cqmin,90px)",
-            padding: "clamp(12px,2.8cqmin,140px) clamp(22px,5.4cqmin,270px)",
+            gap: css("clamp(8px,1.8cqmin,90px)"),
+            padding: css("clamp(12px,2.8cqmin,140px) clamp(22px,5.4cqmin,270px)"),
             borderRadius: 999,
-            border: "clamp(2px,0.42cqmin,20px) solid var(--color-neutral-400)",
+            border: css("clamp(2px,0.42cqmin,20px) solid var(--color-neutral-400)"),
             background: "transparent",
             color: "var(--color-neutral-100)",
-            fontSize: "clamp(16px,3.6cqmin,180px)",
+            fontSize: css("clamp(16px,3.6cqmin,180px)"),
             fontWeight: 500,
             cursor: "pointer",
           }}

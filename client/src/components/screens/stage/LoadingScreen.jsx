@@ -1,23 +1,25 @@
 import BrandLoader from "../../loading/BrandLoader.jsx";
 import Logo from "../../layout/Logo.jsx";
 import PulsingDots from "./PulsingDots.jsx";
+import { useStageCss } from "../../../utils/stageCss.js";
 
 // "Connecting…", or, while the server refuses new codes, the static logo with
 // an explanation (the counter itself is LoadingFooter).
 function LoadingScreen({ limited }) {
+  const css = useStageCss();
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "clamp(12px,3.4cqmin,170px)" }}>
-      {limited ? <Logo size="clamp(56px,14cqmin,700px)" /> : <BrandLoader size="clamp(56px,14cqmin,700px)" label={null} />}
-      <div style={{ fontSize: "clamp(16px,3.4cqmin,170px)", color: "var(--color-neutral-200)" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: css("clamp(12px,3.4cqmin,170px)") }}>
+      {limited ? <Logo size={css("clamp(56px,14cqmin,700px)")} /> : <BrandLoader size={css("clamp(56px,14cqmin,700px)")} label={null} />}
+      <div style={{ fontSize: css("clamp(16px,3.4cqmin,170px)"), color: "var(--color-neutral-200)" }}>
         {limited ? "Too many codes requested" : "Connecting…"}
       </div>
       {limited && (
         <div
           style={{
-            maxWidth: "min(70cqw, 1400px)",
+            maxWidth: css("min(70cqw, 1400px)"),
             textAlign: "center",
             lineHeight: 1.5,
-            fontSize: "clamp(13px,2.4cqmin,120px)",
+            fontSize: css("clamp(13px,2.4cqmin,120px)"),
             color: "var(--color-neutral-400)",
           }}
         >
@@ -33,24 +35,25 @@ function LoadingScreen({ limited }) {
 // The bottom row while the server refuses new codes: "Waiting for new codes"
 // and a mm:ss counter.
 export function LoadingFooter({ retryLeft }) {
+  const css = useStageCss();
   return (
     <>
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "clamp(8px,1.8cqmin,90px)",
-          fontSize: "clamp(14px,2.7cqmin,140px)",
+          gap: css("clamp(8px,1.8cqmin,90px)"),
+          fontSize: css("clamp(14px,2.7cqmin,140px)"),
           color: "var(--color-accent-200)",
         }}
       >
         <PulsingDots />
         Waiting for new codes
       </div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "clamp(2px,0.6cqmin,30px)" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: css("clamp(2px,0.6cqmin,30px)") }}>
         <div
           style={{
-            fontSize: "clamp(12px,2.2cqmin,110px)",
+            fontSize: css("clamp(12px,2.2cqmin,110px)"),
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: "var(--color-accent-200)",
@@ -60,7 +63,7 @@ export function LoadingFooter({ retryLeft }) {
         </div>
         <div
           style={{
-            fontSize: "clamp(28px,7.6cqmin,390px)",
+            fontSize: css("clamp(28px,7.6cqmin,390px)"),
             fontWeight: 500,
             lineHeight: 1,
             letterSpacing: "-0.02em",

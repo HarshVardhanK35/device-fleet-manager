@@ -100,11 +100,11 @@ body {
 .screens-foot-warn { grid-area: warn; justify-self: start; }
 .screens-foot-wait { grid-area: wait; }
 .screens-foot-count { grid-area: count; }
-@container (min-aspect-ratio: 8/5) {
+@media (min-aspect-ratio: 8/5) {
   .screens-foot {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas: "wait warn count";
-    column-gap: 3cqw;
+    column-gap: 3vw;
     justify-content: stretch;
   }
   .screens-foot-warn { justify-self: center; max-width: 34em; }

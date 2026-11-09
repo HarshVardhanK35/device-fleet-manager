@@ -81,6 +81,21 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
+  <!-- Safety net for a browser too old to run the app: if nothing has appeared after
+       12 seconds, say so plainly (plain ES5 on purpose). -->
+  <script>
+    setTimeout(function () {
+      var root = document.getElementById("root");
+      if (root && !root.firstChild) {
+        var m = navigator.userAgent.match(/Chrom(?:e|ium)/(d+)/);
+        root.innerHTML =
+          "<div style=\"font:20px Arial,sans-serif;color:#e6edf3;background:#0d1117;min-height:100vh;padding:6vmin\">" +
+          "<h1 style=\"font-size:1.6em\">CastWise could not start</h1>" +
+          "<p>Check the internet connection and reload. If it keeps happening, this browser may be too old: update the TV firmware or use a newer browser.</p>" +
+          "<p style=\"opacity:.7\">Browser: " + (m ? "Chromium " + m[1] : navigator.userAgent) + "</p></div>";
+      }
+    }, 12000);
+  </script>
 </body>
 
 </html>
