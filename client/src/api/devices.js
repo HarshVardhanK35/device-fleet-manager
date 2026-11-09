@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
+import { fetchWithTimeout } from "../utils/screens/fetchWithTimeout.js";
 import { apiFetch, API_BASE } from "./apiClient.js";
 
 export async function getDevices() {

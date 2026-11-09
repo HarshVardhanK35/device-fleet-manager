@@ -4,7 +4,7 @@ import { MessageSquareText, Plus, Trash2 } from "lucide-react";
 import { deleteMyFeedback, getMyFeedback, markFeedbackRead } from "../api/feedback.js";
 import { useToast } from "../context/useToast.js";
 import { notifyFeedbackChanged } from "../hooks/useFeedbackIndicator.js";
-import { TYPE_LABEL, STATUS_LABEL, formatFeedbackDate } from "../utils/feedbackMeta.js";
+import { TYPE_LABEL, STATUS_LABEL, formatFeedbackDate } from "../utils/feedback/feedbackMeta.js";
 import ConfirmDeleteFeedback from "../components/feedback/ConfirmDeleteFeedback.jsx";
 import { FbButton } from "../components/feedback/FeedbackButtons.jsx";
 import {

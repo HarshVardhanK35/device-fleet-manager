@@ -1,7 +1,7 @@
 import { Play, RotateCcw, Square } from "lucide-react";
 
 import UnpairLink from "./UnpairLink.jsx";
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 // "Playback stopped" with Continue / Restart (after a long press) and Unpair.
 function StoppedScreen({ screenName, onContinue, onRestart, onUnpair }) {

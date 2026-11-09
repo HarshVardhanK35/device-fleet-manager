@@ -1,6 +1,6 @@
 import { Trash2 } from "lucide-react";
 
-import { STATUS_EXPLAIN } from "../../utils/feedbackMeta.js";
+import { STATUS_EXPLAIN } from "../../utils/feedback/feedbackMeta.js";
 import ScrollBox from "../layout/ScrollBox.jsx";
 import DetailsShell from "./DetailsShell.jsx";
 import StatusBadge from "./StatusBadge.jsx";

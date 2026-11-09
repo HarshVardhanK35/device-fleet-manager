@@ -18,11 +18,11 @@ import {
   findConflict,
   classifyOverride,
   overlapRange,
-} from "../../utils/publishConflicts.js";
-import { getAssignmentStatus, STATUS_PILL } from "../../utils/assignmentStatus.js";
-import { formatScheduleDuration } from "../../utils/scheduleTime.js";
-import { formatDurationHuman } from "../../utils/durationInput.js";
-import { timeAgo } from "../../utils/timeAgo.js";
+} from "../../utils/assignments/publishConflicts.js";
+import { getAssignmentStatus, STATUS_PILL } from "../../utils/assignments/assignmentStatus.js";
+import { formatScheduleDuration } from "../../utils/assignments/scheduleTime.js";
+import { formatDurationHuman } from "../../utils/format/durationInput.js";
+import { timeAgo } from "../../utils/format/timeAgo.js";
 import { useToast } from "../../context/useToast.js";
 import SelectCheckbox from "../ui/SelectCheckbox.jsx";
 import CancelButton from "../ui/CancelButton.jsx";
@@ -634,7 +634,7 @@ export default PublishModal;
 // entirely inside the old one's span — splits it into a "before" and
 // "after" fragment (the "it resumes after" case). Nothing is mutated
 // until Publish is actually clicked; toggles are local UI state only
-// until then. See utils/publishConflicts.js for the overlap/classify
+// until then. See utils/assignments/publishConflicts.js for the overlap/classify
 // logic this reads.
 //
 // Reused from elsewhere: input/select field styling from

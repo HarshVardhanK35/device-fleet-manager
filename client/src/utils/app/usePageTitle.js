@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-import { useAuth } from "../context/useAuth.js";
+import { useAuth } from "../../context/useAuth.js";
 
 // Browser tab title per page. The landing page ("/" signed out) sets its own
 // title (pages/landing/usePageChrome.js) and restores this one on leave.

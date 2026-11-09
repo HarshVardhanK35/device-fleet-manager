@@ -3,6 +3,8 @@
 // service worker (public/player-sw.js) reads the same cache, so a saved file
 // is served from here instead of the network.
 
+import { logEvent, logWarn } from "../utils/screenLog/screenLog.js";
+
 const MEDIA_CACHE = "cw-media-v1";
 export const SHELL_CACHE = "cw-shell-v1";
 
@@ -67,12 +69,27 @@ export async function clearMedia() {
 }
 
 // Is there room for `bytes` more? Leaves a 50 MB margin so the device never runs dry.
-export async function hasRoom(bytes) {
+// `label` is only for the log (which file asked).
+export async function hasRoom(bytes, label = "a file") {
+  const mb = (n) => `${(n / 1048576).toFixed(1)} MB`;
   try {
     const { quota, usage } = await navigator.storage.estimate();
-    if (!quota) return true;
-    return quota - usage > bytes * 1.2 + 50 * 1024 * 1024;
-  } catch {
+    if (!quota) {
+      logEvent("offline", `Storage check for ${label}: the browser reports no quota, so it is allowed`);
+      return true;
+    }
+    const needed = bytes * 1.2 + 50 * 1024 * 1024;
+    const free = quota - usage;
+    const ok = free > needed;
+    if (!ok) {
+      logWarn(
+        "offline",
+        `Not enough space for ${label}: the file is ${mb(bytes)} (original size), so ${mb(needed)} must be free (file x1.2 + 50 MB margin), but only ${mb(free)} is free (quota ${mb(quota)}, used ${mb(usage)})`,
+      );
+    }
+    return ok;
+  } catch (error) {
+    logEvent("offline", `Storage check for ${label} failed (${error.message}), so it is allowed`);
     return true;
   }
 }
@@ -80,7 +97,8 @@ export async function hasRoom(bytes) {
 // Ask the browser not to delete our saved files when the device runs low on space.
 export async function keepStorage() {
   try {
-    await navigator.storage?.persist?.();
+    const persisted = await navigator.storage?.persist?.();
+    logEvent("offline", `Asked the browser to keep the saved files: ${persisted === undefined ? "not supported" : persisted ? "granted" : "not granted (files may be cleared when the device runs low on space)"}`);
   } catch {
     // not supported: the files may be cleared under pressure, and are saved again
   }

@@ -1,3 +1,4 @@
+import { logError, logEvent, logForeign, logWarn } from "../utils/screenLog/screenLog.js";
 import { SHELL_CACHE } from "./mediaCache.js";
 
 // Turns on offline support for the player pages: registers the service worker
@@ -7,13 +8,27 @@ import { SHELL_CACHE } from "./mediaCache.js";
 let started = false;
 
 export function registerOffline() {
-  if (started || !("serviceWorker" in navigator)) return;
+  if (started) return;
+  if (!("serviceWorker" in navigator)) {
+    logWarn("sw", "This browser has no service worker: saved files can NOT be served offline, and the page itself will not open without internet");
+    return;
+  }
   started = true;
+  // Lines the service worker writes about what it served (it cannot log into this page directly).
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type === "CW_LOG") logForeign("sw", event.data.level || "info", event.data.message);
+  });
   navigator.serviceWorker
     .register("/player-sw.js", { scope: "/" })
-    .then(() => navigator.serviceWorker.ready)
-    .then(saveShell)
-    .catch(() => {});
+    .then((registration) => {
+      logEvent("sw", `Service worker registered (scope ${registration.scope})`);
+      return navigator.serviceWorker.ready;
+    })
+    .then(() => {
+      logEvent("sw", `Service worker is ready; it ${navigator.serviceWorker.controller ? "controls this page" : "does NOT control this page yet (a reload is needed before it serves offline files)"}`);
+      return saveShell();
+    })
+    .catch((error) => logError("sw", `Service worker could not start: ${error.name}: ${error.message}`));
 }
 
 // Keeps exactly the built files this page uses (and the page itself) in the
@@ -32,15 +47,20 @@ async function saveShell() {
       await cache.delete(request);
     }
   }
+  let added = 0;
   for (const url of current) {
-    if (!(await cache.match(url))) await cache.add(url).catch(() => {});
+    if (!(await cache.match(url))) {
+      await cache.add(url).then(() => (added += 1)).catch((error) => logWarn("sw", `Could not save the page file ${url.slice(-60)}: ${error.message}`));
+    }
   }
+  logEvent("sw", `The player page files are saved for offline start: ${current.size} file(s), ${added} newly saved`);
 
   try {
     const page = await fetch("/index.html", { cache: "no-store" });
     if (page.ok) await cache.put("/__shell", page);
   } catch {
     // offline right now: the page saved earlier stays
+    logWarn("sw", "Could not refresh the saved player page (offline?); the one saved earlier stays");
   }
 }
 

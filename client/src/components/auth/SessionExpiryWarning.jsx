@@ -7,7 +7,7 @@ import { refreshAccessToken } from "../../api/auth.js";
 import { getAccessToken, setAccessToken, subscribeToken } from "../../api/apiClient.js";
 import { useAuth } from "../../context/useAuth.js";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
-import { saveReturnTo, tokenExpiry, tokenMinutes } from "../../utils/sessionExpiry.js";
+import { saveReturnTo, tokenExpiry, tokenMinutes } from "../../utils/session/sessionExpiry.js";
 import Button from "../ui/Button.jsx";
 
 const WARN_SECONDS = 5 * 60; // the warning opens this long before the session ends

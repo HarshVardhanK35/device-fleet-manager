@@ -11,8 +11,9 @@ import {
 } from "../api/devices.js";
 import { getAssignments } from "../api/assignments.js";
 import { useToast } from "../context/useToast.js";
-import { MAX_SCREENS } from "../utils/limits.js";
-import { PAIRING_CODE_LENGTH, computePlaying, mapDevice } from "../utils/screenSlots.js";
+import { MAX_SCREENS } from "../utils/validation/limits.js";
+import { downloadLogsZip, pullScreenLogs } from "../utils/screenLog/screenLogPull.js";
+import { PAIRING_CODE_LENGTH, computePlaying, mapDevice } from "../utils/screens/screenSlots.js";
 
 // Everything the Player page knows and does: the account's screens (up to 3
 // slots, one of them possibly still waiting to be paired), which one is
@@ -256,6 +257,22 @@ export function useScreenSlots() {
     toast(result?.message || "Couldn't refresh this screen. Try again.", "error");
   }
 
+  // "Pull logs": asks the screen (if online) for its log and browser details and saves
+  // them as a .zip on this device. `pullingId` is the screen being asked.
+  const [pullingId, setPullingId] = useState(null);
+  async function pullLogsNow(screen) {
+    setPullingId(screen.id);
+    try {
+      const result = await pullScreenLogs(screen.id);
+      const fileName = downloadLogsZip(result, screen.name);
+      toast(`Logs saved: ${fileName}`, "success", "Logs saved");
+    } catch (error) {
+      toast(error.message || "Couldn't pull the logs. Try again.", "error");
+    } finally {
+      setPullingId(null);
+    }
+  }
+
   function openTakeOver(id) {
     setModal({ mode: "take", id });
     setAck(false);
@@ -360,6 +377,8 @@ export function useScreenSlots() {
     openTakeOver,
     refreshLeft,
     refreshScreenNow,
+    pullingId,
+    pullLogsNow,
     confirmTakeOver,
     releaseScreen,
     removeScreen,

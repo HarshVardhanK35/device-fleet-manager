@@ -1,7 +1,7 @@
 import BrandLoader from "../../loading/BrandLoader.jsx";
 import Logo from "../../layout/Logo.jsx";
 import PulsingDots from "./PulsingDots.jsx";
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 // "Connecting…", or, while the server refuses new codes, the static logo with
 // an explanation (the counter itself is LoadingFooter).

@@ -10,7 +10,7 @@ import Button from "../ui/Button.jsx";
 import EmptyState from "../ui/EmptyState.jsx";
 import RefreshButton from "../ui/RefreshButton.jsx";
 import { COLLAPSED_PANE_CLASS } from "../../hooks/usePaneCollapse.js";
-import { pluralizeCount } from "../../utils/pluralize.js";
+import { pluralizeCount } from "../../utils/format/pluralize.js";
 
 // A playlist is made of content, so with an empty library there is nothing to
 // create one from.

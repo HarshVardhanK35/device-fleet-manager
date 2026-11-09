@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import AppRenderer from "../../apps/shared/playback/AppRenderer.jsx";
+import { logEvent, logWarn } from "../../utils/screenLog/screenLog.js";
 import { screenImageUrl, toWebm, videoUrl } from "../../offline/playlistItems.js";
 import ScreenImage from "./ScreenImage.jsx";
 import { nextPlayableIndex } from "./playbackRules.js";
@@ -39,6 +40,8 @@ const WAITING = {
 const preloadedImages = [];
 function preloadImage(url) {
   const img = new Image();
+  img.onload = () => logEvent("image", `Next image loaded ahead of its turn: ${url.slice(-70)}`);
+  img.onerror = () => logWarn("image", `Next image could not be loaded ahead of its turn: ${url.slice(-70)}`);
   img.src = url;
   if (img.decode) img.decode().catch(() => {});
   preloadedImages.push(img);
@@ -160,6 +163,11 @@ function PlaybackLayers({
 }) {
   const nextIndex = items.length > 1 ? nextPlayableIndex(items, contentIndex, online, savedKeys) : contentIndex;
   const layers = [{ index: contentIndex, turn, current: true }];
+  useEffect(() => {
+    if (nextIndex !== contentIndex) {
+      logEvent("play", `Preparing the next item behind the current one: ${nextIndex + 1} "${items[nextIndex]?.name}" (${items[nextIndex]?.type})`);
+    }
+  }, [items, contentIndex, nextIndex]);
   if (nextIndex !== contentIndex) layers.push({ index: nextIndex, turn: turn + 1, current: false });
 
   return layers.map(({ index, turn: layerTurn, current }) => {

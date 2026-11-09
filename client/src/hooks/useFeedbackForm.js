@@ -3,7 +3,7 @@ import { useState } from "react";
 import { createFeedback } from "../api/feedback.js";
 import { useAsyncAction } from "./useAsyncAction.js";
 import { notifyFeedbackChanged } from "./useFeedbackIndicator.js";
-import { FEEDBACK_MESSAGE_MAX } from "../utils/feedbackMeta.js";
+import { FEEDBACK_MESSAGE_MAX } from "../utils/feedback/feedbackMeta.js";
 import { useToast } from "../context/useToast.js";
 
 // The state and the Send action of the New feedback form, shared by the modal

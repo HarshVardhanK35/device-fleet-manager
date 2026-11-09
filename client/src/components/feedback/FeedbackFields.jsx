@@ -6,7 +6,7 @@ import {
   FEEDBACK_EMAIL,
   FEEDBACK_MESSAGE_MAX,
   TYPE_LABEL,
-} from "../../utils/feedbackMeta.js";
+} from "../../utils/feedback/feedbackMeta.js";
 
 const INPUT =
   "w-full bg-bg-primary border rounded-md text-sm text-text-primary outline-none transition-colors focus-visible:border-accent-blue focus-visible:ring-[3px] focus-visible:ring-accent-blue/25 disabled:opacity-50";

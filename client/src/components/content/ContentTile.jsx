@@ -1,7 +1,7 @@
 import AppThumb from "../ui/AppThumb.jsx";
-import { appTypeOf } from "../../utils/appType.js";
-import { getTypeMeta } from "../../utils/contentTypeMeta.js";
-import { formatDuration } from "../../utils/formatDuration.js";
+import { appTypeOf } from "../../utils/content/appType.js";
+import { getTypeMeta } from "../../utils/content/contentTypeMeta.js";
+import { formatDuration } from "../../utils/format/formatDuration.js";
 import BlurImage from "../ui/BlurImage.jsx";
 
 function ContentTile({

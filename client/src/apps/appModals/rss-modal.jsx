@@ -14,7 +14,7 @@ import ContentPickerModal from "../../components/content/ContentPickerModal.jsx"
 import { resolveAppUrlByName } from "../resolveAppUrl.js";
 import Hint from "./announcements/common/Hint.jsx";
 import { rssSecondsPerItem } from "../rssTiming.js";
-import { formatDurationHuman } from "../../utils/durationInput.js";
+import { formatDurationHuman } from "../../utils/format/durationInput.js";
 import { useAppSettingsForm } from "../shared/settings/useAppSettingsForm.js";
 
 // Matches the approved Media RSS mock's own font list exactly.

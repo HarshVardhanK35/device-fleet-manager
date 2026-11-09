@@ -6,13 +6,13 @@ import AssignmentPlaylistPreview, { AssignmentPlaylistLine } from "./AssignmentP
 import {
   getAssignmentStatus,
   STATUS_PILL,
-} from "../../utils/assignmentStatus.js";
+} from "../../utils/assignments/assignmentStatus.js";
 import {
   formatScheduleDuration,
   formatClock,
   formatDateLabel,
   formatAutoDeleteNotice,
-} from "../../utils/scheduleTime.js";
+} from "../../utils/assignments/scheduleTime.js";
 
 // Live and paused (offline-missed) both occupy the "current" slot for
 // this device right now, so they share the same menu rules as Live.
@@ -163,6 +163,6 @@ export default AssignmentCard;
 // get "Stop now" only, Upcoming gets Edit+Delete, Ended gets Delete only
 // (matches Assignment-Menu-Reference.html exactly; paused is treated like
 // live since it's still occupying the device's current time slot).
-// Status/timing logic comes from utils/assignmentStatus.js and
-// utils/scheduleTime.js.
+// Status/timing logic comes from utils/assignments/assignmentStatus.js and
+// utils/assignments/scheduleTime.js.
 // Used by: pages/Assignments.jsx.

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { getBlurPlaceholder, getOptimizedThumbnail } from "../../utils/cloudinaryTransform.js";
+import { getBlurPlaceholder, getOptimizedThumbnail } from "../../utils/content/cloudinaryTransform.js";
 
 // A picture that loads "blur-up": a tiny blurred copy (about 1 kB) fills the
 // box at once, then the real image fades in over it when it has arrived, so

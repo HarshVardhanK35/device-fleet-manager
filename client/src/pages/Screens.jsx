@@ -12,9 +12,9 @@ import { THEME } from "../components/screens/stage/stageTheme.js";
 import { usePairing } from "../hooks/usePairing.js";
 import { forgetScreen } from "../offline/forgetScreen.js";
 import { registerOffline } from "../offline/registerOffline.js";
-import { clearStoredPairing } from "../utils/screenStorage.js";
-import { useStageCss } from "../utils/stageCss.js";
-import { installFlexGapFallback } from "../utils/flexGapFallback.js";
+import { clearStoredPairing } from "../utils/screens/screenStorage.js";
+import { useStageCss } from "../utils/screens/stageCss.js";
+import { installFlexGapFallback } from "../utils/screens/flexGapFallback.js";
 
 function Screens() {
   const css = useStageCss();
@@ -203,7 +203,7 @@ export default Screens;
 // poll, the "too many codes" wait); each phase is a component in
 // components/screens/stage/ (LoadingScreen, CodeScreen, PairedScreen,
 // TapScreen, PlayingScreen, StoppedScreen); what the browser remembers is in
-// utils/screenStorage.js.
+// utils/screens/screenStorage.js.
 //
 // Real backend wiring: code generation/expiry (api/pairing.js), the
 // paired-detection poll, and the "playing" phase (components/screens/

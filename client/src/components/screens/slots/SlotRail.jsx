@@ -6,8 +6,8 @@ import SkeletonPlayerSlots from "../../loading/SkeletonPlayerSlots.jsx";
 import RefreshButton from "../../ui/RefreshButton.jsx";
 import PaneToggle from "../../layout/PaneToggle.jsx";
 import { COLLAPSED_PANE_CLASS } from "../../../hooks/usePaneCollapse.js";
-import { MAX_SCREENS } from "../../../utils/limits.js";
-import { pillLabel } from "../../../utils/screenStatus.js";
+import { MAX_SCREENS } from "../../../utils/validation/limits.js";
+import { pillLabel } from "../../../utils/screens/screenStatus.js";
 
 // The left column of the Player page: the title with its Refresh button, "n of 3", and
 // the three slots (a screen, a screen waiting to be paired, or an empty

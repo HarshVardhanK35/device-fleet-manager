@@ -1,7 +1,7 @@
 import { Play } from "lucide-react";
 
 import UnpairLink from "./UnpairLink.jsx";
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 // "Tap to Start Playing": full screen needs one tap (a browser rule).
 function TapScreen({ onStart, onUnpair }) {

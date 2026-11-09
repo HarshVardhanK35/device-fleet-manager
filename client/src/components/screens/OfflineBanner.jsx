@@ -1,4 +1,4 @@
-import { useStageCss } from "../../utils/stageCss.js";
+import { useStageCss } from "../../utils/screens/stageCss.js";
 
 // "OFFLINE" strip across the top of a screen that has lost its connection.
 // DevicePlayback shows it only after the screen has been offline for a few

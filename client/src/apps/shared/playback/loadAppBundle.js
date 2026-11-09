@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 
 import { fetchAppBundle as fetchAppBundleBytes } from "../../../api/apps.js";
+import { logEvent, logWarn } from "../../../utils/screenLog/screenLog.js";
 import { appBundleKey, isSaved, readText, saveText } from "../../../offline/mediaCache.js";
 
 // Fetches and unzips a built app bundle (e.g. Weather's staging/prod
@@ -30,8 +31,10 @@ const bundleCache = new Map();
 // saved in the browser's storage after every online load, and used when the
 // download fails (offline), so an app still starts with no internet.
 export async function loadAppBundle(zipUrl, { remember = false } = {}) {
+  const name = zipUrl.split("/").pop();
   const cached = bundleCache.get(zipUrl);
   if (cached) {
+    logEvent("app", `App bundle ${name}: already in memory`);
     // Already in memory; make sure the saved copy exists too (it may have been cleaned up).
     if (remember && !(await isSaved(appBundleKey(zipUrl)))) {
       saveText(appBundleKey(zipUrl), cached, "text/html").catch(() => {});
@@ -39,7 +42,9 @@ export async function loadAppBundle(zipUrl, { remember = false } = {}) {
     return cached;
   }
 
+  const began = Date.now();
   try {
+    logEvent("app", `App bundle ${name}: downloading through the server`);
     const bytes = await fetchAppBundleBytes(zipUrl);
     const zip = await JSZip.loadAsync(bytes);
     const indexFile = zip.file("index.html");
@@ -48,13 +53,18 @@ export async function loadAppBundle(zipUrl, { remember = false } = {}) {
     }
 
     const html = await indexFile.async("string");
+    logEvent("app", `App bundle ${name}: downloaded and unzipped (${Math.round(html.length / 1024)} KB, ${((Date.now() - began) / 1000).toFixed(1)} s)`);
     bundleCache.set(zipUrl, html);
     if (remember) saveText(appBundleKey(zipUrl), html, "text/html").catch(() => {});
     return html;
   } catch (error) {
     // Offline: the copy saved the last time this app loaded online.
     const saved = remember ? await readText(appBundleKey(zipUrl)).catch(() => null) : null;
-    if (saved) return saved;
+    if (saved) {
+      logWarn("app", `App bundle ${name}: the download failed (${error.name}: ${error.message}); using the copy saved earlier`);
+      return saved;
+    }
+    logWarn("app", `App bundle ${name}: the download failed (${error.name}: ${error.message}) and there is NO saved copy, so the app cannot start`);
     throw error;
   }
 }

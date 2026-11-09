@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 // "Paired as <name>", shown for a moment after the code is entered.
 function PairedScreen({ screenName }) {

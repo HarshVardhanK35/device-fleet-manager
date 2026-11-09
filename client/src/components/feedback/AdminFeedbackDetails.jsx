@@ -7,7 +7,7 @@ import {
   STATUS_LABEL,
   STATUS_STYLE,
   formatFeedbackDateTime,
-} from "../../utils/feedbackMeta.js";
+} from "../../utils/feedback/feedbackMeta.js";
 import ScrollBox from "../layout/ScrollBox.jsx";
 import DetailsShell from "./DetailsShell.jsx";
 import StatusBadge from "./StatusBadge.jsx";

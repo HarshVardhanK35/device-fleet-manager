@@ -1,8 +1,8 @@
 import { CalendarOff, Play } from "lucide-react";
-import { getTypeMeta } from "../../utils/contentTypeMeta.js";
+import { getTypeMeta } from "../../utils/content/contentTypeMeta.js";
 import BlurImage from "../ui/BlurImage.jsx";
 import AppThumb from "../ui/AppThumb.jsx";
-import { appTypeOf } from "../../utils/appType.js";
+import { appTypeOf } from "../../utils/content/appType.js";
 
 // `playing` is null (nothing scheduled) or
 // { type, name, mediaUrl, thumbnailUrl, pos } — the first content item of

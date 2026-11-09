@@ -12,8 +12,8 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { ToastProvider } from "./context/ToastProvider.jsx";
 import { useAuth } from "./context/useAuth.js";
 import { pageLoaders } from "./pageLoaders.js";
-import { lazyRetry } from "./utils/lazyRetry.js";
-import { usePageTitle } from "./utils/usePageTitle.js";
+import { lazyRetry } from "./utils/app/lazyRetry.js";
+import { usePageTitle } from "./utils/app/usePageTitle.js";
 
 // Every page is loaded on demand (its own file in the build), so a visitor on
 // the landing page or sign-in doesn't download the whole app first.

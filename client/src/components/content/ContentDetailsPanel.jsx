@@ -4,16 +4,16 @@ import { Trash2, Pencil, Settings2 } from "lucide-react";
 import Button from "../ui/Button.jsx";
 import AppThumb from "../ui/AppThumb.jsx";
 import ToggleSwitch from "../../apps/shared/fields/ToggleSwitch.jsx";
-import { appTypeOf } from "../../utils/appType.js";
+import { appTypeOf } from "../../utils/content/appType.js";
 import { rssSecondsPerItem } from "../../apps/rssTiming.js";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
 import CancelButton from "../ui/CancelButton.jsx";
 import ScrollBox from "../layout/ScrollBox.jsx";
-import { getTypeMeta } from "../../utils/contentTypeMeta.js";
+import { getTypeMeta } from "../../utils/content/contentTypeMeta.js";
 import BlurImage from "../ui/BlurImage.jsx";
 import FieldCount from "../ui/FieldCount.jsx";
-import { MAX_APP_NAME, MAX_CONTENT_NAME } from "../../utils/limits.js";
+import { MAX_APP_NAME, MAX_CONTENT_NAME } from "../../utils/validation/limits.js";
 import { useMediaQuery } from "../../hooks/useCompactLayout.js";
 import {
   DURATION_UNIT_CYCLE,
@@ -21,7 +21,7 @@ import {
   isDurationInRange,
   formatDurationHuman,
   secondsToUnitDisplay,
-} from "../../utils/durationInput.js";
+} from "../../utils/format/durationInput.js";
 
 const DURATION_PRESETS = [5, 10, 15, 30, 60];
 // Fewer presets shown while Custom is active (editing) — frees up row

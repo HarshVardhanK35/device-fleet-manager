@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import { THEME } from "../components/screens/stage/stageTheme.js";
+import { THEME } from "../../components/screens/stage/stageTheme.js";
 
 // The /screens page and the player's messages size everything from the screen
 // with CSS container-query units (cqmin, cqw, cqh), clamp(), min(), max() and

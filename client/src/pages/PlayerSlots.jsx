@@ -108,6 +108,7 @@ function PlayerSlots() {
               }}
               nameRef={slots.nameInputRef}
               refreshLeft={slots.refreshLeft(selected.id)}
+              pulling={slots.pullingId === selected.id}
               releaseError={slots.releaseError}
               onBack={() => setMobileView("list")}
               onPreview={() => slots.setModal({ mode: "preview", id: selected.id })}
@@ -116,6 +117,7 @@ function PlayerSlots() {
               onOpenPlayer={() => slots.setModal({ mode: "player", id: selected.id })}
               onRelease={() => slots.releaseScreen(selected.id)}
               onRefreshScreen={() => slots.refreshScreenNow(selected)}
+              onPullLogs={() => slots.pullLogsNow(selected)}
             />
           )}
         </div>
@@ -131,7 +133,7 @@ export default PlayerSlots;
 // Player tab — manage up to 3 paired screens (devices), pair a new one via
 // an 8-character code (entered here; generated/shown on the physical
 // screen's own pairing page, pages/Screens.jsx at "/screens" — code shape
-// must stay in sync between the two, see utils/screenSlots.js), preview
+// must stay in sync between the two, see utils/screens/screenSlots.js), preview
 // without touching the live screen, and explicitly "take over" a screen
 // (disconnects it, since only one connection per screen is ever allowed —
 // see z-files/future-implementations.md's Preview-tab section for the full

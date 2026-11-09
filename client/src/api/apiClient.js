@@ -1,4 +1,4 @@
-import { saveReturnTo } from "../utils/sessionExpiry.js";
+import { saveReturnTo } from "../utils/session/sessionExpiry.js";
 
 // Falls back to the local backend when unset, same pattern as the MQTT env
 // vars in components/DevicePlayback.jsx — deployed builds get the real

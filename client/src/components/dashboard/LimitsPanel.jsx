@@ -1,4 +1,4 @@
-import { MAX_IMAGES, MAX_VIDEO_BYTES, MAX_SCREENS, formatMB } from "../../utils/limits.js";
+import { MAX_IMAGES, MAX_VIDEO_BYTES, MAX_SCREENS, formatMB } from "../../utils/validation/limits.js";
 
 // One rule for all three bars: green up to 40% of the limit, amber from 40% to
 // 80%, red above 80%. So screens go green (1 of 3) -> amber (2 of 3) -> red

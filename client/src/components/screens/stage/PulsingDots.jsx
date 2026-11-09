@@ -1,4 +1,4 @@
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 // Three dots that pulse in turn ("waiting").
 function PulsingDots() {

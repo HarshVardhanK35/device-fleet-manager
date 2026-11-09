@@ -13,8 +13,8 @@ import PasswordRequirementsList from "../components/auth/PasswordRequirementsLis
 import PasswordMatchHint from "../components/auth/PasswordMatchHint.jsx";
 import Button from "../components/ui/Button.jsx";
 import LoadingOverlay from "../components/loading/LoadingOverlay.jsx";
-import { getPasswordRules } from "../utils/passwordRules.js";
-import { MAX_FIRST_NAME, MAX_LAST_NAME } from "../utils/limits.js";
+import { getPasswordRules } from "../utils/validation/passwordRules.js";
+import { MAX_FIRST_NAME, MAX_LAST_NAME } from "../utils/validation/limits.js";
 
 function Register() {
   const [firstName, setFirstName] = useState("");

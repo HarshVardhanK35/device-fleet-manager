@@ -1,9 +1,9 @@
 import { SkipForward } from "lucide-react";
 
 import AppThumb from "../ui/AppThumb.jsx";
-import { appTypeOf } from "../../utils/appType.js";
-import { formatDuration } from "../../utils/formatDuration.js";
-import { pluralizeCount } from "../../utils/pluralize.js";
+import { appTypeOf } from "../../utils/content/appType.js";
+import { formatDuration } from "../../utils/format/formatDuration.js";
+import { pluralizeCount } from "../../utils/format/pluralize.js";
 
 const MAX_TILES = 8;
 

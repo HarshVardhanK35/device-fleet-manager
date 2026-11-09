@@ -6,8 +6,8 @@ import ContentDetailsPanel from "../content/ContentDetailsPanel.jsx";
 import ContentPickerModal from "../content/ContentPickerModal.jsx";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal.jsx";
 import RemoveConfirmModal from "../modals/RemoveConfirmModal.jsx";
-import { MAX_IMAGE_COPIES } from "../../utils/limits.js";
-import { takenPlaylistNames } from "../../utils/playlistNames.js";
+import { MAX_IMAGE_COPIES } from "../../utils/validation/limits.js";
+import { takenPlaylistNames } from "../../utils/playlists/playlistNames.js";
 
 // Every dialog of the Playlists page, plus the details panel of a clicked item
 // and the app settings screens: create / add content / edit playlist, the

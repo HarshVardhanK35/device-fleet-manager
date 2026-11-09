@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { getAdminUserScreens } from "../../api/admin.js";
 import CancelButton from "../ui/CancelButton.jsx";
-import { timeAgo } from "../../utils/timeAgo.js";
+import { timeAgo } from "../../utils/format/timeAgo.js";
 import { RoleBadge, VerifiedBadge } from "./UserBadges.jsx";
 import { fullName, formatJoined } from "./userFormat.js";
 

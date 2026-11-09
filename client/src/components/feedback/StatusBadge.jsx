@@ -1,4 +1,4 @@
-import { STATUS_LABEL, STATUS_STYLE } from "../../utils/feedbackMeta.js";
+import { STATUS_LABEL, STATUS_STYLE } from "../../utils/feedback/feedbackMeta.js";
 
 // A status pill: coloured dot and label. `large` is the bigger one in the
 // user's message details.

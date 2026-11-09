@@ -2,7 +2,7 @@ import { TriangleAlert } from "lucide-react";
 
 import CodeBox from "./CodeBox.jsx";
 import PulsingDots from "./PulsingDots.jsx";
-import { useStageCss } from "../../../utils/stageCss.js";
+import { useStageCss } from "../../../utils/screens/stageCss.js";
 
 function formatCountdown(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
