@@ -11,6 +11,9 @@ export default defineConfig({
     tailwindcss(),
   ],
   build: {
+    // Plain ES2018 output (no ?. or ??), so a TV browser from about 2019 can run
+    // the player and the pairing page. Newer browsers just get slightly larger code.
+    target: "es2018",
     rolldownOptions: {
       output: {
         // React and the router get their own file: it changes only when we

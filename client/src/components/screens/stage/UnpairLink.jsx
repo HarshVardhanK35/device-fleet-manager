@@ -1,5 +1,8 @@
+import { useStageCss } from "../../../utils/stageCss.js";
+
 // The small "Unpair this screen" link under the tap and stopped screens.
 function UnpairLink({ onClick }) {
+  const css = useStageCss();
   return (
     <button
       type="button"
@@ -7,7 +10,7 @@ function UnpairLink({ onClick }) {
       style={{
         all: "unset",
         cursor: "pointer",
-        fontSize: "clamp(13px,2.4cqmin,120px)",
+        fontSize: css("clamp(13px,2.4cqmin,120px)"),
         color: "var(--color-neutral-400)",
         textDecoration: "underline",
         textUnderlineOffset: "3px",

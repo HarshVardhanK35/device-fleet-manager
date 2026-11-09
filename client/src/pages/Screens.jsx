@@ -13,8 +13,10 @@ import { usePairing } from "../hooks/usePairing.js";
 import { forgetScreen } from "../offline/forgetScreen.js";
 import { registerOffline } from "../offline/registerOffline.js";
 import { clearStoredPairing } from "../utils/screenStorage.js";
+import { useStageCss } from "../utils/stageCss.js";
 
 function Screens() {
+  const css = useStageCss();
   const {
     phase,
     setPhase,
@@ -101,7 +103,10 @@ function Screens() {
       style={{
         ...THEME,
         position: "fixed",
-        inset: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
         overflow: "hidden",
         containerType: "size",
         color: "var(--color-neutral-100)",
@@ -111,13 +116,16 @@ function Screens() {
       <div
         style={{
           position: "absolute",
-          inset: 0,
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
           display: "grid",
           gridTemplateRows: "auto minmax(0,1fr) auto",
-          padding: "clamp(16px,5.5cqmin,320px)",
-          gap: "clamp(8px,3cqmin,160px)",
+          padding: css("clamp(16px,5.5cqmin,320px)"),
+          gap: css("clamp(8px,3cqmin,160px)"),
           background:
-            "radial-gradient(110% 90% at 0% 0%, var(--color-section-glow) 0%, transparent 58%), radial-gradient(70% 70% at 100% 100%, color-mix(in srgb, var(--color-accent-700) 60%, transparent) 0%, transparent 62%), var(--color-section)",
+            css("radial-gradient(110% 90% at 0% 0%, var(--color-section-glow) 0%, transparent 58%), radial-gradient(70% 70% at 100% 100%, color-mix(in srgb, var(--color-accent-700) 60%, transparent) 0%, transparent 62%), var(--color-section)"),
         }}
       >
         <StageHeader onRefresh={phase !== "loading" && phase !== "playing" ? refresh : undefined} />
@@ -149,14 +157,14 @@ function Screens() {
           className={phase === "code" ? "screens-foot" : undefined}
           style={
             phase === "code"
-              ? { gap: "clamp(8px,2cqmin,100px)", minHeight: "clamp(20px,9cqmin,460px)" }
+              ? { gap: css("clamp(8px,2cqmin,100px)"), minHeight: css("clamp(20px,9cqmin,460px)") }
               : {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "flex-end",
                   flexWrap: "wrap",
-                  gap: "clamp(8px,2cqmin,100px)",
-                  minHeight: "clamp(20px,9cqmin,460px)",
+                  gap: css("clamp(8px,2cqmin,100px)"),
+                  minHeight: css("clamp(20px,9cqmin,460px)"),
                 }
           }
         >
