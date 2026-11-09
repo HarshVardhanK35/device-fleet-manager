@@ -21,6 +21,24 @@ async function pushManifest(deviceId) {
   }
 }
 
+// Two playlists of one account can't share a name (capitals and extra spaces don't
+// count as a difference). `exceptId` is the playlist being renamed.
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+async function nameTaken(userId, name, exceptId) {
+  const clean = String(name || "").trim().replace(/\s+/g, " ");
+  if (!clean) return false;
+  const pattern = escapeRegex(clean).replace(/ /g, "\\s+");
+  const found = await Playlist.findOne({
+    userId,
+    name: { $regex: `^\\s*${pattern}\\s*$`, $options: "i" },
+    ...(exceptId ? { _id: { $ne: exceptId } } : {}),
+  })
+    .select("_id")
+    .lean();
+  return !!found;
+}
+const NAME_TAKEN_MESSAGE = "You already have a playlist with this name.";
+
 // An image may appear in a playlist up to 3 times; any other content once.
 const MAX_IMAGE_COPIES = 3;
 
@@ -56,6 +74,10 @@ export const createPlaylist = async (req, res) => {
 
     const ruleError = await duplicateRuleError(contentIds);
     if (ruleError) return res.status(400).json({ message: ruleError });
+
+    if (await nameTaken(req.user.id, req.body.name)) {
+      return res.status(409).json({ message: NAME_TAKEN_MESSAGE });
+    }
 
     const playlist = await Playlist.create({
       ...req.body,
@@ -121,6 +143,10 @@ export const updatePlaylist = async (req, res) => {
 
       const ruleError = await duplicateRuleError(req.body.contentItems);
       if (ruleError) return res.status(400).json({ message: ruleError });
+    }
+
+    if (req.body.name !== undefined && (await nameTaken(req.user.id, req.body.name, playlist._id))) {
+      return res.status(409).json({ message: NAME_TAKEN_MESSAGE });
     }
 
     Object.assign(playlist, req.body);

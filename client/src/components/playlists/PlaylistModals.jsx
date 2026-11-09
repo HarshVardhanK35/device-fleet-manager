@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import AppEditModals from "./AppEditModals.jsx";
 import EditPlaylistModal from "./EditPlaylistModal.jsx";
 import ContentDetailsPanel from "../content/ContentDetailsPanel.jsx";
@@ -5,13 +7,24 @@ import ContentPickerModal from "../content/ContentPickerModal.jsx";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal.jsx";
 import RemoveConfirmModal from "../modals/RemoveConfirmModal.jsx";
 import { MAX_IMAGE_COPIES } from "../../utils/limits.js";
+import { takenPlaylistNames } from "../../utils/playlistNames.js";
 
 // Every dialog of the Playlists page, plus the details panel of a clicked item
 // and the app settings screens: create / add content / edit playlist, the
 // delete and remove confirmations.
 //   pl  what usePlaylistsPage returns
 function PlaylistModals({ pl }) {
-  const { playlists, content, selectedPlaylist, removeSlotItems, inspectedItem } = pl;
+  const { playlists, content, selectedPlaylist, inspectedItem } = pl;
+
+  // The remove dialog keeps the items it was opened with while it closes: the selection
+  // is cleared as soon as they are removed, and the dialog would otherwise redraw as
+  // "Remove 0 items" during its closing animation.
+  const [shownRemoveItems, setShownRemoveItems] = useState([]);
+  const removeKey = pl.removeSlotItems.map((item) => item.id).join();
+  if (pl.removeSlotItems.length > 0 && removeKey !== shownRemoveItems.map((item) => item.id).join()) {
+    setShownRemoveItems(pl.removeSlotItems);
+  }
+  const removeSlotItems = pl.removeSlotItems.length > 0 ? pl.removeSlotItems : shownRemoveItems;
 
   return (
     <>
@@ -23,6 +36,7 @@ function PlaylistModals({ pl }) {
         title="Create Playlist"
         submitLabel="Create"
         busyLabel="Creating…"
+        takenNames={takenPlaylistNames(playlists)}
         onSubmit={pl.handleCreatePlaylist}
       />
 
@@ -46,6 +60,7 @@ function PlaylistModals({ pl }) {
         open={!!pl.editPlaylistId}
         onOpenChange={(open) => !open && pl.setEditPlaylistId(null)}
         playlist={playlists.find((p) => p._id === pl.editPlaylistId)}
+        takenNames={takenPlaylistNames(playlists, pl.editPlaylistId)}
         onSave={pl.handleSaveEditPlaylist}
       />
 
@@ -99,8 +114,12 @@ function PlaylistModals({ pl }) {
           </>
         }
         onConfirm={async () => {
-          await pl.handleDeleteSlots();
-          pl.setSlotDeleteConfirmOpen(false);
+          // closes whatever happens, so a failure can never leave the dialog stuck open
+          try {
+            await pl.handleDeleteSlots();
+          } finally {
+            pl.setSlotDeleteConfirmOpen(false);
+          }
         }}
       />
 
@@ -111,6 +130,7 @@ function PlaylistModals({ pl }) {
           item={inspectedItem}
           dockSide={pl.panelDock.side}
           dockLeft={pl.panelDock.left}
+          showFit
           onClose={() => pl.setInspectedSlot(null)}
           onSave={pl.handleSaveItem}
           onOpenAppSettings={

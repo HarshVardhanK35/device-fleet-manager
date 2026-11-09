@@ -31,7 +31,7 @@ function EventCardsFields({
 
       <SettingsCard kicker="Display">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-text-primary text-sm font-medium">Light theme (iframe only)</span>
+          <span className="text-text-primary text-sm font-medium">Light theme (this app only)</span>
           <ToggleSwitch
             checked={form.theme === "light"}
             onChange={(v) => set("theme", v ? "light" : "dark")}

@@ -26,8 +26,8 @@ function PlaylistListPane({ pl }) {
 
   return (
     <div
-      className={`relative w-full max-w-xl md:max-w-none mx-auto lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:border-r lg:border-border-muted flex flex-col min-h-0 ${
-        pl.mobileView === "detail" ? "hidden lg:flex" : "flex"
+      className={`relative w-full max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:w-80 lg:flex-shrink-0 lg:border-r lg:border-border-muted flex-col min-h-0 ${
+        pl.split || pl.mobileView === "list" ? "flex" : "hidden"
       } ${pl.listCollapsed ? COLLAPSED_PANE_CLASS : ""}`}
     >
       <PaneToggle collapsed={pl.listCollapsed} onToggle={pl.toggleList} />
@@ -56,12 +56,12 @@ function PlaylistListPane({ pl }) {
         {pl.loading ? (
           <SkeletonPlaylistList count={4} />
         ) : (
-          <div className="flex flex-col gap-2 pb-2 md:grid md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] md:gap-3 lg:flex lg:flex-col lg:gap-2">
+          <div className="flex flex-col gap-2 pb-2">
             {playlists.length === 0 && (
               <>
                 {/* Below lg the right pane is hidden, so the guidance lives here. */}
                 <EmptyState
-                  className="lg:hidden md:col-span-full"
+                  className="lg:hidden"
                   title={noContent ? "No content yet" : "Create your first playlist"}
                   description={
                     noContent

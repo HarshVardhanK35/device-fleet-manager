@@ -1,16 +1,26 @@
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 
-import AppRenderer from "../../apps/shared/playback/AppRenderer.jsx";
 import { useScreenConnection } from "../../hooks/useScreenConnection.js";
 import { getSaved, stopDownloads, subscribeSaved, syncDownloads } from "../../offline/downloadManager.js";
-import { downloadItems, screenImageUrl } from "../../offline/playlistItems.js";
+import { downloadItems } from "../../offline/playlistItems.js";
 import { registerOffline } from "../../offline/registerOffline.js";
 import { savePlaying } from "../../offline/savedManifest.js";
 import OfflineBanner from "./OfflineBanner.jsx";
-import ScreenImage from "./ScreenImage.jsx";
+import PlaybackLayers from "./PlaybackLayers.jsx";
 import { findActiveAssignment, findLockedAssignment, nextPlayableIndex, playableFor } from "./playbackRules.js";
 
 const FALLBACK_ITEM_MS = 8000; // used only if a content item has no/invalid durationInMillis
+
+// The built-in messages (already connected elsewhere, taken over, nothing scheduled)
+// are styled here, not left to the browser or to Tailwind's heading reset, which an
+// older TV browser skips; they would otherwise look different on every browser.
+const MESSAGE_STYLE = {
+  margin: 0,
+  fontSize: "5vmin",
+  fontWeight: 600,
+  color: "#e6edf3",
+  fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+};
 
 function DevicePlayback(
   {
@@ -26,8 +36,14 @@ function DevicePlayback(
   const [now, setNow] = useState(() => Date.now());
   const [contentIndex, setContentIndex] = useState(0);
   const [savedKeys, setSavedKeys] = useState(getSaved);
+  // Goes up each time the playlist moves on (see PlaybackLayers).
+  const [turn, setTurn] = useState(0);
   const activeIdRef = useRef(null);
   const videoRef = useRef(null);
+  // The video on screen, so getPosition() can read how far it has played.
+  const setVideoElement = useCallback((element) => {
+    videoRef.current = element;
+  }, []);
   // The live link to the server: manifest, connection state, whether it can
   // be reached (`online`), and which playlist may keep playing if it can't.
   const { manifest, connection, online, offlineLock, bannerOn, backOnline, refreshTick } = useScreenConnection(screenToken, {
@@ -133,6 +149,7 @@ function DevicePlayback(
     setPendingVideoSeek(canResume ? initialPosition.videoTime || 0 : null);
     setContentIndex(canResume ? initialPosition.contentIndex : 0);
     setItemStartedAt(canResume ? now - (initialPosition.elapsedMs || 0) : now);
+    setTurn((t) => t + 1);
   }
 
   // "Refresh screen" from the app: start the playlist again from the first
@@ -143,6 +160,7 @@ function DevicePlayback(
     setPendingVideoSeek(null);
     setContentIndex(0);
     setItemStartedAt(now);
+    setTurn((t) => t + 1);
   }
 
   // Rotates through the active playlist's content, each item for its own
@@ -164,6 +182,7 @@ function DevicePlayback(
       () => {
         setContentIndex((i) => nextPlayableIndex(items, i, online, savedKeys));
         setItemStartedAt(Date.now());
+        setTurn((t) => t + 1);
       },
       skip ? 0 : remaining,
     );
@@ -173,11 +192,11 @@ function DevicePlayback(
   const banner = bannerOn ? <OfflineBanner /> : backOnline ? <OfflineBanner online /> : null;
 
   if (connection === "rejected") {
-    return rejectedView ?? <h1>This screen is already connected elsewhere.</h1>;
+    return rejectedView ?? <div style={MESSAGE_STYLE}>This screen is already connected elsewhere.</div>;
   }
 
   if (connection === "taken-over") {
-    return takenOverView ?? <h1>This screen was taken over from the app.</h1>;
+    return takenOverView ?? <div style={MESSAGE_STYLE}>This screen was taken over from the app.</div>;
   }
 
   if (!manifest) {
@@ -196,9 +215,9 @@ function DevicePlayback(
     return (
       <>
         <div style={{ textAlign: "center" }}>
-          {nothingScheduledView ?? <h1>Nothing scheduled at this time</h1>}
+          {nothingScheduledView ?? <div style={MESSAGE_STYLE}>Nothing scheduled at this time</div>}
           {!online && (
-            <p style={{ margin: "1em 0 0", opacity: 0.8 }}>
+            <p style={{ margin: "1em 0 0", opacity: 0.8, fontSize: "3vmin", color: "#e6edf3" }}>
               This screen can&apos;t reach CastWise. Check its internet connection.
             </p>
           )}
@@ -213,29 +232,18 @@ function DevicePlayback(
 
   return (
     <>
-      {currentContent.type === "image" && (
-        <ScreenImage url={screenImageUrl(currentContent.mediaUrl)} alt={currentContent.name} />
-      )}
-      {currentContent.type === "video" && (
-        <video
-          key={`${currentContent._id}-${refreshTick}`}
-          ref={videoRef}
-          src={currentContent.mediaUrl}
-          autoPlay
-          loop
-          muted
-          onLoadedMetadata={(e) => {
-            if (pendingVideoSeek != null) {
-              e.currentTarget.currentTime = pendingVideoSeek;
-              setPendingVideoSeek(null);
-            }
-          }}
-          style={{ width: "100vw", height: "100vh", objectFit: "contain" }}
-        />
-      )}
-      {currentContent.type === "app" && (
-        <AppRenderer key={itemStartedAt} configBlob={currentContent.configBlob} />
-      )}
+      <PlaybackLayers
+        items={activeAssignment.content}
+        contentIndex={contentIndex}
+        turn={turn}
+        assignmentId={activeAssignment.assignmentId}
+        online={online}
+        savedKeys={savedKeys}
+        refreshTick={refreshTick}
+        pendingVideoSeek={pendingVideoSeek}
+        onSeekApplied={() => setPendingVideoSeek(null)}
+        onVideoElement={setVideoElement}
+      />
       {banner}
     </>
   );

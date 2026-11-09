@@ -33,10 +33,10 @@ function StageHeader({ onRefresh }) {
           aria-label="Refresh"
           style={{
             marginLeft: "auto",
+            position: "relative",
             width: css("clamp(30px,6.6cqmin,340px)"),
             height: css("clamp(30px,6.6cqmin,340px)"),
-            display: "grid",
-            placeItems: "center",
+            padding: 0,
             borderRadius: css("clamp(6px,1.5cqmin,70px)"),
             border: css("clamp(1.5px,0.32cqmin,14px) solid var(--color-accent-400)"),
             background: "transparent",
@@ -44,7 +44,22 @@ function StageHeader({ onRefresh }) {
             cursor: "pointer",
           }}
         >
-          <RefreshCw style={{ width: "50%", height: "50%" }} />
+          {/* a <button> cannot be a grid / flex box before Chromium 83, so this inner
+              box does the centring */}
+          <span
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <RefreshCw style={{ width: "50%", height: "50%" }} />
+          </span>
         </button>
       )}
     </div>

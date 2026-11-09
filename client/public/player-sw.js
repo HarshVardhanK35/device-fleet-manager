@@ -3,9 +3,10 @@
 //
 // It lets a screen keep working with no internet:
 //   - the player page itself (index.html + its /assets files) opens offline
-//   - images, videos and app images that the page saved (cache "cw-media-v1")
-//     are served from that saved copy instead of the network, with Range
-//     support so a saved video can play and seek
+//   - images and app images that the page saved (cache "cw-media-v1") are
+//     served from that saved copy instead of the network; videos and audio use
+//     the network while it works and the saved copy (with Range support, so it
+//     can play and seek) only when it does not
 //   - the Google Fonts an app uses are kept after their first online load
 // The page (src/offline/*) decides WHAT to save; this file only serves it.
 
@@ -44,7 +45,9 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(assetHandler(req));
   } else if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") {
     event.respondWith(fontHandler(req));
-  } else if (["image", "video", "audio"].includes(req.destination)) {
+  } else if (req.destination === "video" || req.destination === "audio") {
+    event.respondWith(streamHandler(req));
+  } else if (req.destination === "image") {
     event.respondWith(mediaHandler(req));
   }
 });
@@ -73,6 +76,22 @@ async function assetHandler(req) {
   const res = await fetch(req);
   if (res.ok) cache.put(req, res.clone());
   return res;
+}
+
+// A video or audio file: the network first, the saved copy only when the network fails
+// (offline). A <video> that began playing from the network must not be handed to the
+// saved copy half way through (the download finishing while it plays): the browser
+// cannot switch sources in the middle of a stream and freezes with a read error.
+async function streamHandler(req) {
+  try {
+    return await fetch(req);
+  } catch {
+    const cache = await caches.open(MEDIA);
+    const saved = await cache.match(req.url);
+    if (!saved) return Response.error();
+    const range = req.headers.get("range");
+    return range ? rangeResponse(range, saved) : saved;
+  }
 }
 
 // Saved copy first (as the player decided), the network for anything not saved.

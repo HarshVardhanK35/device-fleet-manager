@@ -4,27 +4,31 @@ import * as Dialog from "@radix-ui/react-dialog";
 import ScrollBox from "../layout/ScrollBox.jsx";
 import CancelButton from "../ui/CancelButton.jsx";
 import Button from "../ui/Button.jsx";
+import GhostButton from "../ui/GhostButton.jsx";
 import RemovableContentTile from "../content/RemovableContentTile.jsx";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
 import FieldCount from "../ui/FieldCount.jsx";
 import { MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from "../../utils/limits.js";
 import { useAsyncAction } from "../../hooks/useAsyncAction.js";
+import { DUPLICATE_PLAYLIST_NAME, normalizeName } from "../../utils/playlistNames.js";
 
 // Owns name/description/contentItems state. Rendered only while `open` is
 // true, so it mounts fresh off `playlist` every time the modal opens —
 // avoids syncing props into state via a useEffect (see
 // react-hooks/set-state-in-effect; same pattern as ContentPickerModal.jsx).
-function EditPlaylistBody({ playlist, onSave }) {
+function EditPlaylistBody({ playlist, takenNames, onSave }) {
   const [name, setName] = useState(playlist.name);
   const [description, setDescription] = useState(playlist.description || "");
   const [contentItems, setContentItems] = useState(playlist.contentItems);
 
   const [error, setError] = useState("");
+  const nameTaken = takenNames.includes(normalizeName(name));
 
   // Nothing is saved until Save: removing a tile only edits this list, and
   // Cancel (or closing) throws the edits away.
   const [save, saving] = useAsyncAction(async () => {
     setError("");
+    if (nameTaken) return;
     try {
       await onSave(name, description, contentItems.map((item) => item._id));
     } catch (err) {
@@ -51,8 +55,16 @@ function EditPlaylistBody({ playlist, onSave }) {
                 value={name}
                 maxLength={MAX_PLAYLIST_NAME}
                 onChange={(e) => setName(e.target.value)}
-                className="bg-bg-primary border border-border-muted rounded-lg px-3 h-10 text-text-primary text-sm outline-none focus-visible:border-accent-blue"
+                aria-invalid={nameTaken}
+                className={`bg-bg-primary border rounded-lg px-3 h-10 text-text-primary text-sm outline-none ${
+                  nameTaken ? "border-accent-red" : "border-border-muted focus-visible:border-accent-blue"
+                }`}
               />
+              {nameTaken && (
+                <span role="alert" className="text-accent-red text-xs">
+                  {DUPLICATE_PLAYLIST_NAME}
+                </span>
+              )}
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="flex items-center justify-between text-text-muted text-xs font-semibold">
@@ -97,13 +109,14 @@ function EditPlaylistBody({ playlist, onSave }) {
 
       {error && <p className="m-0 px-6 pb-2 text-sm text-accent-red">{error}</p>}
       <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
-        <Dialog.Close
-          type="button"
+        <GhostButton
+          as={Dialog.Close}
+          size="lg"
           disabled={saving}
-          className="disabled:opacity-40 disabled:pointer-events-none text-text-muted border border-border-muted hover:border-border-hover hover:bg-bg-hover hover:text-text-primary rounded-lg px-3 py-1.5 text-sm transition-colors"
+          className="disabled:opacity-40 disabled:pointer-events-none"
         >
           Cancel
-        </Dialog.Close>
+        </GhostButton>
         <Button onClick={save} disabled={saving}>
           {saving ? "Saving…" : "Save"}
         </Button>
@@ -113,7 +126,7 @@ function EditPlaylistBody({ playlist, onSave }) {
   );
 }
 
-function EditPlaylistModal({ open, onOpenChange, playlist, onSave }) {
+function EditPlaylistModal({ open, onOpenChange, playlist, takenNames = [], onSave }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -129,6 +142,7 @@ function EditPlaylistModal({ open, onOpenChange, playlist, onSave }) {
           {open && playlist && (
             <EditPlaylistBody
               playlist={playlist}
+              takenNames={takenNames}
               onSave={onSave}
             />
           )}
@@ -142,6 +156,7 @@ export default EditPlaylistModal;
 
 // Edit Playlist modal (Radix Dialog): name + description fields, and a
 // grid of the playlist's current content with per-item remove buttons.
+// `takenNames`: the other playlists' normalised names; typing one shows a red line.
 // Everything is a draft until Save: `onSave(name, description, contentIds)`
 // saves all three in one request (and throws with a message when the server
 // refuses, which the modal shows); Cancel or closing discards the edits.

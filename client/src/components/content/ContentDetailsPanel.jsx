@@ -3,6 +3,7 @@ import { Trash2, Pencil, Settings2 } from "lucide-react";
 
 import Button from "../ui/Button.jsx";
 import AppThumb from "../ui/AppThumb.jsx";
+import ToggleSwitch from "../../apps/shared/fields/ToggleSwitch.jsx";
 import { appTypeOf } from "../../utils/appType.js";
 import { rssSecondsPerItem } from "../../apps/rssTiming.js";
 import LoadingOverlay from "../loading/LoadingOverlay.jsx";
@@ -46,13 +47,19 @@ function deriveCustomUnit(sec) {
 // truthy — the key forces a remount (fresh initial state) whenever a
 // different item is inspected, instead of syncing props into state via a
 // useEffect (an anti-pattern: see react-hooks/set-state-in-effect).
+// `showFit` (the Playlists page only) adds the "Fill the screen" switch for images and
+// videos; the Content page leaves it out and never changes that setting.
 // `onDelete` is optional: the Playlists page leaves it out, so the library item
 // can't be deleted from there (the button is not shown).
 // `onOpenAppSettings` (app items only) opens that app's own full settings
 // modal (location, refresh interval, etc.) — this panel only ever edits
 // name + duration, the two fields every content type shares.
-function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, onSave, onDelete, onOpenAppSettings }) {
+function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, showFit = false, onClose, onSave, onDelete, onOpenAppSettings }) {
   const [name, setName] = useState(item.name);
+  // "Fill the screen" (images and videos): on crops the edges to fill it, off shows the
+  // whole frame. Unset means the type's default: images fill, videos show whole.
+  const [fill, setFill] = useState(item.fit ? item.fit === "cover" : item.type === "image");
+  const hasFit = showFit && (item.type === "image" || item.type === "video");
   const [durationSec, setDurationSec] = useState(
     item.durationInMillis ? item.durationInMillis / 1000 : "",
   );
@@ -135,6 +142,7 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
       // video (never had a duration field here) and for auto-duration
       // apps (their own settings screen owns this value).
       durationInMillis: showDuration ? effectiveSec * 1000 : undefined,
+      fit: hasFit ? (fill ? "cover" : "contain") : undefined,
     });
   });
 
@@ -195,6 +203,20 @@ function ContentDetailsPanel({ item, dockSide = "right", dockLeft = 0, onClose, 
               <Settings2 size={14} />
               Edit app settings
             </button>
+          )}
+
+          {hasFit && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-text-primary text-xs font-semibold">Fill the screen</span>
+                <ToggleSwitch checked={fill} onChange={setFill} />
+              </div>
+              <p className="m-0 text-text-muted text-xs">
+                {fill
+                  ? "Fills the whole screen. The edges may be cropped when the shapes differ."
+                  : "Shows the whole picture, with bars where the shapes differ."}
+              </p>
+            </div>
           )}
 
           {showDuration && (

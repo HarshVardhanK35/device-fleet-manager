@@ -20,9 +20,9 @@ export function computePlaying(assignments, deviceId) {
     return now >= begin && now <= end;
   });
 
-  // Skipped items are not played, so they are not "what is playing" either.
-  const skipped = new Set((active?.playlistId?.skippedItems ?? []).map(String));
-  const items = active?.playlistId?.contentItems?.filter((item) => !skipped.has(String(item._id)));
+  // Skipped slots are not played, so they are not "what is playing" either.
+  const skipped = new Set(active?.playlistId?.skippedSlots ?? []);
+  const items = active?.playlistId?.contentItems?.filter((item, index) => !skipped.has(index));
   const first = items?.[0];
   if (!first) return null;
 

@@ -10,13 +10,28 @@ import { getContent, updateContent } from "../api/content.js";
 import { useToggleSet } from "./useToggleSet.js";
 import { useAsyncAction } from "./useAsyncAction.js";
 import { usePaneCollapse } from "./usePaneCollapse.js";
+import { useMediaQuery } from "./useCompactLayout.js";
 import { useToast } from "../context/useToast.js";
 
-// The skipped ids that still belong to a playlist whose items are now `ids`
-// (skipping an item that was removed from the playlist is forgotten).
-function keepSkipped(playlist, ids) {
-  const stay = new Set(ids.map(String));
-  return (playlist?.skippedItems ?? []).map(String).filter((id) => stay.has(id));
+// Skipped slots are positions in the playlist (0, 1, 2 ...), so one copy of an image
+// can be skipped while another copy still plays. These keep them right when the
+// items move or go.
+const toFlags = (slots, length) => Array.from({ length }, (_, i) => slots.has(i));
+const fromFlags = (flags) => new Set(flags.map((on, i) => (on ? i : -1)).filter((i) => i >= 0));
+const sorted = (slots) => [...slots].sort((a, b) => a - b);
+
+// After the playlist's items were edited as a list of ids: each new slot takes the
+// skip flag of the first unused old slot holding the same content.
+function carrySkipped(oldIds, oldSlots, newIds) {
+  const used = new Set();
+  const next = new Set();
+  newIds.forEach((id, newIndex) => {
+    const oldIndex = oldIds.findIndex((old, i) => !used.has(i) && String(old) === String(id));
+    if (oldIndex === -1) return;
+    used.add(oldIndex);
+    if (oldSlots.has(oldIndex)) next.add(newIndex);
+  });
+  return next;
 }
 
 // All the state and actions of the Playlists page: the playlists and the
@@ -32,6 +47,13 @@ export function usePlaylistsPage(pageRef) {
   const [content, setContent] = useState([]);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
   const [mobileView, setMobileView] = useState("list"); // "list" | "detail"
+  // A desktop (1024 px and up) shows the list and the open playlist side by side; a
+  // tablet and a phone show one at a time (mobileView says which).
+  const split = useMediaQuery("(min-width: 1024px)");
+  // Items are moved with the ‹ › buttons on a touch screen of any size (a tablet, even a big
+  // one) and in any window narrower than a desktop; a mouse on a desktop drags them.
+  const touch = useMediaQuery("(pointer: coarse)");
+  const moveButtons = touch || !split;
   const [loading, setLoading] = useState(true);
   const noContent = content.length === 0;
 
@@ -80,13 +102,23 @@ export function usePlaylistsPage(pageRef) {
   // Reordering only changes this local draft; nothing is saved until the user
   // clicks Save order. `shownItems` is what the grid shows (draft, else saved).
   const [draftItems, setDraftItems] = useState(null);
+  // The skipped slots that go with the draft order (null while there is no draft).
+  const [draftSkipped, setDraftSkipped] = useState(null);
+  function clearDraft() {
+    setDraftItems(null);
+    setDraftSkipped(null);
+  }
   const [savingOrder, setSavingOrder] = useState(false);
   const [orderError, setOrderError] = useState(false);
   const shownItems = draftItems ?? selectedPlaylist?.contentItems ?? [];
+  const savedSkipped = new Set(selectedPlaylist?.skippedSlots ?? []);
+  // Skipped positions of what the grid shows (the draft's while one is open).
+  const skippedSlots = draftItems && draftSkipped ? draftSkipped : savedSkipped;
   const orderDirty =
     draftItems !== null &&
-    draftItems.map((i) => i._id).join() !==
-      (selectedPlaylist?.contentItems ?? []).map((i) => i._id).join();
+    (draftItems.map((i) => i._id).join() !==
+      (selectedPlaylist?.contentItems ?? []).map((i) => i._id).join() ||
+      sorted(skippedSlots).join() !== sorted(savedSkipped).join());
 
   const inspectedItem = inspectedSlot
     ? shownItems.find((item, index) => `${item._id}-${index}` === inspectedSlot)
@@ -98,37 +130,37 @@ export function usePlaylistsPage(pageRef) {
         .map((item) => ({ id: item._id, name: item.name, type: item.type }))
     : [];
 
-  // Skipped items stay in the playlist but are not played (by content id, so
-  // every copy of an image is skipped together).
-  const skippedIds = new Set((selectedPlaylist?.skippedItems ?? []).map(String));
-  const selectedItemIds = [
-    ...new Set(
-      shownItems
-        .filter((item, index) => checkedSlotIds.has(`${item._id}-${index}`))
-        .map((item) => String(item._id)),
-    ),
-  ];
+  // Skipped items stay in the playlist but are not played. Skip works on the
+  // selected slots, so a repeated image is skipped one copy at a time.
+  const selectedSlots = shownItems
+    .map((item, index) => index)
+    .filter((index) => checkedSlotIds.has(`${shownItems[index]._id}-${index}`));
   // All selected items are skipped already: the button turns into "Unskip".
-  const unskipMode = selectedItemIds.length > 0 && selectedItemIds.every((id) => skippedIds.has(id));
+  const unskipMode = selectedSlots.length > 0 && selectedSlots.every((index) => skippedSlots.has(index));
 
   const [handleSkip, skipping] = useAsyncAction(async () => {
-    const next = new Set(skippedIds);
-    for (const id of selectedItemIds) {
-      if (unskipMode) next.delete(id);
-      else next.add(id);
+    const next = new Set(skippedSlots);
+    for (const index of selectedSlots) {
+      if (unskipMode) next.delete(index);
+      else next.add(index);
     }
-    const updated = await updatePlaylist(selectedPlaylistId, { skippedItems: [...next] });
+    const message = unskipMode ? "Playing again" : "Skipped. Item(s) stay in the playlist but won't play";
+    const shortMessage = unskipMode ? "Playing again" : "Skipped";
+    // With an unsaved new order, the skips belong to that order and are saved with it.
+    if (draftItems) {
+      setDraftSkipped(next);
+      clearCheckedSlots();
+      toast(message, "success", shortMessage);
+      return;
+    }
+    const updated = await updatePlaylist(selectedPlaylistId, { skippedSlots: sorted(next) });
     if (!updated?._id) {
       toast(updated?.message || "Could not save the change", "error");
       return;
     }
     setPlaylists((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
     clearCheckedSlots();
-    toast(
-      unskipMode ? "Playing again" : "Skipped. Item(s) stay in the playlist but won't play",
-      "success",
-      unskipMode ? "Playing again" : "Skipped",
-    );
+    toast(message, "success", shortMessage);
   });
 
   const slotFilterCounts = selectedPlaylist
@@ -169,7 +201,7 @@ export function usePlaylistsPage(pageRef) {
     const [playlistData, contentData] = await Promise.all([getPlaylists(), getContent()]);
     setPlaylists(playlistData);
     setContent(contentData);
-    setDraftItems(null);
+    clearDraft();
     setInspectedSlot(null);
     clearCheckedSlots();
     setSelectedPlaylistId((id) =>
@@ -178,7 +210,7 @@ export function usePlaylistsPage(pageRef) {
   }
 
   function selectPlaylist(id) {
-    setDraftItems(null);
+    clearDraft();
     setInspectedSlot(null);
     clearCheckedSlots();
     setSlotFilterType("all");
@@ -193,13 +225,25 @@ export function usePlaylistsPage(pageRef) {
       .filter((item, index) => !checkedSlotIds.has(`${item._id}-${index}`))
       .map((item) => item._id);
 
-    const updated = await updatePlaylist(selectedPlaylistId, {
-      contentItems: remaining,
-      skippedItems: keepSkipped(selectedPlaylist, remaining),
+    let kept = 0;
+    const stillSkipped = new Set();
+    shownItems.forEach((item, index) => {
+      if (checkedSlotIds.has(`${item._id}-${index}`)) return;
+      if (skippedSlots.has(index)) stillSkipped.add(kept);
+      kept += 1;
     });
 
+    const updated = await updatePlaylist(selectedPlaylistId, {
+      contentItems: remaining,
+      skippedSlots: sorted(stillSkipped),
+    });
+
+    if (!updated?._id) {
+      toast(updated?.message || "Could not remove the items", "error");
+      return;
+    }
     setPlaylists(playlists.map((p) => (p._id === updated._id ? updated : p)));
-    setDraftItems(null);
+    clearDraft();
     clearCheckedSlots();
     toast(removedCount === 1 ? "Removed from the playlist" : `Removed ${removedCount} items`);
   }
@@ -244,6 +288,8 @@ export function usePlaylistsPage(pageRef) {
       description,
       contentItems: contentItemIds,
     });
+    // A refusal answers with just { message } (for example a name already taken).
+    if (!newPlaylist?._id) throw new Error(newPlaylist?.message || "Could not create the playlist");
 
     setPlaylists([...playlists, newPlaylist]);
     selectPlaylist(newPlaylist._id);
@@ -299,10 +345,11 @@ export function usePlaylistsPage(pageRef) {
     const existingIds = shownItems.map((item) => item._id);
     const updated = await updatePlaylist(selectedPlaylistId, {
       contentItems: [...existingIds, ...ids],
+      skippedSlots: sorted(skippedSlots),
     });
 
     setPlaylists(playlists.map((p) => (p._id === updated._id ? updated : p)));
-    setDraftItems(null);
+    clearDraft();
     setAddContentOpen(false);
     toast(ids.length === 1 ? "Added to the playlist" : `Added ${ids.length} items`);
   }
@@ -310,13 +357,17 @@ export function usePlaylistsPage(pageRef) {
   // Name, description and the content list are saved together, only here: the
   // modal's remove buttons just edit its own draft until Save.
   async function handleSaveEditPlaylist(name, description, contentItems) {
+    const editing = playlists.find((p) => p._id === editPlaylistId);
     const updated = await updatePlaylist(editPlaylistId, {
       name,
       description,
       contentItems,
-      skippedItems: keepSkipped(
-        playlists.find((p) => p._id === editPlaylistId),
-        contentItems,
+      skippedSlots: sorted(
+        carrySkipped(
+          (editing?.contentItems ?? []).map((i) => i._id),
+          new Set(editing?.skippedSlots ?? []),
+          contentItems,
+        ),
       ),
     });
     // A failed save answers with just { message }.
@@ -332,8 +383,13 @@ export function usePlaylistsPage(pageRef) {
     const reordered = [...shownItems];
     const [moved] = reordered.splice(fromIndex, 1);
     reordered.splice(toIndex, 0, moved);
+    // the skip flag moves with its item
+    const flags = toFlags(skippedSlots, shownItems.length);
+    const [movedFlag] = flags.splice(fromIndex, 1);
+    flags.splice(toIndex, 0, movedFlag);
     setOrderError(false);
     setInspectedSlot(null);
+    setDraftSkipped(fromFlags(flags));
     setDraftItems(reordered);
   }
 
@@ -343,9 +399,10 @@ export function usePlaylistsPage(pageRef) {
     try {
       const updated = await updatePlaylist(selectedPlaylistId, {
         contentItems: draftItems.map((item) => item._id),
+        skippedSlots: sorted(skippedSlots),
       });
       setPlaylists((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
-      setDraftItems(null);
+      clearDraft();
       toast("Order saved");
     } catch {
       setOrderError(true);
@@ -355,7 +412,7 @@ export function usePlaylistsPage(pageRef) {
   }
 
   function handleDiscardOrder() {
-    setDraftItems(null);
+    clearDraft();
     setOrderError(false);
   }
 
@@ -377,6 +434,8 @@ export function usePlaylistsPage(pageRef) {
     selectedPlaylistId,
     mobileView,
     setMobileView,
+    split,
+    moveButtons,
     refreshAll,
     // the list on the left
     listCollapsed,
@@ -400,7 +459,7 @@ export function usePlaylistsPage(pageRef) {
     orderError,
     handleSaveOrder,
     handleDiscardOrder,
-    skippedIds,
+    skippedSlots,
     unskipMode,
     skipping,
     handleSkip,

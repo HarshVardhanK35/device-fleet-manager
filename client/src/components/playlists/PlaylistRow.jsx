@@ -7,9 +7,11 @@ import { useLongPress } from "../../hooks/useLongPress.js";
 import { formatDuration } from "../../utils/formatDuration.js";
 import { pluralizeCount } from "../../utils/pluralize.js";
 
+// One round's length: skipped slots (by position) are left out.
 function getPlaylistRuntimeMs(playlist) {
+  const skipped = new Set(playlist.skippedSlots ?? []);
   return playlist.contentItems.reduce(
-    (sum, item) => sum + (item.durationInMillis || 0),
+    (sum, item, index) => (skipped.has(index) ? sum : sum + (item.durationInMillis || 0)),
     0,
   );
 }
@@ -30,6 +32,9 @@ function PlaylistRow({
   // Long press (touch only) ticks the row — touch screens have no hover to
   // reveal the checkbox.
   const { handlers: pressHandlers, consumeClick } = useLongPress(onLongPress);
+  const skippedCount = new Set(
+    (playlist.skippedSlots ?? []).filter((index) => index < playlist.contentItems.length),
+  ).size;
 
   function handleClick() {
     if (consumeClick()) return;
@@ -85,6 +90,12 @@ function PlaylistRow({
                 <span className="whitespace-nowrap">
                   {formatDuration(getPlaylistRuntimeMs(playlist))}
                 </span>
+                {skippedCount > 0 && (
+                  <>
+                    <span>·</span>
+                    <span className="whitespace-nowrap text-accent-amber">{skippedCount} skipped</span>
+                  </>
+                )}
               </>
             )}
           </span>

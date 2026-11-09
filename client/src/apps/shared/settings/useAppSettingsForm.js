@@ -7,7 +7,7 @@ import { useToast } from "../../../context/useToast.js";
 // image/video, which have one) — backend requires durationInMillis for
 // type "app" with no default, so this is a placeholder until a real
 // duration control is built.
-const APP_DEFAULT_DURATION_MS = 60000;
+const APP_DEFAULT_DURATION_MS = 30000;
 
 // `existingContent` (a Content document) means a settings screen is editing
 // an already-saved app tile, opened via its tile's pencil icon — form state
@@ -74,14 +74,21 @@ export function useAppSettingsForm({
     setSaving(true);
     setSaveError(null);
     try {
+      const creating = !contentId;
       const payload = {
         name: appName,
         type: "app",
-        durationInMillis: computeDuration ? computeDuration(form, existingContent) : APP_DEFAULT_DURATION_MS,
+        // An app that works its own duration out from its settings (RSS, Rotating Notices, Event
+        // Cards) always sends it. Any other app starts at 30 s; once it exists, saving its
+        // settings leaves the duration alone, so one the user set in the details panel stays.
+        durationInMillis: computeDuration
+          ? computeDuration(form, existingContent)
+          : creating
+            ? APP_DEFAULT_DURATION_MS
+            : undefined,
         configBlob: { ...form, appType },
       };
 
-      const creating = !contentId;
       const saved = creating
         ? await createContent(payload)
         : await updateContent(contentId, payload);

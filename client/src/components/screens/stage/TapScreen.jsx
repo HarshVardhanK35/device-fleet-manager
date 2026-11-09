@@ -27,9 +27,6 @@ function TapScreen({ onStart, onUnpair }) {
           onClick={onStart}
           style={{
             position: "relative",
-            display: "flex",
-            alignItems: "center",
-            gap: css("clamp(10px,2.4cqmin,120px)"),
             padding: css("clamp(14px,3.4cqmin,170px) clamp(28px,7.5cqmin,380px)"),
             borderRadius: 999,
             border: css("clamp(2px,0.5cqmin,24px) solid var(--color-accent-400)"),
@@ -42,8 +39,11 @@ function TapScreen({ onStart, onUnpair }) {
             boxShadow: css("0 0 7cqmin color-mix(in srgb, var(--color-accent) 50%, transparent)"),
           }}
         >
-          <Play style={{ width: "1em", height: "1em", color: "var(--color-accent-200)" }} fill="currentColor" />
-          Tap to Start Playing
+          {/* a <button> is not a flex box before Chromium 83, so a span lays out the icon and label */}
+          <span style={{ display: "flex", alignItems: "center", gap: css("clamp(10px,2.4cqmin,120px)") }}>
+            <Play style={{ width: "1em", height: "1em", color: "var(--color-accent-200)" }} fill="currentColor" />
+            Tap to Start Playing
+          </span>
         </button>
       </div>
       <div style={{ fontSize: css("clamp(14px,2.6cqmin,130px)"), color: "var(--color-accent-200)", textAlign: "center", maxWidth: css("90cqw") }}>

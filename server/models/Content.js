@@ -40,6 +40,13 @@ const contentSchema = new mongoose.Schema(
     thumbnailUrl: {
       type: String,
     },
+    // How an image or video fills the screen: "cover" fills it and crops the edges,
+    // "contain" shows the whole frame (bars where the shapes differ). Not set means the
+    // type's default: images cover, videos contain.
+    fit: {
+      type: String,
+      enum: ["cover", "contain"],
+    },
     sizeBytes: {
       type: Number,
       default: 0,

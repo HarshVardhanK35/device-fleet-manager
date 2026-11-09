@@ -1,11 +1,12 @@
 import EmptyState from "../ui/EmptyState.jsx";
 import PlaylistSlotTile from "./PlaylistSlotTile.jsx";
+import { CONTENT_GRID } from "../content/contentGrid.js";
 
 // The grid of the open playlist's items: drag to reorder (or the ‹ › buttons on
 // touch), select, open an item's details, skipped items marked.
 //   pl  what usePlaylistsPage returns
 function PlaylistSlotGrid({ pl }) {
-  const { shownItems, visibleSlots, slotFilterType, checkedSlotIds, skippedIds } = pl;
+  const { shownItems, visibleSlots, slotFilterType, checkedSlotIds, skippedSlots } = pl;
 
   if (shownItems.length === 0) {
     return (
@@ -21,7 +22,7 @@ function PlaylistSlotGrid({ pl }) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+    <div className={CONTENT_GRID}>
       {visibleSlots.map(({ item, index }) => {
         const slotId = `${item._id}-${index}`;
         const canDrag = slotFilterType === "all";
@@ -31,13 +32,14 @@ function PlaylistSlotGrid({ pl }) {
             item={item}
             index={index}
             checked={checkedSlotIds.has(slotId)}
-            skipped={skippedIds.has(String(item._id))}
+            skipped={skippedSlots.has(index)}
             inspected={pl.inspectedSlot === slotId}
             dimmed={!!pl.inspectedItem && pl.inspectedSlot !== slotId}
             selectionMode={checkedSlotIds.size > 0}
             onOpen={(tileRect) => pl.openSlot(slotId, tileRect)}
             onToggleSelect={() => pl.selectSlot(slotId)}
             draggable={canDrag}
+            showMoveButtons={pl.moveButtons}
             isDragging={canDrag && pl.dragIndex === index}
             isDragOver={canDrag && pl.dragOverIndex === index}
             onDragStart={() => canDrag && pl.setDragIndex(index)}

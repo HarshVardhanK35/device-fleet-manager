@@ -53,8 +53,10 @@ function formatRange(begin, end) {
 
 function playlistMeta(playlist) {
   const count = playlist.contentItems?.length ?? 0;
+  // Skipped slots (by position) don't play, so they are left out of the loop length.
+  const skipped = new Set(playlist.skippedSlots ?? []);
   const totalMs = (playlist.contentItems || []).reduce(
-    (sum, c) => sum + (c.durationInMillis || 0),
+    (sum, c, index) => (skipped.has(index) ? sum : sum + (c.durationInMillis || 0)),
     0,
   );
   return `${count} item${count === 1 ? "" : "s"} · ${formatDurationHuman(totalMs / 1000)} loop`;

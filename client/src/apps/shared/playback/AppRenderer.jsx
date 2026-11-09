@@ -11,7 +11,11 @@ import BrandLoader from "../../../components/loading/BrandLoader.jsx";
 // preview-size toggle and live-edit re-send: a playing screen has no
 // editor pushing config changes mid-session, configBlob is whatever was
 // saved, sent once.
-function AppRenderer({ configBlob }) {
+//   active  false while the app waits behind the one on screen: it loads, compiles and
+//           says it is ready, but its settings are held back (so it has not started)
+//           and it is not drawn. true when its turn comes: the settings are sent and it
+//           appears.
+function AppRenderer({ configBlob, active = true }) {
   const [bundleHtml, setBundleHtml] = useState(null);
   const [bundleError, setBundleError] = useState(null);
   const [appListening, setAppListening] = useState(false);
@@ -50,7 +54,7 @@ function AppRenderer({ configBlob }) {
   }, [src, bundleHtml]);
 
   useEffect(() => {
-    if (!appListening) return;
+    if (!appListening || !active) return;
     // `apiBase` injected here too — same reasoning as AppPreviewFrame.jsx's
     // own copy of this: any app needing to call DFM's backend gets it
     // automatically, real playback included, not just the settings preview.
@@ -58,19 +62,20 @@ function AppRenderer({ configBlob }) {
       { type: "DFM_CONFIG", config: { ...configBlob, apiBase: API_BASE } },
       "*",
     );
-  }, [appListening, configBlob]);
+  }, [appListening, active, configBlob]);
 
   // The logo only appears if the app is still loading after a moment, so a
   // quick start never flashes it on the screen.
+  // (Counted only while the app is the one on screen.)
   useEffect(() => {
-    if (appLoaded) return undefined;
+    if (appLoaded || !active) return undefined;
     const t = setTimeout(() => setSlow(true), 700);
     return () => clearTimeout(t);
-  }, [appLoaded]);
+  }, [appLoaded, active]);
 
   const loader =
-    !appLoaded && slow ? (
-      <div style={{ position: "fixed", inset: 0, display: "grid", placeItems: "center", pointerEvents: "none" }}>
+    active && !appLoaded && slow ? (
+      <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, display: "grid", placeItems: "center", pointerEvents: "none" }}>
         <BrandLoader size={72} label="Loading app" />
       </div>
     ) : null;
@@ -94,7 +99,11 @@ function AppRenderer({ configBlob }) {
       // (that's why long-press worked for image/video but not apps).
       // pointerEvents: "none" makes the iframe transparent to pointer
       // events entirely, so they pass straight through to that overlay.
-      style={{ border: "none", width: "100vw", height: "100vh", pointerEvents: "none" }}
+      style={
+        active
+          ? { border: "none", width: "100vw", height: "100vh", pointerEvents: "none" }
+          : { border: "none", position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", visibility: "hidden", pointerEvents: "none" }
+      }
       sandbox="allow-scripts allow-same-origin"
     />
     {loader}

@@ -18,6 +18,7 @@ function OfflineBanner({ online = false }) {
         left: "50%",
         transform: "translateX(-50%)",
         zIndex: 50,
+        fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
         padding: "0.8vmin 3vmin",
         borderRadius: 999,
         background: online ? "#238636" : "#da3633",

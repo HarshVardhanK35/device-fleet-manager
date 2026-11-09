@@ -20,14 +20,14 @@ async function buildManifestForDevice(deviceId) {
     generatedAt: new Date(),
     playlists: assignments.map((assignment) => {
       // Skipped items stay in the playlist but are not sent to the screen.
-      const skipped = new Set(assignment.playlistId.skippedItems.map(String));
+      const skipped = new Set(assignment.playlistId.skippedSlots);
       return {
         assignmentId: assignment._id,
         beginDT: assignment.beginDT,
         endDT: assignment.endDT,
         playlistName: assignment.playlistId.name,
         content: assignment.playlistId.contentItems.filter(
-          (item) => !skipped.has(String(item._id)),
+          (item, index) => !skipped.has(index),
         ),
       };
     }),

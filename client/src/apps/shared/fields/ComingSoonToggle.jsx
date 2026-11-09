@@ -3,8 +3,8 @@ import ToggleSwitch from "./ToggleSwitch.jsx";
 // A disabled toggle row with a "Coming soon" badge — for a setting that's
 // shown (so the layout matches what it'll look like once built) but isn't
 // wired to anything yet. Was hand-copied identically into every app's
-// Display card for the "Theme (iframe only)" row; now one shared piece.
-function ComingSoonToggle({ label = "Theme (iframe only)" }) {
+// Display card for the "Theme (this app only)" row; now one shared piece.
+function ComingSoonToggle({ label = "Theme (this app only)" }) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs text-text-muted/70">{label}</span>
