@@ -23,7 +23,7 @@ function PlaylistDetailPane({ pl }) {
   const { playlists, content, selectedPlaylist, shownItems, visibleSlots, checkedSlotIds } = pl;
 
   return (
-    <div className={`flex-1 min-h-0 flex flex-col ${pl.mobileView === "list" ? "hidden lg:flex" : "flex"}`}>
+    <div className={`flex-1 min-h-0 flex-col ${pl.split || pl.mobileView === "detail" ? "flex" : "hidden"}`}>
       {pl.loading ? (
         <SkeletonGrid count={6} />
       ) : !selectedPlaylist ? (
@@ -59,7 +59,7 @@ function PlaylistDetailPane({ pl }) {
           bodyClassName="flex-1 min-h-0 flex flex-col"
           headerClassName="lg:pr-4"
           backLabel="Playlists"
-          onBack={() => pl.setMobileView("list")}
+          onBack={pl.split ? undefined : () => pl.setMobileView("list")}
           title={selectedPlaylist.name}
           badge={
             <span
@@ -121,8 +121,7 @@ function PlaylistDetailPane({ pl }) {
                 {pluralizeCount(visibleSlots.length, "item")}
                 {pl.slotFilterType === "all" && (
                   <>
-                    <span className="hidden md:inline"> · drag to reorder</span>
-                    <span className="md:hidden"> · use ‹ › to reorder</span>
+                    {pl.moveButtons ? " · use ‹ › to reorder" : " · drag to reorder"}
                   </>
                 )}
               </span>

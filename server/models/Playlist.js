@@ -25,13 +25,10 @@ const playlistSchema = new mongoose.Schema(
         ref: "Content",
       },
     ],
-    // Items that stay in the playlist but are not played (by content id).
-    skippedItems: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Content",
-      },
-    ],
+    // Positions (0, 1, 2 ...) in contentItems that stay in the playlist but are not
+    // played. By position, not by content id, so one copy of an image can be skipped
+    // while another copy still plays.
+    skippedSlots: [Number],
   },
   { timestamps: true },
 );

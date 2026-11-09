@@ -11,8 +11,8 @@ const MAX_TILES = 8;
 // and how long one round takes (skipped items are left out of both).
 function summarize(playlist) {
   const items = playlist?.contentItems ?? [];
-  const skipped = new Set((playlist?.skippedItems ?? []).map(String));
-  const playing = items.filter((item) => !skipped.has(String(item._id)));
+  const skipped = new Set(playlist?.skippedSlots ?? []);
+  const playing = items.filter((item, index) => !skipped.has(index));
   const totalMs = playing.reduce((sum, item) => sum + (item.durationInMillis || 0), 0);
   return { items, skipped, playing, totalMs, skippedCount: items.length - playing.length };
 }
@@ -39,7 +39,7 @@ export function AssignmentPlaylistLine({ playlist }) {
 // only when the card itself is wide enough (container query on the card, 48rem):
 // a laptop with the navbar and list open gets AssignmentPlaylistLine instead,
 // phone and tablet get neither.
-//   playlist  the assignment's populated playlist ({ contentItems, skippedItems })
+//   playlist  the assignment's populated playlist ({ contentItems, skippedSlots })
 function AssignmentPlaylistPreview({ playlist }) {
   const { items, skipped, playing, totalMs, skippedCount } = summarize(playlist);
   if (items.length === 0) return null;
@@ -64,7 +64,7 @@ function AssignmentPlaylistPreview({ playlist }) {
 
       <ul className="m-0 p-0 list-none flex flex-wrap gap-2">
         {shown.map((item, i) => {
-          const isSkipped = skipped.has(String(item._id));
+          const isSkipped = skipped.has(i);
           return (
             <li
               key={`${item._id}-${i}`}

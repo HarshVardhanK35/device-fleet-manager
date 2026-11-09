@@ -14,6 +14,7 @@ import { forgetScreen } from "../offline/forgetScreen.js";
 import { registerOffline } from "../offline/registerOffline.js";
 import { clearStoredPairing } from "../utils/screenStorage.js";
 import { useStageCss } from "../utils/stageCss.js";
+import { installFlexGapFallback } from "../utils/flexGapFallback.js";
 
 function Screens() {
   const css = useStageCss();
@@ -30,6 +31,9 @@ function Screens() {
     retryLeft,
   } = usePairing();
   const stageRef = useRef(null);
+
+  // An older TV browser ignores flex `gap`; give it the same spacing another way.
+  useEffect(() => installFlexGapFallback(stageRef.current), []);
   const playbackRef = useRef(null);
   // Position captured right before long-press stops playback, so "Continue"
   // can hand it back in as DevicePlayback's `initialPosition` prop; cleared
@@ -109,6 +113,9 @@ function Screens() {
         left: 0,
         overflow: "hidden",
         containerType: "size",
+        // Tailwind's base font rule is skipped by an older browser, which then shows
+        // plain serif text, so the stage names its own sans-serif stack.
+        fontFamily: "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
         color: "var(--color-neutral-100)",
         background: "var(--color-bg)",
       }}

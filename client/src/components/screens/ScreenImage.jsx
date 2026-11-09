@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 
 // Shows an image only once it has fully loaded and decoded, so it appears
 // whole instead of painting from top to bottom; the previous image stays up
-// until then. A short fade makes the swap soft.
-function ScreenImage({ url, alt }) {
+// until then. A short fade makes the swap soft. `fit` is "cover" (fills the screen,
+// crops the edges) or "contain" (the whole picture, with bars).
+function ScreenImage({ url, alt, fit = "cover" }) {
   const [shown, setShown] = useState(null);
 
   useEffect(() => {
@@ -27,7 +28,7 @@ function ScreenImage({ url, alt }) {
       key={shown}
       src={shown}
       alt={alt}
-      style={{ width: "100vw", height: "100vh", objectFit: "cover", animation: "cw-fade 400ms ease-out both" }}
+      style={{ width: "100vw", height: "100vh", objectFit: fit, animation: "cw-fade 400ms ease-out both" }}
     />
   );
 }

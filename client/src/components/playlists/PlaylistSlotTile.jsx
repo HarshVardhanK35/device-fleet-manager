@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import ContentTile from "../content/ContentTile.jsx";
 import SelectCheckbox from "../ui/SelectCheckbox.jsx";
 import { useLongPress } from "../../hooks/useLongPress.js";
+import { useMediaQuery } from "../../hooks/useCompactLayout.js";
 
 function PlaylistSlotTile({
   item,
@@ -23,10 +24,14 @@ function PlaylistSlotTile({
   isDragOver,
   onMoveEarlier,
   onMoveLater,
+  showMoveButtons = false,
 }) {
   // Touch: a long press selects (there is no hover to reveal the checkbox).
   // While anything is selected a click toggles; otherwise it opens the details.
   const { handlers, consumeClick } = useLongPress(onToggleSelect);
+  // A draggable element makes a touch screen start a native drag on a long press, which
+  // cancels the press before it can select the tile. Touch uses the ‹ › buttons instead.
+  const touch = useMediaQuery("(pointer: coarse)");
 
   function handleClick(e) {
     if (consumeClick()) return;
@@ -36,7 +41,7 @@ function PlaylistSlotTile({
 
   return (
     <div
-      draggable={draggable}
+      draggable={draggable && !touch}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
@@ -54,11 +59,12 @@ function PlaylistSlotTile({
         slotIndexActive={checked}
         onClick={handleClick}
         rootProps={handlers}
-        // Touch screens can't drag (HTML5 drag-and-drop ignores touch), so below
-        // md each tile gets a bar with earlier / later buttons instead.
+        // Touch screens can't drag (HTML5 drag-and-drop ignores touch), so where the page
+        // asks for it (`showMoveButtons`) each tile gets a bar with earlier / later buttons.
         footerBar={
+          showMoveButtons &&
           (onMoveEarlier || onMoveLater) && (
-            <div className="md:hidden flex border-t border-border-muted">
+            <div className="flex border-t border-border-muted">
               {[
                 { label: "Move earlier", Icon: ChevronLeft, onClick: onMoveEarlier },
                 { label: "Move later", Icon: ChevronRight, onClick: onMoveLater },
@@ -81,7 +87,7 @@ function PlaylistSlotTile({
             </div>
           )
         }
-        className={`transition-[filter,opacity] duration-200 ${
+        className={`select-none [-webkit-touch-callout:none] transition-[filter,opacity] duration-200 ${
           dimmed ? "xl:blur-[3px] xl:opacity-60" : ""
         } ${
           checked
@@ -132,6 +138,7 @@ export default PlaylistSlotTile;
 // `skipped` dims the tile and lays a "Skipped" banner over it (the item stays in
 // the playlist but is not played). The overlay sits below the checkbox (z-10)
 // and ignores clicks, so selecting still works.
-// `onMoveEarlier` / `onMoveLater` (optional) show the below-md move bar;
+// `onMoveEarlier` / `onMoveLater` (optional) fill the move bar, shown when
+// `showMoveButtons` is true (touch screens and anything narrower than a desktop);
 // pass undefined for the first / last tile so that button is disabled.
 // Used by: pages/Playlists.jsx.

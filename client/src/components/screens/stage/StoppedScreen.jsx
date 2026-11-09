@@ -38,9 +38,6 @@ function StoppedScreen({ screenName, onContinue, onRestart, onUnpair }) {
           onClick={onContinue}
           title="Resume from where it stopped"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: css("clamp(8px,1.8cqmin,90px)"),
             padding: css("clamp(12px,2.8cqmin,140px) clamp(22px,5.4cqmin,270px)"),
             borderRadius: 999,
             border: css("clamp(2px,0.42cqmin,20px) solid var(--color-accent-400)"),
@@ -51,8 +48,10 @@ function StoppedScreen({ screenName, onContinue, onRestart, onUnpair }) {
             cursor: "pointer",
           }}
         >
-          <Play style={{ width: "1em", height: "1em", color: "var(--color-accent-200)" }} fill="currentColor" />
-          Continue
+          <span style={{ display: "flex", alignItems: "center", gap: css("clamp(8px,1.8cqmin,90px)") }}>
+            <Play style={{ width: "1em", height: "1em", color: "var(--color-accent-200)" }} fill="currentColor" />
+            Continue
+          </span>
         </button>
 
         <button
@@ -60,9 +59,6 @@ function StoppedScreen({ screenName, onContinue, onRestart, onUnpair }) {
           onClick={onRestart}
           title="Start the current item from the top"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: css("clamp(8px,1.8cqmin,90px)"),
             padding: css("clamp(12px,2.8cqmin,140px) clamp(22px,5.4cqmin,270px)"),
             borderRadius: 999,
             border: css("clamp(2px,0.42cqmin,20px) solid var(--color-neutral-400)"),
@@ -73,8 +69,10 @@ function StoppedScreen({ screenName, onContinue, onRestart, onUnpair }) {
             cursor: "pointer",
           }}
         >
-          <RotateCcw style={{ width: "1em", height: "1em", color: "var(--color-neutral-200)" }} />
-          Restart
+          <span style={{ display: "flex", alignItems: "center", gap: css("clamp(8px,1.8cqmin,90px)") }}>
+            <RotateCcw style={{ width: "1em", height: "1em", color: "var(--color-neutral-200)" }} />
+            Restart
+          </span>
         </button>
       </div>
 

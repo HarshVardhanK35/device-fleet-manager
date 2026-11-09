@@ -18,6 +18,7 @@ import { MAX_IMAGE_COPIES, MAX_PLAYLIST_DESCRIPTION, MAX_PLAYLIST_NAME } from ".
 import BlurImage from "../ui/BlurImage.jsx";
 import AppThumb from "../ui/AppThumb.jsx";
 import { appTypeOf } from "../../utils/appType.js";
+import { DUPLICATE_PLAYLIST_NAME, normalizeName } from "../../utils/playlistNames.js";
 
 // One library item as a compact row (the picker's List view) — about three
 // times more items per screen than tiles, for big libraries.
@@ -86,10 +87,14 @@ function PickerFormBody({
   singleSelect,
   initialSelectedIds,
   existingItems,
+  takenNames,
   onSubmit,
   portalContainer,
 }) {
   const [name, setName] = useState("");
+  // What the server said when it refused the save (a name taken in the meantime).
+  const [submitError, setSubmitError] = useState("");
+  const nameTaken = showNameField && takenNames.includes(normalizeName(name));
   const [description, setDescription] = useState("");
   const [selectedIds, setSelectedIds] = useState(initialSelectedIds);
   const [filterType, setFilterType] = useState("all");
@@ -179,7 +184,7 @@ function PickerFormBody({
     .reduce((sum, c) => sum + (c.durationInMillis || 0), 0);
 
   const canSubmit =
-    (!showNameField || name.trim().length > 0) && selectedIds.length > 0;
+    (!showNameField || (name.trim().length > 0 && !nameTaken)) && selectedIds.length > 0;
 
   // While an async onSubmit (create / add) runs, the button shows `busyLabel`.
   const [submit, busy] = useAsyncAction(onSubmit);
@@ -190,7 +195,8 @@ function PickerFormBody({
       setAlertKey((k) => k + 1);
       return;
     }
-    submit(name, description, selectedIds);
+    setSubmitError("");
+    submit(name, description, selectedIds).catch((err) => setSubmitError(err.message || "Could not save"));
   }
 
   const libraryGrid = visibleContent.length === 0 ? (
@@ -262,10 +268,21 @@ function PickerFormBody({
                 autoFocus
                 value={name}
                 maxLength={MAX_PLAYLIST_NAME}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setSubmitError("");
+                }}
                 placeholder="e.g. Lobby — Weekday"
-                className="bg-bg-primary border border-border-muted rounded-lg px-3 h-10 text-text-primary text-sm outline-none focus-visible:border-accent-blue"
+                aria-invalid={nameTaken || !!submitError}
+                className={`bg-bg-primary border rounded-lg px-3 h-10 text-text-primary text-sm outline-none ${
+                  nameTaken || submitError ? "border-accent-red" : "border-border-muted focus-visible:border-accent-blue"
+                }`}
               />
+              {(nameTaken || submitError) && (
+                <span role="alert" className="text-accent-red text-xs">
+                  {nameTaken ? DUPLICATE_PLAYLIST_NAME : submitError}
+                </span>
+              )}
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="flex items-center justify-between text-text-muted text-xs font-semibold">
@@ -440,6 +457,7 @@ function ContentPickerModal({
   singleSelect = false,
   initialSelectedIds = [],
   existingItems = [],
+  takenNames = [],
   onSubmit,
 }) {
   // See StyledSelect.jsx's `portalContainer` comment — without this, the
@@ -487,6 +505,7 @@ function ContentPickerModal({
               singleSelect={singleSelect}
               initialSelectedIds={initialSelectedIds}
               existingItems={existingItems}
+              takenNames={takenNames}
               onSubmit={onSubmit}
               portalContainer={contentEl}
             />
@@ -507,6 +526,8 @@ export default ContentPickerModal;
 // (filter/sort) + search used on the Content page. Selection is ORDERED
 // (an array, not a Set) — each picked tile shows its pick-order number in
 // place of a checkmark, since playlist content plays in the order it was
-// added. `onSubmit(name, description, orderedIds)` may be async: the submit
+// added. `takenNames` (normalised, see utils/playlistNames.js) are the playlist names
+// already used: typing one shows a red line under Name and blocks the button.
+// `onSubmit(name, description, orderedIds)` may be async: the submit
 // button then shows `busyLabel` (e.g. "Creating…") until it settles.
 // Used by: pages/Playlists.jsx (Create Playlist + Add Content modals).
