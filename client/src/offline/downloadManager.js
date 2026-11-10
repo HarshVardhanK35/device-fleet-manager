@@ -26,6 +26,12 @@ let running = 0;
 let largeRunning = 0;
 let saved = new Set();
 const tries = new Map(); // key -> failed tries so far
+// key -> times the browser, while online, refused the download outright ("Failed to fetch"): a server that
+// sends no permission for cross-site downloads (a news site's channel logo). Kept across syncs; after
+// REFUSED_AFTER such answers the address is left alone instead of being tried every minute.
+const refused = new Map();
+const REFUSED_AFTER = 2;
+const refusedLogged = new Set();
 let retryTimer = null;
 const controllers = new Set();
 const listeners = new Set();
@@ -106,7 +112,13 @@ async function start(item, large, mine) {
     if (mine === session && !controller.signal.aborted && !error.noRetry) {
       const count = (tries.get(item.key) || 0) + 1;
       tries.set(item.key, count);
-      if (count < MAX_TRIES) {
+      if (error instanceof TypeError && navigator.onLine) refused.set(item.key, (refused.get(item.key) || 0) + 1);
+      if (refused.get(item.key) >= REFUSED_AFTER) {
+        if (!refusedLogged.has(item.key)) {
+          refusedLogged.add(item.key);
+          logWarn("offline", `Not saving ${short(item.key)}: its server refused the download ${REFUSED_AFTER} times while online (no permission for downloads from this page), so it is not tried again`);
+        }
+      } else if (count < MAX_TRIES) {
         failed.push(item);
         logWarn("offline", `Could not save ${short(item.key)}: ${error.name}: ${error.message}. Try ${count} of ${MAX_TRIES}; it will be tried again in about ${RETRY_MS / 1000} s`);
       } else {
@@ -172,7 +184,9 @@ export async function syncDownloads(items) {
   if (mine !== session) return;
   emit();
 
-  queue = items.filter((i) => !saved.has(i.key)).sort((a, b) => (a.size || 0) - (b.size || 0));
+  queue = items
+    .filter((i) => !saved.has(i.key) && !(refused.get(i.key) >= REFUSED_AFTER))
+    .sort((a, b) => (a.size || 0) - (b.size || 0));
   logEvent("offline", `${saved.size} file(s) already saved, ${queue.length} to download (smallest first)`);
   if (queue.length > 0) keepStorage(); // not awaited: it must never hold the downloads back
   pump(mine);
