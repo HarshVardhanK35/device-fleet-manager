@@ -20,7 +20,7 @@ function safe(fn, fallback = null) {
 }
 
 // The browser's name and version, and the TV (Tizen / webOS) it runs on, from its user agent.
-function describeBrowser(ua = navigator.userAgent) {
+export function describeBrowser(ua = navigator.userAgent) {
   const find = (pattern) => (pattern.exec(ua) || [])[1] || null;
   const chromium = find(/Chrome\/([\d.]+)/);
   let browser = "Unknown";

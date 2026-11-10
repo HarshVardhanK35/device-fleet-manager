@@ -2,6 +2,7 @@ import { loadAppBundle, isAppBundleUrl } from "../apps/shared/playback/loadAppBu
 import { resolveAppUrlByName } from "../apps/resolveAppUrl.js";
 import { getOptimizedThumbnail } from "../utils/content/cloudinaryTransform.js";
 import { appBundleKey } from "./mediaCache.js";
+import { isLowStorage } from "./storageMode.js";
 
 // A screen-sized copy of an image (not the multi-MB original). This is the
 // exact URL the player shows, so it is also what gets saved.
@@ -27,8 +28,19 @@ const CLOUDINARY_VIDEO = /(res\.cloudinary\.com\/.+\/video\/upload\/.+)\.(mp4|mo
 
 export const toWebm = (url) => url.replace(CLOUDINARY_VIDEO, "$1.webm$3");
 
-// The address a video is played from and saved under on this device.
-export const videoUrl = (url) => (CAN_PLAY_MP4 ? url : toWebm(url));
+// Low-storage mode (see storageMode.js): a Cloudinary video is asked for at most 480 px high,
+// lower quality, so it is much smaller. The same address is played and saved.
+const LOW_VIDEO = "h_480,c_limit,q_auto:low";
+const CLOUDINARY_UPLOAD = /(res\.cloudinary\.com\/[^/]+\/video\/upload\/)/;
+export const toLowQuality = (url) =>
+  CLOUDINARY_VIDEO.test(url) && !url.includes(LOW_VIDEO) ? url.replace(CLOUDINARY_UPLOAD, (found) => `${found}${LOW_VIDEO}/`) : url;
+
+// The address a video is played from and saved under on this device. `original` asks for the
+// full-quality file even in low-storage mode (used when the small copy cannot be made).
+export function videoUrl(url, original = false) {
+  const base = !original && isLowStorage() ? toLowQuality(url) : url;
+  return CAN_PLAY_MP4 ? base : toWebm(base);
+}
 
 const norm = (url) => {
   try {
@@ -78,7 +90,8 @@ export function downloadItems(content = []) {
       add({ key: url, url, size: c.sizeBytes || 0 });
     } else if (c.type === "video" && c.mediaUrl) {
       const url = norm(videoUrl(c.mediaUrl));
-      add({ key: url, url, size: c.sizeBytes || 0 });
+      // in low-storage mode the saved copy is much smaller than the original
+      add({ key: url, url, size: isLowStorage() ? Math.round((c.sizeBytes || 0) * 0.25) : c.sizeBytes || 0 });
     } else if (c.type === "app") {
       const src = resolveAppUrlByName(c.configBlob?.appType);
       if (isAppBundleUrl(src)) {

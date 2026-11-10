@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 import AppRenderer from "../../apps/shared/playback/AppRenderer.jsx";
 import { logEvent, logWarn } from "../../utils/screenLog/screenLog.js";
-import { screenImageUrl, toWebm, videoUrl } from "../../offline/playlistItems.js";
+import { screenImageUrl, toLowQuality, toWebm, videoUrl } from "../../offline/playlistItems.js";
+import { isLowStorage } from "../../offline/storageMode.js";
 import ScreenImage from "./ScreenImage.jsx";
 import { nextPlayableIndex } from "./playbackRules.js";
 
@@ -55,12 +56,16 @@ function VideoLayer({ item, current, pendingVideoSeek, onSeekApplied, onVideoEle
   const ref = useRef(null);
   // Videos this browser refused as MP4 (error 4, source not supported): played as WebM instead.
   const [asWebm, setAsWebm] = useState(false);
+  // Low-storage mode plays a 480p copy; if that copy cannot be made or played, the original is used.
+  const [useOriginal, setUseOriginal] = useState(false);
   // False once this layer is gone: a browser reports a read error for a video it was
   // still downloading when the element was removed, which is not a real problem.
   const mounted = useRef(false);
   const retries = useRef(0);
   const loggedPlaying = useRef(false);
-  const src = asWebm ? toWebm(item.mediaUrl) : videoUrl(item.mediaUrl);
+  const src = asWebm
+    ? toWebm(useOriginal || !isLowStorage() ? item.mediaUrl : toLowQuality(item.mediaUrl))
+    : videoUrl(item.mediaUrl, useOriginal);
 
   useEffect(() => {
     mounted.current = true;
@@ -116,6 +121,12 @@ function VideoLayer({ item, current, pendingVideoSeek, onSeekApplied, onVideoEle
             video.load();
             if (current) video.play().catch(() => {});
           }, 500);
+          return;
+        }
+        // The small 480p copy could not be played (not made yet, or refused): the original instead.
+        if (video.error?.code === 4 && isLowStorage() && !useOriginal && toLowQuality(item.mediaUrl) !== item.mediaUrl) {
+          console.log("[video] the 480p copy could not be played, using the original", item.name);
+          setUseOriginal(true);
           return;
         }
         // The browser said it could play MP4 but could not: try WebM once.

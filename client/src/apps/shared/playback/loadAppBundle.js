@@ -2,6 +2,7 @@ import JSZip from "jszip";
 
 import { fetchAppBundle as fetchAppBundleBytes } from "../../../api/apps.js";
 import { logEvent, logWarn } from "../../../utils/screenLog/screenLog.js";
+import { markSaved } from "../../../offline/downloadManager.js";
 import { appBundleKey, isSaved, readText, saveText } from "../../../offline/mediaCache.js";
 
 // Fetches and unzips a built app bundle (e.g. Weather's staging/prod
@@ -37,7 +38,11 @@ export async function loadAppBundle(zipUrl, { remember = false } = {}) {
     logEvent("app", `App bundle ${name}: already in memory`);
     // Already in memory; make sure the saved copy exists too (it may have been cleaned up).
     if (remember && !(await isSaved(appBundleKey(zipUrl)))) {
-      saveText(appBundleKey(zipUrl), cached, "text/html").catch(() => {});
+      saveText(appBundleKey(zipUrl), cached, "text/html")
+        .then(() => markSaved(appBundleKey(zipUrl)))
+        .catch(() => {});
+    } else if (remember) {
+      markSaved(appBundleKey(zipUrl));
     }
     return cached;
   }
@@ -55,12 +60,17 @@ export async function loadAppBundle(zipUrl, { remember = false } = {}) {
     const html = await indexFile.async("string");
     logEvent("app", `App bundle ${name}: downloaded and unzipped (${Math.round(html.length / 1024)} KB, ${((Date.now() - began) / 1000).toFixed(1)} s)`);
     bundleCache.set(zipUrl, html);
-    if (remember) saveText(appBundleKey(zipUrl), html, "text/html").catch(() => {});
+    if (remember) {
+      saveText(appBundleKey(zipUrl), html, "text/html")
+        .then(() => markSaved(appBundleKey(zipUrl)))
+        .catch(() => {});
+    }
     return html;
   } catch (error) {
     // Offline: the copy saved the last time this app loaded online.
     const saved = remember ? await readText(appBundleKey(zipUrl)).catch(() => null) : null;
     if (saved) {
+      markSaved(appBundleKey(zipUrl));
       logWarn("app", `App bundle ${name}: the download failed (${error.name}: ${error.message}); using the copy saved earlier`);
       return saved;
     }

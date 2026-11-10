@@ -69,7 +69,8 @@ export async function clearMedia() {
 }
 
 // Is there room for `bytes` more? Leaves a 50 MB margin so the device never runs dry.
-// `label` is only for the log (which file asked).
+// `label` is only for the log (which file asked). The margin kept free is 10% of the quota,
+// at most 50 MB (a fixed 50 MB left a TV with an 80 MB quota room for only a 24 MB file).
 export async function hasRoom(bytes, label = "a file") {
   const mb = (n) => `${(n / 1048576).toFixed(1)} MB`;
   try {
@@ -78,13 +79,14 @@ export async function hasRoom(bytes, label = "a file") {
       logEvent("offline", `Storage check for ${label}: the browser reports no quota, so it is allowed`);
       return true;
     }
-    const needed = bytes * 1.2 + 50 * 1024 * 1024;
+    const margin = Math.min(50 * 1024 * 1024, quota * 0.1);
+    const needed = bytes * 1.1 + margin;
     const free = quota - usage;
     const ok = free > needed;
     if (!ok) {
       logWarn(
         "offline",
-        `Not enough space for ${label}: the file is ${mb(bytes)} (original size), so ${mb(needed)} must be free (file x1.2 + 50 MB margin), but only ${mb(free)} is free (quota ${mb(quota)}, used ${mb(usage)})`,
+        `Not enough space for ${label}: the file is ${mb(bytes)}, so ${mb(needed)} must be free (file x1.1 + a ${mb(margin)} margin, 10% of the quota), but only ${mb(free)} is free (quota ${mb(quota)}, used ${mb(usage)})`,
       );
     }
     return ok;
@@ -95,13 +97,18 @@ export async function hasRoom(bytes, label = "a file") {
 }
 
 // Ask the browser not to delete our saved files when the device runs low on space.
-export async function keepStorage() {
-  try {
-    const persisted = await navigator.storage?.persist?.();
-    logEvent("offline", `Asked the browser to keep the saved files: ${persisted === undefined ? "not supported" : persisted ? "granted" : "not granted (files may be cleared when the device runs low on space)"}`);
-  } catch {
-    // not supported: the files may be cleared under pressure, and are saved again
-  }
+// Never wait for the answer: a TV browser (a Samsung one) never answers persist(), and the
+// downloads used to wait for it, so none of them ever started.
+export function keepStorage() {
+  const asked = Promise.resolve().then(() => navigator.storage?.persist?.());
+  const gaveUp = new Promise((resolve) => setTimeout(() => resolve("no answer"), 3000));
+  return Promise.race([asked, gaveUp])
+    .then((persisted) => {
+      logEvent("offline", `Asked the browser to keep the saved files: ${persisted === undefined ? "not supported" : persisted === "no answer" ? "no answer in 3 s (downloads did not wait)" : persisted ? "granted" : "not granted (files may be cleared when the device runs low on space)"}`);
+    })
+    .catch(() => {
+      // not supported: the files may be cleared under pressure, and are saved again
+    });
 }
 
 // Used by: offline/downloadManager.js, offline/registerOffline.js, offline/forgetScreen.js,
