@@ -78,7 +78,9 @@ export function itemKey(item) {
 }
 
 // The files to save for a playlist's content, as downloadManager items.
-export function downloadItems(content = []) {
+// `extraImages`: picture links an app listed itself (a feed's pictures), saved under their own
+// address so the service worker can serve them when the app asks for them offline.
+export function downloadItems(content = [], extraImages = []) {
   const items = new Map();
   const add = (item) => {
     if (!items.has(item.key)) items.set(item.key, item);
@@ -105,6 +107,11 @@ export function downloadItems(content = []) {
       }
     }
   }
+  for (const url of extraImages) {
+    const raw = norm(url);
+    add({ key: raw, url: raw, size: 0 });
+  }
+
   return [...items.values()];
 }
 
