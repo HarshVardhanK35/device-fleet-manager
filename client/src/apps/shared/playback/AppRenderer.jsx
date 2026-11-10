@@ -30,11 +30,13 @@ function withLogHook(html, appName) {
 // preview-size toggle and live-edit re-send: a playing screen has no
 // editor pushing config changes mid-session, configBlob is whatever was
 // saved, sent once.
+//   onAssets(urls)  called when the app lists the picture links it shows (APP_ASSETS), to be saved
+//           for offline play
 //   active  false while the app waits behind the one on screen: it loads, compiles and
 //           says it is ready, but its settings are held back (so it has not started)
 //           and it is not drawn. true when its turn comes: the settings are sent and it
 //           appears.
-function AppRenderer({ configBlob, active = true, onFailed }) {
+function AppRenderer({ configBlob, active = true, onFailed, onAssets }) {
   const [bundleHtml, setBundleHtml] = useState(null);
   const [bundleError, setBundleError] = useState(null);
   const [appListening, setAppListening] = useState(false);
@@ -87,6 +89,12 @@ function AppRenderer({ configBlob, active = true, onFailed }) {
         logEvent("app", `App "${appName}" is running and waiting for its settings (${Date.now() - startedAt.current} ms after it was prepared)`);
         setAppListening(true);
       }
+      // An app lists the pictures it shows (its feed's images) so the player can save them for offline.
+      if (e.data?.type === "APP_ASSETS" && onAssets && Array.isArray(e.data.images)) {
+        const images = e.data.images.filter((url) => typeof url === "string" && /^https?:\/\//i.test(url)).slice(0, 20);
+        logEvent("app", `App "${appName}" lists ${images.length} picture(s) to keep for offline`);
+        if (images.length > 0) onAssets(images);
+      }
       if (e.data?.type === "APP_LOAD") {
         logEvent("app", `App "${appName}" finished loading its data and is showing (${Date.now() - startedAt.current} ms after it was prepared)`);
         setAppLoaded(true);
@@ -94,7 +102,7 @@ function AppRenderer({ configBlob, active = true, onFailed }) {
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [src, bundleHtml, appName]);
+  }, [src, bundleHtml, appName, onAssets]);
 
   useEffect(() => {
     if (!appListening || !active) return;

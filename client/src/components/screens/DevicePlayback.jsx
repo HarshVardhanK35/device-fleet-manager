@@ -13,6 +13,7 @@ import PlaybackLayers from "./PlaybackLayers.jsx";
 import { logAdvance } from "./playbackLog.js";
 import { findActiveAssignment, findLockedAssignment, nextPlayableIndex, playableFor } from "./playbackRules.js";
 
+const NO_IMAGES = []; // one shared empty list, so "no extra pictures" never changes between renders
 const FALLBACK_ITEM_MS = 8000; // used only if a content item has no/invalid durationInMillis
 
 // The built-in messages (already connected elsewhere, taken over, nothing scheduled)
@@ -96,6 +97,21 @@ function DevicePlayback(
     setFailedKeys((previous) => (previous.has(key) ? previous : new Set(previous).add(key)));
   }, []);
 
+  // Pictures the playing apps list (an RSS feed's pictures) are saved for offline too, kept for as
+  // long as this playlist plays; the newest 40 at most.
+  const [appImages, setAppImages] = useState({ id: null, urls: [] });
+  const handleAssets = useCallback(
+    (urls) => {
+      const id = activeIdRef.current;
+      setAppImages((current) => {
+        const old = current.id === id ? current.urls : [];
+        return { id, urls: [...new Set([...urls, ...old])].slice(0, 40) };
+      });
+    },
+    [activeIdRef],
+  );
+  const extraImages = appImages.id === (activeAssignment?.assignmentId ?? null) ? appImages.urls : NO_IMAGES;
+
   useStorageReport({ publishStatus, online, connection, activeAssignment, savedKeys });
 
   usePlaybackLog({
@@ -121,8 +137,8 @@ function DevicePlayback(
       stopDownloads();
       return;
     }
-    syncDownloads(downloadItems(activeAssignment?.content));
-  }, [manifest, activeAssignment, online, refreshTick]);
+    syncDownloads(downloadItems(activeAssignment?.content, extraImages));
+  }, [manifest, activeAssignment, online, refreshTick, extraImages]);
 
   useEffect(() => () => stopDownloads(), []);
 
@@ -174,19 +190,33 @@ function DevicePlayback(
   const [prevAssignment, setPrevAssignment] = useState(activeAssignment);
   if (prevAssignment !== activeAssignment) {
     setPrevAssignment(activeAssignment);
-    // A saved position only applies to the assignment it was captured
-    // from — if the schedule has since moved on to a different assignment,
-    // always start that one fresh at item 0.
-    const canResume =
-      !initialPositionApplied &&
-      initialPosition &&
-      activeAssignment?.assignmentId &&
-      initialPosition.assignmentId === activeAssignment.assignmentId;
-    setInitialPositionApplied(true);
-    setPendingVideoSeek(canResume ? initialPosition.videoTime || 0 : null);
-    setContentIndex(canResume ? initialPosition.contentIndex : 0);
-    setItemStartedAt(canResume ? now - (initialPosition.elapsedMs || 0) : now);
-    setTurn((t) => t + 1);
+    // The same playlist with new content (an item skipped, added or removed): the screen stays on
+    // the item it is showing, found again in the new list (the nearest copy if it appears twice),
+    // instead of jumping back to the first item.
+    const shown = prevAssignment?.content?.[contentIndex];
+    let kept = -1;
+    if (shown && activeAssignment && prevAssignment.assignmentId === activeAssignment.assignmentId) {
+      activeAssignment.content.forEach((item, index) => {
+        if (item._id === shown._id && (kept === -1 || Math.abs(index - contentIndex) < Math.abs(kept - contentIndex))) kept = index;
+      });
+    }
+    if (kept !== -1) {
+      setContentIndex(kept);
+    } else {
+      // A saved position only applies to the assignment it was captured
+      // from — if the schedule has since moved on to a different assignment,
+      // always start that one fresh at item 0.
+      const canResume =
+        !initialPositionApplied &&
+        initialPosition &&
+        activeAssignment?.assignmentId &&
+        initialPosition.assignmentId === activeAssignment.assignmentId;
+      setInitialPositionApplied(true);
+      setPendingVideoSeek(canResume ? initialPosition.videoTime || 0 : null);
+      setContentIndex(canResume ? initialPosition.contentIndex : 0);
+      setItemStartedAt(canResume ? now - (initialPosition.elapsedMs || 0) : now);
+      setTurn((t) => t + 1);
+    }
   }
 
   // "Refresh screen" from the app: start the playlist again from the first
@@ -284,6 +314,7 @@ function DevicePlayback(
         onSeekApplied={() => setPendingVideoSeek(null)}
         onVideoElement={setVideoElement}
         onFailed={markFailed}
+        onAssets={handleAssets}
       />
       {banner}
     </>

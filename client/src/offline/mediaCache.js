@@ -27,12 +27,20 @@ export async function isSaved(key) {
 }
 
 // The saved file itself (a Blob), or null. Used to play a saved video from memory: a TV browser's
-// video player asks for the file by itself and never goes through the service worker.
+// video player asks for the file by itself and never goes through the service worker. A file up
+// to 30 MB is copied into memory first: the Blob the Cache API hands out is read lazily from
+// storage, and a TV player stopped with a network error a few seconds into it.
+const IN_MEMORY_LIMIT = 30 * 1024 * 1024;
+
 export async function readSavedBlob(key) {
   if (!supported) return null;
   try {
     const hit = await (await open()).match(key);
-    return hit ? await hit.blob() : null;
+    if (!hit) return null;
+    const blob = await hit.blob();
+    if (blob.size > IN_MEMORY_LIMIT) return blob;
+    const bytes = await blob.arrayBuffer();
+    return new Blob([bytes], { type: blob.type || hit.headers.get("Content-Type") || "video/mp4" });
   } catch {
     return null;
   }

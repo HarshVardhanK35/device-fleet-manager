@@ -164,9 +164,19 @@ function VideoLayer({ item, current, online, savedKeys, pendingVideoSeek, onSeek
         if (!mounted.current) return;
         logVideo("ERROR", video);
         const code = video.error?.code;
-        // The saved copy itself will not play.
+        // The saved copy itself stopped: load it again a few times, then give up.
         if (wantBlob && blob.url) {
-          giveUp(`the saved copy failed too: error ${code}`);
+          if (code === 2 && retries.current < 3) {
+            retries.current += 1;
+            console.log(`[video] the saved copy stopped, reloading it (${retries.current} of 3)`, item.name);
+            setTimeout(() => {
+              if (!mounted.current) return;
+              video.load();
+              if (current) video.play().catch(() => {});
+            }, 500);
+            return;
+          }
+          giveUp(`the saved copy failed too: error ${code}; this browser may not be able to play saved videos offline`);
           return;
         }
         // The network copy failed and a saved copy exists: play that.
@@ -239,6 +249,7 @@ function PlaybackLayers({
   onSeekApplied,
   onVideoElement,
   onFailed,
+  onAssets,
 }) {
   const nextIndex = items.length > 1 ? nextPlayableIndex(items, contentIndex, online, savedKeys, failedKeys) : contentIndex;
   const layers = [{ index: contentIndex, turn, current: true }];
@@ -271,7 +282,7 @@ function PlaybackLayers({
         />
       );
     }
-    if (item.type === "app") return <AppRenderer key={key} configBlob={item.configBlob} active={current} onFailed={() => onFailed(item)} />;
+    if (item.type === "app") return <AppRenderer key={key} configBlob={item.configBlob} active={current} onFailed={() => onFailed(item)} onAssets={onAssets} />;
     return null;
   });
 }

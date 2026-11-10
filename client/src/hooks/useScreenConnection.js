@@ -65,10 +65,16 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
 
     // The connection to the server is lost: keep playing the playlist that
     // is playing now (or the one saved as playing, after a restart).
+    // The log says "Offline" once when the connection goes, not on every reconnect attempt (the link
+    // retries every 2 s and each attempt used to add a line).
+    let offlineLogged = false;
     function markOffline(reason = "the connection was lost") {
       if (cancelled) return;
       const lockId = activeIdRef.current ?? readPlaying(screenToken);
-      logWarn("connect", `Offline: ${reason}. It may keep playing playlist ${lockId || "(none known)"} until that playlist ends`);
+      if (!offlineLogged) {
+        offlineLogged = true;
+        logWarn("connect", `Offline: ${reason}. It may keep playing playlist ${lockId || "(none known)"} until that playlist ends`);
+      }
       setOfflineLock((lock) => lock ?? lockId);
       setOnline(false);
       clearTimeout(backOnlineTimer);
@@ -76,6 +82,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
     }
 
     function markOnline() {
+      offlineLogged = false;
       logEvent("connect", "Online: the connection to the server is back");
       setOnline(true);
       setOfflineLock(null);
