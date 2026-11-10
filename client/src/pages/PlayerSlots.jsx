@@ -104,7 +104,7 @@ function PlayerSlots() {
                 editing: slots.editingId === selected.id,
                 draft: slots.draft,
                 error: slots.editError,
-                onChange: (field, value) => slots.changeDraft(selected.id, field, value),
+                onChange: (field, value) => slots.changeDraft(selected, field, value),
                 onStart: () => slots.startEdit(selected),
                 onDiscard: slots.discardEdit,
                 onSave: () => slots.saveEdit(selected.id),
@@ -121,7 +121,7 @@ function PlayerSlots() {
               onOpenPlayer={() => slots.setModal({ mode: "player", id: selected.id })}
               onRelease={() => slots.releaseScreen(selected.id)}
               onRefreshScreen={() => slots.refreshScreenNow(selected)}
-              onPullLogs={() => slots.pullLogsNow(selected)}
+              onPullLogs={() => slots.setModal({ mode: "pull", id: selected.id })}
             />
           )}
         </div>

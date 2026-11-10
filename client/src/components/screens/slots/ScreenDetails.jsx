@@ -122,17 +122,16 @@ function ScreenDetails({
           <div className="flex-1 min-w-0 flex flex-col">
             {[
               ["Now playing", screen.playing ? screen.playing.playlistName : "Nothing scheduled"],
-              [
-                "Item",
-                screen.playing
-                  ? `${screen.playing.name}${screen.playing.pos ? ` · ${screen.playing.pos}` : ""}`
-                  : "—",
-              ],
-              ["Up next", screen.playing ? screen.playing.nextName || "—" : "—"],
+              // no Item / Up next rows when nothing is scheduled: "Nothing scheduled" says it already
+              ...(screen.playing
+                ? [
+                    ["Item", `${screen.playing.name}${screen.playing.pos ? ` · ${screen.playing.pos}` : ""}`],
+                    ...(screen.playing.nextName ? [["Up next", screen.playing.nextName]] : []),
+                  ]
+                : []),
               ["Connection", screen.seen],
-              ["Resolution", screen.res],
               ["Browser", browserText(storage.status, storage.loading)],
-              ["Offline storage", storageText(storage.status, storage.loading, !refreshOffline)],
+              ["Offline storage", storageText(storage.status, storage.loading)],
             ].map(([label, value], i, arr) => (
               <div
                 key={label}

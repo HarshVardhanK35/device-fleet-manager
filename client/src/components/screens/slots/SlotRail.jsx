@@ -1,17 +1,18 @@
-import { Plus, Hourglass } from "lucide-react";
+import { Plus } from "lucide-react";
 
-import ScreenThumb from "../ScreenThumb.jsx";
 import SelectableRow from "../../ui/SelectableRow.jsx";
 import SkeletonPlayerSlots from "../../loading/SkeletonPlayerSlots.jsx";
 import RefreshButton from "../../ui/RefreshButton.jsx";
 import PaneToggle from "../../layout/PaneToggle.jsx";
 import { COLLAPSED_PANE_CLASS } from "../../../hooks/usePaneCollapse.js";
 import { MAX_SCREENS } from "../../../utils/validation/limits.js";
+import { fitFont, statusFont } from "../../../utils/screens/fitText.js";
 import { pillLabel } from "../../../utils/screens/screenStatus.js";
 
 // The left column of the Player page: the title with its Refresh button, "n of 3", and
 // the three slots (a screen, a screen waiting to be paired, or an empty
-// "Add a screen" slot).
+// "Add a screen" slot). A long name or type is shown whole on one line by shrinking its font, never cut. A screen shows two columns: its name over its type (or slot number),
+// and its status over when it was last seen.
 function SlotRail({ screens, loading, selectedId, used, full, mobileView, collapsed, onToggleCollapse, onSelect, onAdd, onRefresh }) {
   return (
     <div
@@ -57,12 +58,13 @@ function SlotRail({ screens, loading, selectedId, used, full, mobileView, collap
               </button>
             );
           }
+          const status = statusFont(s.name);
           return (
             <SelectableRow
               as="button"
               key={s.id}
               onClick={() => onSelect(s.id)}
-              className={`flex items-center gap-2.5 p-3 rounded-lg border hover:bg-bg-hover ${
+              className={`@container flex items-center gap-2.5 p-3 rounded-lg border hover:bg-bg-hover ${
                 selectedId === s.id
                   ? s.pending
                     ? "border-accent-amber bg-bg-hover"
@@ -70,23 +72,18 @@ function SlotRail({ screens, loading, selectedId, used, full, mobileView, collap
                   : "border-border-muted"
               }`}
             >
-              <span className="w-14 aspect-video rounded overflow-hidden border border-border-muted flex-none bg-bg-primary">
-                {s.pending ? (
-                  <span className="w-full h-full flex items-center justify-center">
-                    <Hourglass size={14} className="text-accent-amber" />
-                  </span>
-                ) : (
-                  <ScreenThumb playing={s.playing} mini />
-                )}
-              </span>
-              <span className="flex-1 min-w-0 flex flex-col gap-0.5">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
-                  Slot {i + 1}
+              {/* two columns, two rows: name over type, status over last seen; each row is one grid row,
+                  so name and status share a line, and type and last seen share the next */}
+              <span className="flex-1 min-w-0 grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[20px_16px] items-center gap-x-3 gap-y-1">
+                <span
+                  className="whitespace-nowrap overflow-hidden font-semibold leading-5 text-text-primary"
+                  style={{ fontSize: fitFont(s.name, status, 0.6, 7, 14) }}
+                >
+                  {s.name}
                 </span>
-                <span className="text-sm font-semibold text-text-primary truncate">{s.name}</span>
-                <span className="flex items-center gap-1.5 text-xs text-text-muted">
+                <span className="flex items-center gap-1.5 leading-5 text-text-muted whitespace-nowrap" style={{ fontSize: `${status}px` }}>
                   <span
-                    className={`w-1.5 h-1.5 rounded-full flex-none ${
+                    className={`w-1.5 h-1.5 rounded-full flex-none self-center ${
                       s.pending
                         ? "bg-accent-amber"
                         : s.status === "online"
@@ -96,7 +93,16 @@ function SlotRail({ screens, loading, selectedId, used, full, mobileView, collap
                             : "bg-text-muted"
                     }`}
                   />
-                  {pillLabel(s)}
+                  <span>{pillLabel(s)}</span>
+                </span>
+                <span
+                  className="whitespace-nowrap overflow-hidden font-semibold uppercase leading-4 tracking-wide text-text-muted"
+                  style={{ fontSize: fitFont(s.pending || !s.type ? `Slot ${i + 1}` : s.type, status, 0.74, 7, 10) }}
+                >
+                  {s.pending || !s.type ? `Slot ${i + 1}` : s.type}
+                </span>
+                <span className="leading-4 text-text-muted whitespace-nowrap" style={{ fontSize: `${status}px` }}>
+                  {!s.pending && s.status !== "taken" ? s.seen : ""}
                 </span>
               </span>
             </SelectableRow>

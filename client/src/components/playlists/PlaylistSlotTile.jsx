@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreVertical, Play, SkipForward, Trash2 } from "lucide-react";
 
 import ContentTile from "../content/ContentTile.jsx";
+import ActionMenu from "../ui/ActionMenu.jsx";
 import SelectCheckbox from "../ui/SelectCheckbox.jsx";
 import { useLongPress } from "../../hooks/useLongPress.js";
 import { useMediaQuery } from "../../hooks/useCompactLayout.js";
@@ -25,6 +26,13 @@ function PlaylistSlotTile({
   onMoveEarlier,
   onMoveLater,
   showMoveButtons = false,
+  touchProps,
+  consumeTouchClick,
+  armed = false,
+  onSkip,
+  onMoveToStart,
+  onMoveToEnd,
+  onRemove,
 }) {
   // Touch: a long press selects (there is no hover to reveal the checkbox).
   // While anything is selected a click toggles; otherwise it opens the details.
@@ -34,7 +42,7 @@ function PlaylistSlotTile({
   const touch = useMediaQuery("(pointer: coarse)");
 
   function handleClick(e) {
-    if (consumeClick()) return;
+    if ((consumeTouchClick && consumeTouchClick()) || consumeClick()) return;
     if (selectionMode) onToggleSelect();
     else onOpen(e?.currentTarget?.getBoundingClientRect?.());
   }
@@ -58,37 +66,69 @@ function PlaylistSlotTile({
         slotIndex={index}
         slotIndexActive={checked}
         onClick={handleClick}
-        rootProps={handlers}
+        rootProps={touchProps ? { ...handlers, ...touchProps } : handlers}
         // Touch screens can't drag (HTML5 drag-and-drop ignores touch), so where the page
         // asks for it (`showMoveButtons`) each tile gets a bar with earlier / later buttons.
         footerBar={
-          showMoveButtons &&
-          (onMoveEarlier || onMoveLater) && (
+          showMoveButtons && (
             <div className="flex border-t border-border-muted">
-              {[
-                { label: "Move earlier", Icon: ChevronLeft, onClick: onMoveEarlier },
-                { label: "Move later", Icon: ChevronRight, onClick: onMoveLater },
-              ].map(({ label, Icon, onClick }, i) => (
-                <button
-                  key={label}
-                  type="button"
-                  title={label}
-                  aria-label={label}
-                  disabled={!onClick}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClick?.();
-                  }}
-                  className={`flex-1 h-9 flex items-center justify-center text-text-primary hover:bg-bg-hover active:bg-bg-hover disabled:opacity-25 disabled:hover:bg-transparent transition-colors ${i === 0 ? "border-r border-border-muted" : ""}`}
-                >
-                  <Icon size={18} />
-                </button>
-              ))}
+              <button
+                type="button"
+                title="Move earlier"
+                aria-label="Move earlier"
+                disabled={!onMoveEarlier}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveEarlier?.();
+                }}
+                className="flex-1 h-9 flex items-center justify-center border-r border-border-muted text-text-primary hover:bg-bg-hover active:bg-bg-hover disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              {/* this item's own actions (the toolbar above acts on the selected items) */}
+              <ActionMenu
+                label="Actions for this item"
+                align="end"
+                items={[
+                  { label: skipped ? "Unskip" : "Skip", icon: skipped ? Play : SkipForward, variant: "warning", onClick: onSkip },
+                  { label: "Move to start", icon: ChevronsLeft, onClick: onMoveToStart, disabled: !onMoveToStart },
+                  { label: "Move to end", icon: ChevronsRight, onClick: onMoveToEnd, disabled: !onMoveToEnd },
+                  { type: "separator" },
+                  { label: "Remove from playlist", icon: Trash2, variant: "danger", onClick: onRemove },
+                ]}
+                trigger={
+                  <button
+                    type="button"
+                    title="More"
+                    aria-label="More actions for this item"
+                    disabled={selectionMode}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 h-9 flex items-center justify-center border-r border-border-muted text-text-primary hover:bg-bg-hover active:bg-bg-hover disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+                  >
+                    <MoreVertical size={18} />
+                  </button>
+                }
+              />
+              <button
+                type="button"
+                title="Move later"
+                aria-label="Move later"
+                disabled={!onMoveLater}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMoveLater?.();
+                }}
+                className="flex-1 h-9 flex items-center justify-center text-text-primary hover:bg-bg-hover active:bg-bg-hover disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
           )
         }
         className={`select-none [-webkit-touch-callout:none] transition-[filter,opacity] duration-200 ${
           dimmed ? "xl:blur-[3px] xl:opacity-60" : ""
+        } ${
+          armed ? "!border-2 !border-accent-blue scale-[1.04] shadow-lg shadow-black/40" : ""
         } ${
           checked
             ? "!border-2 !border-accent-blue -translate-y-0.5"
@@ -140,5 +180,7 @@ export default PlaylistSlotTile;
 // and ignores clicks, so selecting still works.
 // `onMoveEarlier` / `onMoveLater` (optional) fill the move bar, shown when
 // `showMoveButtons` is true (touch screens and anything narrower than a desktop);
-// pass undefined for the first / last tile so that button is disabled.
+// pass undefined for the first / last tile so that button is disabled. Between them the ⋮ menu
+// acts on this one item: Skip / Unskip, Move to start, Move to end, Remove from playlist.
+// `touchProps`, `consumeTouchClick` and `armed` come from useTouchReorder (hold and drag).
 // Used by: pages/Playlists.jsx.

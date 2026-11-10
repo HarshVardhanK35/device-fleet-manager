@@ -16,6 +16,7 @@ export function usePlaybackLog({
   activeAssignment,
   contentIndex,
   savedKeys,
+  failedKeys,
   itemStartedAt,
   turn,
   refreshTick,
@@ -59,10 +60,10 @@ export function usePlaybackLog({
   useEffect(() => {
     const items = activeAssignment?.content;
     if (!items?.length) return;
-    if (!items.some((item) => playableFor(online, savedKeys, item))) {
+    if (!items.some((item) => playableFor(online, savedKeys, item, failedKeys))) {
       logWarn("play", `None of the ${items.length} items can play: the screen is ${online ? "online" : "offline"} and no item's file is saved`);
     }
-  }, [activeAssignment, online, savedKeys]);
+  }, [activeAssignment, online, savedKeys, failedKeys]);
 
   useEffect(() => {
     if (refreshTick > 0) logEvent("play", "Refresh screen: starting the playlist again from item 1");

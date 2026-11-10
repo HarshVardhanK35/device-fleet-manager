@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Mail, CircleAlert, Clock } from "lucide-react";
+import { Mail, CircleAlert, Clock, WifiOff } from "lucide-react";
 
 import { login as loginApi, resendVerification } from "../api/auth.js";
 import { useAuth } from "../context/useAuth.js";
@@ -18,6 +18,8 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  // The server could not be reached at all (no internet, or the server is down).
+  const [unreachable, setUnreachable] = useState(false);
   const [resent, setResent] = useState(false);
   // apiClient.js sends an ended session here with ?expired=1
   const [expired] = useState(() => new URLSearchParams(window.location.search).get("expired") === "1");
@@ -33,7 +35,13 @@ function Login() {
   }, []);
 
   const [signIn, signingIn] = useAsyncAction(async () => {
-    const response = await loginApi({ email, password });
+    let response;
+    try {
+      response = await loginApi({ email, password });
+    } catch {
+      setUnreachable(true);
+      return;
+    }
 
     if (response.token) {
       login(response.token, response.user);
@@ -46,6 +54,7 @@ function Login() {
   function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setUnreachable(false);
     setResent(false);
     signIn();
   }
@@ -69,9 +78,15 @@ function Login() {
           subtitle="Welcome back. Enter your details to access your screens."
         />
 
-        {expired && !error && (
+        {expired && !error && !unreachable && (
           <AuthErrorBanner icon={Clock} tone="amber">
             You were signed out because your session ended. Sign in to continue.
+          </AuthErrorBanner>
+        )}
+
+        {unreachable && (
+          <AuthErrorBanner icon={WifiOff} tone="amber">
+            Can&apos;t reach CastWise right now. Check your internet connection and try again in a moment.
           </AuthErrorBanner>
         )}
 

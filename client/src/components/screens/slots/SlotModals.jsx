@@ -3,11 +3,12 @@ import { Trash2 } from "lucide-react";
 import ScreenThumb from "../ScreenThumb.jsx";
 import TakeOverModal from "../TakeOverModal.jsx";
 import PlayerStandinModal from "../PlayerStandinModal.jsx";
+import PullLogsModal from "../PullLogsModal.jsx";
 import PreviewModal from "../../modals/PreviewModal.jsx";
 import RemoveConfirmModal from "../../modals/RemoveConfirmModal.jsx";
 import StatusPill from "../../ui/StatusPill.jsx";
 
-// The four dialogs of the Player page (preview, take over, remove, and the
+// The dialogs of the Player page (preview, take over, remove, pull logs, and the
 // stand-in player shown after a take-over). `slots` is what
 // hooks/useScreenSlots.js returns; only one dialog is open at a time
 // (`slots.modal.mode`).
@@ -26,6 +27,7 @@ function SlotModals({ slots }) {
     confirmTakeOver,
     removeScreen,
     releaseScreen,
+    pullLogsNow,
   } = slots;
 
   return (
@@ -92,6 +94,16 @@ function SlotModals({ slots }) {
         confirmLabel="Remove screen"
         onConfirm={() => modalScreen && removeScreen(modalScreen.id)}
         error={removeError}
+      />
+
+      <PullLogsModal
+        open={modal?.mode === "pull"}
+        onOpenChange={(o) => !o && setModal(null)}
+        screen={modal?.mode === "pull" ? modalScreen : null}
+        onConfirm={async () => {
+          if (modalScreen) await pullLogsNow(modalScreen);
+          setModal(null);
+        }}
       />
 
       <PlayerStandinModal

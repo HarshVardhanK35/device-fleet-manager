@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 
 import { usePlaybackLog } from "../../hooks/usePlaybackLog.js";
+import { logWarn } from "../../utils/screenLog/screenLog.js";
 import { useStorageReport } from "../../hooks/useStorageReport.js";
 import { useScreenConnection } from "../../hooks/useScreenConnection.js";
 import { getSaved, stopDownloads, subscribeSaved, syncDownloads } from "../../offline/downloadManager.js";
-import { downloadItems } from "../../offline/playlistItems.js";
+import { downloadItems, itemKey } from "../../offline/playlistItems.js";
 import { registerOffline } from "../../offline/registerOffline.js";
 import { savePlaying } from "../../offline/savedManifest.js";
 import OfflineBanner from "./OfflineBanner.jsx";
@@ -79,6 +80,22 @@ function DevicePlayback(
     activeIdRef.current = activeAssignment?.assignmentId ?? null;
   });
 
+  // Items that could not be played (a video the browser refused, an image or app that would
+  // not load) are skipped like items that are not saved. Forgotten when the connection state
+  // changes or the screen is refreshed, so a fixed problem is tried again.
+  const [failedKeys, setFailedKeys] = useState(() => new Set());
+  const [failedFor, setFailedFor] = useState({ online, refreshTick });
+  if (failedFor.online !== online || failedFor.refreshTick !== refreshTick) {
+    setFailedFor({ online, refreshTick });
+    setFailedKeys(new Set());
+  }
+  const markFailed = useCallback((item) => {
+    const key = itemKey(item);
+    if (key === null) return;
+    logWarn("play", `"${item.name}" (${item.type}) could not be played, so it is skipped and the next item plays`);
+    setFailedKeys((previous) => (previous.has(key) ? previous : new Set(previous).add(key)));
+  }, []);
+
   useStorageReport({ publishStatus, online, connection, activeAssignment, savedKeys });
 
   usePlaybackLog({
@@ -89,6 +106,7 @@ function DevicePlayback(
     activeAssignment,
     contentIndex,
     savedKeys,
+    failedKeys,
     itemStartedAt,
     turn,
     refreshTick,
@@ -193,13 +211,13 @@ function DevicePlayback(
     const items = activeAssignment?.content;
     const current = items?.[contentIndex];
     if (!current) return;
-    if (!items.some((item) => playableFor(online, savedKeys, item))) return;
-    const skip = !playableFor(online, savedKeys, current);
+    if (!items.some((item) => playableFor(online, savedKeys, item, failedKeys))) return;
+    const skip = !playableFor(online, savedKeys, current, failedKeys);
     const duration = current.durationInMillis > 0 ? current.durationInMillis : FALLBACK_ITEM_MS;
     const remaining = Math.max(duration - (Date.now() - itemStartedAt), 0);
     const t = setTimeout(
       () => {
-        const next = nextPlayableIndex(items, contentIndex, online, savedKeys);
+        const next = nextPlayableIndex(items, contentIndex, online, savedKeys, failedKeys);
         logAdvance(items, contentIndex, next, skip);
         setContentIndex(next);
         setItemStartedAt(Date.now());
@@ -208,7 +226,7 @@ function DevicePlayback(
       skip ? 0 : remaining,
     );
     return () => clearTimeout(t);
-  }, [activeAssignment, contentIndex, itemStartedAt, online, savedKeys]);
+  }, [activeAssignment, contentIndex, itemStartedAt, online, savedKeys, failedKeys]);
 
   const banner = bannerOn ? <OfflineBanner /> : backOnline ? <OfflineBanner online /> : null;
 
@@ -230,7 +248,7 @@ function DevicePlayback(
   }
 
   const currentContent = activeAssignment?.content?.[contentIndex];
-  const hasPlayable = !!activeAssignment?.content?.some((item) => playableFor(online, savedKeys, item));
+  const hasPlayable = !!activeAssignment?.content?.some((item) => playableFor(online, savedKeys, item, failedKeys));
 
   if (!currentContent || !hasPlayable) {
     return (
@@ -249,7 +267,7 @@ function DevicePlayback(
   }
 
   // The next tick skips an item that is not saved (offline); show nothing meanwhile.
-  if (!playableFor(online, savedKeys, currentContent)) return banner;
+  if (!playableFor(online, savedKeys, currentContent, failedKeys)) return banner;
 
   return (
     <>
@@ -261,9 +279,11 @@ function DevicePlayback(
         online={online}
         savedKeys={savedKeys}
         refreshTick={refreshTick}
+        failedKeys={failedKeys}
         pendingVideoSeek={pendingVideoSeek}
         onSeekApplied={() => setPendingVideoSeek(null)}
         onVideoElement={setVideoElement}
+        onFailed={markFailed}
       />
       {banner}
     </>
