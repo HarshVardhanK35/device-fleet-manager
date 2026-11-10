@@ -163,6 +163,13 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
 
     const onBrowserOffline = () => markOffline("the browser reported no network");
     window.addEventListener("offline", onBrowserOffline);
+    // A short wifi blip (shorter than the 10 s keepalive) marks the screen offline above but never
+    // drops the message link, so nothing would mark it online again. When the browser says it is
+    // back and the link is still up, the screen goes online at once.
+    const onBrowserOnline = () => {
+      if (offlineLogged && mqttClient?.connected) markOnline();
+    };
+    window.addEventListener("online", onBrowserOnline);
 
     (async () => {
       // One active connection per device: claim the slot before doing
@@ -321,6 +328,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       clearTimeout(retryTimer);
       clearTimeout(backOnlineTimer);
       window.removeEventListener("offline", onBrowserOffline);
+      window.removeEventListener("online", onBrowserOnline);
       stopHeartbeat();
       clientRef.current = null;
       idRef.current = null;
