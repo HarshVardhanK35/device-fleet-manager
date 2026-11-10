@@ -82,8 +82,9 @@ function AssignmentCard({
         />
       </div>
 
+      {/* wide card: the details take only the room they need (at most half), the playlist takes the rest */}
       <div className="@2xl:flex @2xl:gap-6">
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 @2xl:flex-none @2xl:max-w-[50%]">
           <p className="text-text-primary font-bold mb-3">
             {assignment.playlistId?.name ?? "Unknown playlist"}
           </p>

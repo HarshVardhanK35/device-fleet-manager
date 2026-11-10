@@ -5,7 +5,8 @@ import { appTypeOf } from "../../utils/content/appType.js";
 import { formatDuration } from "../../utils/format/formatDuration.js";
 import { pluralizeCount } from "../../utils/format/pluralize.js";
 
-const MAX_TILES = 8;
+// One row of small thumbnails: at most this many places, the last one a "+N" when there are more.
+const MAX_TILES = 4;
 
 // Counts for a playlist: the items, which of them are skipped, how many play
 // and how long one round takes (skipped items are left out of both).
@@ -44,11 +45,11 @@ function AssignmentPlaylistPreview({ playlist }) {
   const { items, skipped, playing, totalMs, skippedCount } = summarize(playlist);
   if (items.length === 0) return null;
 
-  const shown = items.slice(0, MAX_TILES);
+  const shown = items.length > MAX_TILES ? items.slice(0, MAX_TILES - 1) : items;
   const more = items.length - shown.length;
 
   return (
-    <div className="hidden lg:@2xl:flex flex-col gap-2.5 min-w-0 @2xl:max-w-[44%] @2xl:pl-6 @2xl:border-l @2xl:border-border-muted">
+    <div className="hidden lg:@2xl:flex flex-col gap-2.5 min-w-0 @2xl:flex-1 @2xl:pl-6 @2xl:border-l @2xl:border-border-muted">
       <div>
         <p className="text-text-muted text-[10px] font-semibold uppercase tracking-wide">Playlist</p>
         <p className="text-text-primary font-bold" title="Time one round of the playlist takes">
@@ -62,14 +63,14 @@ function AssignmentPlaylistPreview({ playlist }) {
         )}
       </div>
 
-      <ul className="m-0 p-0 list-none flex flex-wrap gap-2">
+      <ul className="m-0 p-0 list-none flex flex-nowrap gap-2">
         {shown.map((item, i) => {
           const isSkipped = skipped.has(i);
           return (
             <li
               key={`${item._id}-${i}`}
               title={item.name}
-              className="relative w-20 aspect-video rounded-md overflow-hidden border border-border-muted bg-[#201e1e] flex items-center justify-center"
+              className="relative min-w-0 flex-1 basis-0 max-w-36 aspect-video rounded-md overflow-hidden border border-border-muted bg-[#201e1e] flex items-center justify-center"
             >
               {item.type === "app" ? (
                 <AppThumb appType={appTypeOf(item)} iconClassName="w-[30%]" />
@@ -93,7 +94,7 @@ function AssignmentPlaylistPreview({ playlist }) {
           );
         })}
         {more > 0 && (
-          <li className="w-20 aspect-video rounded-md border border-dashed border-border-muted flex items-center justify-center text-text-muted text-xs font-semibold">
+          <li className="min-w-0 flex-1 basis-0 max-w-36 aspect-video rounded-md border border-dashed border-border-muted flex items-center justify-center text-text-muted text-xs font-semibold">
             +{more}
           </li>
         )}

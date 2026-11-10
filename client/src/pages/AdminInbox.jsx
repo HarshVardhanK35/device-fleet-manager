@@ -33,7 +33,7 @@ function senderOf(item) {
   const u = item.userId || {};
   return {
     fullName: `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Deleted user",
-    meta: u.username ? `@${u.username} · ${u.email || ""}` : u.email || "",
+    meta: u.email || "",
   };
 }
 
@@ -96,24 +96,26 @@ function InboxCard({ item, onOpen }) {
         }
       }}
       aria-label={`${s.fullName}, ${STATUS_LABEL[item.status]}, ${formatFeedbackDate(item.createdAt)}`}
-      className={`flex cursor-pointer flex-col gap-1 rounded-[10px] border border-border-muted p-3.5 md:p-4 transition-colors ${
+      className={`flex cursor-pointer items-start gap-3 rounded-[10px] border border-border-muted p-3.5 md:p-4 transition-colors ${
         attn ? "bg-[#0f1828]" : "bg-bg-panel"
       } hover:bg-[#1a2029]`}
     >
-      <div className="flex items-center gap-2">
-        <AttentionDot on={attn} />
-        <span className={`min-w-0 flex-1 truncate text-sm ${attn ? "font-semibold" : "font-medium"} text-text-primary`}>{s.fullName}</span>
-        <span className="flex-none text-xs text-text-muted">{formatFeedbackDate(item.createdAt)}</span>
+      {/* two columns: name, email and the message on the left; date over status on the right */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex items-center gap-2">
+          {attn && <AttentionDot on />}
+          <span className={`min-w-0 flex-1 truncate text-sm ${attn ? "font-semibold" : "font-medium"} text-text-primary`}>{s.fullName}</span>
+        </div>
+        <span className="truncate text-xs text-text-muted">{s.meta}</span>
+        <ClampedText
+          readMore
+          text={item.message}
+          className="m-0 line-clamp-2 text-sm text-text-primary [overflow-wrap:anywhere]"
+        />
       </div>
-      <span className="truncate text-xs text-text-muted">{s.meta}</span>
-      <ClampedText
-        readMore
-        text={item.message}
-        className="m-0 line-clamp-2 text-sm text-text-primary [overflow-wrap:anywhere]"
-      />
-      <div className="flex items-center gap-2 pt-0.5 text-xs text-text-muted">
+      <div className="flex flex-none flex-col items-end gap-1.5">
+        <span className="text-xs text-text-muted">{formatFeedbackDate(item.createdAt)}</span>
         <StatusBadge status={item.status} />
-        {TYPE_LABEL[item.type]}
       </div>
     </div>
   );

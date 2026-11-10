@@ -1,12 +1,21 @@
 import EmptyState from "../ui/EmptyState.jsx";
 import PlaylistSlotTile from "./PlaylistSlotTile.jsx";
 import { CONTENT_GRID } from "../content/contentGrid.js";
+import { useTouchReorder } from "../../hooks/useTouchReorder.js";
 
-// The grid of the open playlist's items: drag to reorder (or the ‹ › buttons on
-// touch), select, open an item's details, skipped items marked.
+// The grid of the open playlist's items: drag to reorder (hold and drag on touch, or the ‹ › buttons
+// and the ⋮ menu's Move to start / end), select, open an item's details, skipped items marked.
 //   pl  what usePlaylistsPage returns
 function PlaylistSlotGrid({ pl }) {
   const { shownItems, visibleSlots, slotFilterType, checkedSlotIds, skippedSlots } = pl;
+  // On a touch screen or a narrow window: hold an item and drag it (items can only be reordered
+  // in the unfiltered list).
+  const reorderOn = slotFilterType === "all" && pl.moveButtons;
+  const reorder = useTouchReorder({
+    enabled: reorderOn,
+    onMove: pl.handleReorder,
+    onSelect: (index) => pl.selectSlot(`${shownItems[index]._id}-${index}`),
+  });
 
   if (shownItems.length === 0) {
     return (
@@ -40,8 +49,15 @@ function PlaylistSlotGrid({ pl }) {
             onToggleSelect={() => pl.selectSlot(slotId)}
             draggable={canDrag}
             showMoveButtons={pl.moveButtons}
-            isDragging={canDrag && pl.dragIndex === index}
-            isDragOver={canDrag && pl.dragOverIndex === index}
+            isDragging={(canDrag && pl.dragIndex === index) || reorder.from === index}
+            isDragOver={(canDrag && pl.dragOverIndex === index) || reorder.over === index}
+            touchProps={reorderOn ? reorder.bind(index) : undefined}
+            consumeTouchClick={reorder.consumeClick}
+            armed={reorder.armed === index}
+            onSkip={() => pl.skipOne(index)}
+            onMoveToStart={canDrag && index > 0 ? () => pl.handleReorder(index, 0) : undefined}
+            onMoveToEnd={canDrag && index < shownItems.length - 1 ? () => pl.handleReorder(index, shownItems.length - 1) : undefined}
+            onRemove={() => pl.removeOne(slotId)}
             onDragStart={() => canDrag && pl.setDragIndex(index)}
             onDragOver={(e) => {
               if (!canDrag) return;

@@ -61,7 +61,7 @@ export function usePlaylistsPage(pageRef) {
   const [addContentOpen, setAddContentOpen] = useState(false);
   const [
     checkedSlotIds,
-    { toggle: toggleSlotSelect, toggleAll: toggleAllSlotsIds, clear: clearCheckedSlots },
+    { toggle: toggleSlotSelect, toggleAll: toggleAllSlotsIds, clear: clearCheckedSlots, setSet: setCheckedSlotIds },
   ] = useToggleSet();
 
   const [editPlaylistId, setEditPlaylistId] = useState(null);
@@ -138,14 +138,15 @@ export function usePlaylistsPage(pageRef) {
   // All selected items are skipped already: the button turns into "Unskip".
   const unskipMode = selectedSlots.length > 0 && selectedSlots.every((index) => skippedSlots.has(index));
 
-  const [handleSkip, skipping] = useAsyncAction(async () => {
+  // Skips (or unskips) the given slots: the selected ones from the toolbar, or one item from its menu.
+  const [applySkip, skipping] = useAsyncAction(async (indexes, unskip) => {
     const next = new Set(skippedSlots);
-    for (const index of selectedSlots) {
-      if (unskipMode) next.delete(index);
+    for (const index of indexes) {
+      if (unskip) next.delete(index);
       else next.add(index);
     }
-    const message = unskipMode ? "Playing again" : "Skipped. Item(s) stay in the playlist but won't play";
-    const shortMessage = unskipMode ? "Playing again" : "Skipped";
+    const message = unskip ? "Playing again" : "Skipped. Item(s) stay in the playlist but won't play";
+    const shortMessage = unskip ? "Playing again" : "Skipped";
     // With an unsaved new order, the skips belong to that order and are saved with it.
     if (draftItems) {
       setDraftSkipped(next);
@@ -162,6 +163,9 @@ export function usePlaylistsPage(pageRef) {
     clearCheckedSlots();
     toast(message, "success", shortMessage);
   });
+  const handleSkip = () => applySkip(selectedSlots, unskipMode);
+  // One item, from its ⋮ menu: skip it, or play it again if it is skipped.
+  const skipOne = (index) => applySkip([index], skippedSlots.has(index));
 
   const slotFilterCounts = selectedPlaylist
     ? {
@@ -416,6 +420,14 @@ export function usePlaylistsPage(pageRef) {
     setOrderError(false);
   }
 
+  // One item, from its ⋮ menu: ask before removing it from the playlist (the same dialog the
+  // toolbar's trash opens, with just this item selected).
+  function removeOne(slotId) {
+    setInspectedSlot(null);
+    setCheckedSlotIds(new Set([slotId]));
+    setSlotDeleteConfirmOpen(true);
+  }
+
   function handleDrop(toIndex) {
     if (dragIndex !== null && dragIndex !== toIndex) {
       handleReorder(dragIndex, toIndex);
@@ -463,6 +475,8 @@ export function usePlaylistsPage(pageRef) {
     unskipMode,
     skipping,
     handleSkip,
+    skipOne,
+    removeOne,
     // its tiles: details panel, selection, drag
     inspectedSlot,
     inspectedItem,

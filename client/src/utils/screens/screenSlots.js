@@ -53,7 +53,6 @@ export function mapDevice(d, playing = null) {
       : d.status === "online"
         ? "Online now"
         : `Last seen ${timeAgo(d.lastSeenAt)}`,
-    res: "—",
     playing,
   };
 }

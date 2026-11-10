@@ -34,7 +34,7 @@ function withLogHook(html, appName) {
 //           says it is ready, but its settings are held back (so it has not started)
 //           and it is not drawn. true when its turn comes: the settings are sent and it
 //           appears.
-function AppRenderer({ configBlob, active = true }) {
+function AppRenderer({ configBlob, active = true, onFailed }) {
   const [bundleHtml, setBundleHtml] = useState(null);
   const [bundleError, setBundleError] = useState(null);
   const [appListening, setAppListening] = useState(false);
@@ -47,6 +47,15 @@ function AppRenderer({ configBlob, active = true }) {
   const appName = String(configBlob?.appType || "app").replace(/[^a-z0-9_-]/gi, "");
   const hookedHtml = useMemo(() => (bundleHtml ? withLogHook(bundleHtml, appName) : null), [bundleHtml, appName]);
   const startedAt = useRef(0);
+  // Tells the player once if the app cannot be loaded at all, so it is skipped.
+  const reportedFailure = useRef(false);
+
+  useEffect(() => {
+    if (bundleError && onFailed && !reportedFailure.current) {
+      reportedFailure.current = true;
+      onFailed();
+    }
+  }, [bundleError, onFailed]);
 
   useEffect(() => {
     startedAt.current = Date.now();

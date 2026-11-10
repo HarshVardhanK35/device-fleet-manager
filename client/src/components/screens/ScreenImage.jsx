@@ -6,7 +6,7 @@ import { logError, logEvent, logWarn } from "../../utils/screenLog/screenLog.js"
 // whole instead of painting from top to bottom; the previous image stays up
 // until then. A short fade makes the swap soft. `fit` is "cover" (fills the screen,
 // crops the edges) or "contain" (the whole picture, with bars).
-function ScreenImage({ url, alt, fit = "cover" }) {
+function ScreenImage({ url, alt, fit = "cover", onFailed }) {
   const [shown, setShown] = useState(null);
 
   useEffect(() => {
@@ -32,7 +32,10 @@ function ScreenImage({ url, alt, fit = "cover" }) {
       key={shown}
       src={shown}
       alt={alt}
-      onError={() => logError("image", `The image failed to load (offline and not saved?): ${shown.slice(-70)}`)}
+      onError={() => {
+        logError("image", `The image failed to load (offline and not saved?): ${shown.slice(-70)}`);
+        if (onFailed) onFailed();
+      }}
       style={{ width: "100vw", height: "100vh", objectFit: fit, animation: "cw-fade 400ms ease-out both" }}
     />
   );

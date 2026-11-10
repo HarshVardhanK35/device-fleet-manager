@@ -44,8 +44,8 @@ function DetailPane({
       <div className={headerClassName}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1 md:flex-none flex flex-col gap-1.5">
-            <div className="flex items-center gap-2.5 flex-nowrap md:flex-wrap">
-              <h2 className="min-w-0 truncate md:overflow-visible md:whitespace-normal text-text-primary text-lg font-bold m-0">
+            <div className="flex items-center gap-x-2.5 gap-y-1 flex-wrap">
+              <h2 className="min-w-0 [overflow-wrap:anywhere] text-text-primary text-sm md:text-lg font-bold m-0">
                 {title}
               </h2>
               {badge}

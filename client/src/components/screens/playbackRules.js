@@ -22,18 +22,20 @@ export function findLockedAssignment(manifest, assignmentId, nowMs) {
   return nowMs >= new Date(found.beginDT).getTime() && nowMs <= new Date(found.endDT).getTime() ? found : null;
 }
 
-// Offline, an item can play only if its file was saved; anything else is skipped.
-export function playableFor(online, savedKeys, item) {
-  if (online) return true;
+// An item that failed to load or play (`failedKeys`) is skipped. Offline, an item can play
+// only if its file was saved; anything else is skipped too.
+export function playableFor(online, savedKeys, item, failedKeys) {
   const key = itemKey(item);
+  if (key !== null && failedKeys && failedKeys.has(key)) return false;
+  if (online) return true;
   return key === null || savedKeys.has(key);
 }
 
 // The next item after `from` that can play (or `from` itself when none can).
-export function nextPlayableIndex(items, from, online, savedKeys) {
+export function nextPlayableIndex(items, from, online, savedKeys, failedKeys) {
   for (let step = 1; step <= items.length; step += 1) {
     const index = (from + step) % items.length;
-    if (playableFor(online, savedKeys, items[index])) return index;
+    if (playableFor(online, savedKeys, items[index], failedKeys)) return index;
   }
   return from;
 }

@@ -29,6 +29,7 @@ import SkeletonPanel from "../components/loading/SkeletonPanel.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import DetailPane from "../components/layout/DetailPane.jsx";
 import SelectableRow from "../components/ui/SelectableRow.jsx";
+import { fitFont, statusFont } from "../utils/screens/fitText.js";
 
 function Assignments() {
   const navigate = useNavigate();
@@ -128,7 +129,7 @@ function Assignments() {
             <h1 className="text-text-primary text-xl font-bold">Assignments</h1>
             <RefreshButton className="ml-auto" onRefresh={() => load(false)} />
           </div>
-          <p className="text-text-muted text-sm mb-4 whitespace-nowrap">
+          <p className="text-text-muted text-xs mb-4 whitespace-nowrap">
             <span className="sm:hidden">Choose what each screen plays, and when.</span>
             <span className="hidden sm:inline">Choose which playlist each screen plays, and when.</span>
           </p>
@@ -174,43 +175,41 @@ function Assignments() {
               )}
               {devices.map((device) => {
                 const summary = getDeviceSummary(device);
+                const status = statusFont(device.name);
                 return (
                   <SelectableRow
                     key={device._id}
                     onClick={() => selectDevice(device._id)}
-                    className={`bg-bg-panel rounded-lg p-3 border ${
+                    className={`@container bg-bg-panel rounded-lg p-3 border ${
                       device._id === selectedId
                         ? "border-accent-blue"
                         : "border-border-muted hover:border-border-hover"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    {/* two columns, two rows: name over what is scheduled, status over last seen */}
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[20px_16px] items-center gap-x-3 gap-y-1">
+                      <span
+                        className="whitespace-nowrap overflow-hidden font-semibold leading-5 text-text-primary"
+                        style={{ fontSize: fitFont(device.name, status, 0.6, 7, 14) }}
+                      >
+                        {device.name}
+                      </span>
+                      <span className="flex items-center gap-1.5 whitespace-nowrap leading-5 text-text-muted" style={{ fontSize: `${status}px` }}>
                         <span
-                          className={`w-2 h-2 rounded-full ${
-                            device.status === "online"
-                              ? "bg-accent-green"
-                              : "bg-bg-hover"
+                          className={`w-1.5 h-1.5 flex-none self-center rounded-full ${
+                            device.status === "online" ? "bg-accent-green" : "bg-text-muted"
                           }`}
                         />
-                        <p className="text-text-primary font-semibold">
-                          {device.name}
-                        </p>
-                      </div>
-                      <span className="text-text-muted text-xs">
+                        <span>{device.status === "online" ? "Online" : "Offline"}</span>
+                      </span>
+                      <span className="flex min-w-0 items-center gap-1.5 leading-4 text-text-muted" style={{ fontSize: `${status}px` }}>
+                        <span className={`w-1.5 h-1.5 flex-none rounded-full ${summary.color}`} />
+                        <span className="truncate">{summary.text}</span>
+                      </span>
+                      <span className="whitespace-nowrap leading-4 text-text-muted" style={{ fontSize: `${status}px` }}>
                         {timeAgo(device.lastSeenAt)}
                       </span>
                     </div>
-                    <p className="text-text-muted text-xs mt-0.5 ml-4">
-                      {device.status === "online" ? "Online" : "Offline"}
-                      {device.location && ` · ${device.location}`}
-                    </p>
-                    <p className="text-xs mt-1 ml-4 flex items-center gap-1.5">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${summary.color}`}
-                      />
-                      <span className="text-text-muted">{summary.text}</span>
-                    </p>
                   </SelectableRow>
                 );
               })}
@@ -220,7 +219,7 @@ function Assignments() {
 
         {/* right pane */}
         <div
-          className={`flex-1 ${mobileView === "list" ? "hidden lg:block" : ""}`}
+          className={`flex-1 min-w-0 ${mobileView === "list" ? "hidden lg:block" : ""}`}
         >
           {loading ? (
             <SkeletonPanel rows={3} />

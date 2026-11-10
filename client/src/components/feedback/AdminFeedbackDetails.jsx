@@ -25,7 +25,6 @@ function sender(item) {
   const u = item.userId || {};
   return {
     fullName: `${u.firstName || ""} ${u.lastName || ""}`.trim() || "Deleted user",
-    username: u.username || "",
     email: u.email || "",
   };
 }
@@ -83,7 +82,6 @@ function AdminBody({ item, onClose, onSave, onAskDelete }) {
       <div className="flex flex-col gap-5 p-5">
         <div className="flex flex-col gap-[3px]">
           <span className="text-base font-semibold text-text-primary [overflow-wrap:anywhere]">{from.fullName}</span>
-          {from.username && <span className="text-[13px] text-text-muted">@{from.username}</span>}
           {from.email && (
             <a className="text-[13px] text-accent-blue hover:underline [overflow-wrap:anywhere]" href={`mailto:${from.email}`}>
               {from.email}

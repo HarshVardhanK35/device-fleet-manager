@@ -26,6 +26,18 @@ export async function isSaved(key) {
   }
 }
 
+// The saved file itself (a Blob), or null. Used to play a saved video from memory: a TV browser's
+// video player asks for the file by itself and never goes through the service worker.
+export async function readSavedBlob(key) {
+  if (!supported) return null;
+  try {
+    const hit = await (await open()).match(key);
+    return hit ? await hit.blob() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function saveBlob(key, blob, contentType) {
   const cache = await open();
   await cache.put(

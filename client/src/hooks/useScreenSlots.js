@@ -32,7 +32,7 @@ export function useScreenSlots() {
   const [codeFocused, setCodeFocused] = useState(false);
   const [pairErrors, setPairErrors] = useState({});
   const [busyId, setBusyId] = useState(null);
-  const [modal, setModal] = useState(null); // { mode: "preview"|"take"|"remove"|"player", id }
+  const [modal, setModal] = useState(null); // { mode: "preview"|"take"|"remove"|"player"|"pull", id }
   const [ack, setAck] = useState(false);
   const [loading, setLoading] = useState(true);
   const [removeError, setRemoveError] = useState("");
@@ -183,10 +183,15 @@ export function useScreenSlots() {
     }, 150);
   }
 
-  // Typing in the Name or Type field starts an edit of that screen.
-  function changeDraft(id, field, value) {
-    setEditingId(id);
-    setDraft((d) => ({ ...d, [field]: value }));
+  // Typing in the Name or Type field starts an edit of that screen. The draft then starts from
+  // this screen's own values, so changing only the Type keeps the name (it used to start from
+  // an empty or older draft and blank the other field).
+  function changeDraft(screen, field, value) {
+    const starting = editingId !== screen.id;
+    setEditingId(screen.id);
+    setDraft((d) =>
+      starting ? { name: screen.name, type: screen.type || "", [field]: value } : { ...d, [field]: value },
+    );
   }
 
   function discardEdit() {

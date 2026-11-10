@@ -5,16 +5,17 @@ const at = (iso) => new Date(iso).toLocaleTimeString([], { hour: "numeric", minu
 
 export function browserText(report, loading) {
   if (report) return [report.browser, report.chromium ? `Chromium ${report.chromium.split(".")[0]}` : null].filter(Boolean).join(" · ");
-  return loading ? "Checking…" : "—";
+  return loading ? "Checking…" : "Not reported yet";
 }
 
-export function storageText(report, loading, online) {
-  if (!report) return loading ? "Checking…" : "—";
-  const parts = [];
-  parts.push(report.quotaMB ? `${report.usedMB} of ${report.quotaMB} MB used` : "limit unknown");
-  parts.push(report.wanted ? `${report.saved} of ${report.wanted} files saved` : "nothing to save");
-  if (!online) parts.push(`as of ${at(report.at)}`);
-  return parts.join(" · ");
+// "3 of 80 MB, 7 of 7 files saved, 11:48 AM" (the time is when the screen last reported)
+export function storageText(report, loading) {
+  if (!report) return loading ? "Checking…" : "Not reported yet";
+  return [
+    report.quotaMB ? `${report.usedMB} of ${report.quotaMB} MB` : "limit unknown",
+    report.wanted ? `${report.saved} of ${report.wanted} files saved` : "nothing to save",
+    at(report.at),
+  ].join(", ");
 }
 
 export function storageHints(report) {
