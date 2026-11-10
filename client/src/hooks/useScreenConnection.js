@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import mqtt from "mqtt";
 
 import { API_BASE } from "../api/apiClient.js";
@@ -23,7 +23,7 @@ const RELEASE_RETRIES = 10; // about 30 s, longer than the server's 20 s "still 
 // A screen's live link to the server: claims the one-connection slot, listens
 // for the manifest and the take-over / release messages over MQTT, sends the
 // heartbeat, and tracks whether the server can be reached.
-//   returns { manifest, connection, online, offlineLock, bannerOn, refreshTick }
+//   returns { manifest, connection, online, offlineLock, bannerOn, refreshTick, publishStatus }
 //     connection   connecting | connected | rejected | taken-over
 //     online       false while the server can't be reached
 //     offlineLock  the assignment the screen may keep playing while offline
@@ -45,6 +45,9 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
   // Goes up by one each time the owner sends "Refresh screen".
   const [refreshTick, setRefreshTick] = useState(0);
   const manifestSig = useRef(null);
+  // The open message link and this screen's id, for publish() below.
+  const clientRef = useRef(null);
+  const idRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,6 +190,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       }
 
       resolvedId = result.id;
+      idRef.current = result.id;
       logEvent("connect", "Connected as this screen; opening the message link (MQTT)");
       setConnection("connected");
 
@@ -213,6 +217,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       // subscription - to topic devices/<resolvedId>/manifest, plus a
       // control topic the backend's take-over/release actions publish to
       // (POST /devices/:id/take-over | /release -> publishControlMessage).
+      clientRef.current = mqttClient;
       mqttClient.on("connect", () => {
         console.log("MQTT connected:", mqttUrl);
         markOnline();
@@ -310,6 +315,8 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       clearTimeout(backOnlineTimer);
       window.removeEventListener("offline", onBrowserOffline);
       stopHeartbeat();
+      clientRef.current = null;
+      idRef.current = null;
       if (mqttClient) mqttClient.end();
     };
 
@@ -340,7 +347,15 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
     };
   }, [online]);
 
-  return { manifest, connection, online, offlineLock, bannerOn, backOnline, refreshTick };
+  // Publishes this screen's status (browser, offline storage) as a retained message, so the
+  // Player page can read it at any time. Does nothing while the link is down.
+  const publishStatus = useCallback((report) => {
+    const client = clientRef.current;
+    if (!client?.connected || !idRef.current) return;
+    client.publish(`${TOPIC_PREFIX}devices/${idRef.current}/status`, JSON.stringify(report), { qos: 1, retain: true });
+  }, []);
+
+  return { manifest, connection, online, offlineLock, bannerOn, backOnline, refreshTick, publishStatus };
 }
 
 // Used by: components/screens/DevicePlayback.jsx.

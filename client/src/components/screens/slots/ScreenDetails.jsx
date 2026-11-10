@@ -10,6 +10,7 @@ import GhostButton from "../../ui/GhostButton.jsx";
 import StatusPill from "../../ui/StatusPill.jsx";
 import Hint from "../../../apps/appModals/announcements/common/Hint.jsx";
 import { MAX_SCREEN_NAME, MAX_SCREEN_TYPE } from "../../../utils/validation/limits.js";
+import { browserText, storageHints, storageText } from "./storageText.js";
 
 const FIELD =
   "h-9 px-2.5 rounded-lg border border-border-muted bg-bg-primary text-text-primary text-sm outline-none focus-visible:border-accent-blue";
@@ -19,6 +20,7 @@ const FIELD =
 // "Take over this screen" box.
 //   edit     { editing, draft, error, onChange(field, value), onStart, onDiscard, onSave }
 //   nameRef  the Name input's ref (scrolled to and focused when editing starts)
+//   storage      { status, loading }: what the screen reported about its browser and offline storage
 //   pulling      true while "Pull logs" waits for the screen's answer
 //   refreshLeft  seconds until "Refresh screen" may be used again (0 = now); it
 //                is only available while the screen is online
@@ -29,6 +31,7 @@ function ScreenDetails({
   nameRef,
   refreshLeft,
   pulling,
+  storage,
   releaseError,
   onBack,
   onPreview,
@@ -51,6 +54,24 @@ function ScreenDetails({
       badge={<StatusPill screen={screen} dot />}
       meta={`Slot ${slot} · ${screen.type || "No type set"}`}
       headerExtra={
+        <div className="flex items-center gap-1">
+        <button
+          type="button"
+          aria-label="Pull logs"
+          onClick={onPullLogs}
+          disabled={refreshOffline || pulling}
+          title={
+            refreshOffline
+              ? "Pull logs: this screen is offline"
+              : pulling
+                ? "Pulling logs…"
+                : "Pull logs: saves this screen's log and browser details as a .zip on this device"
+          }
+          className="h-8 px-2.5 rounded-md flex items-center justify-center gap-1.5 text-xs font-medium text-text-muted hover:bg-bg-hover hover:text-text-primary transition-colors flex-none disabled:opacity-40 disabled:pointer-events-none"
+        >
+          <FileDown size={16} />
+          {pulling ? "Pulling…" : "Pull logs"}
+        </button>
         <ActionMenu
           label="Screen actions"
           align="end"
@@ -70,15 +91,6 @@ function ScreenDetails({
                   ? `You can refresh it again in ${refreshLeft} s`
                   : "Restarts the playlist from the first item on this screen",
             },
-            {
-              label: pulling ? "Pulling logs…" : "Pull logs",
-              icon: FileDown,
-              onClick: onPullLogs,
-              disabled: refreshOffline || pulling,
-              title: refreshOffline
-                ? "This screen is offline"
-                : "Saves this screen's log and browser details as a .zip on this device",
-            },
             { type: "separator" },
             { label: "Remove screen", icon: Trash2, variant: "danger", onClick: onRemove },
           ]}
@@ -92,6 +104,7 @@ function ScreenDetails({
             </button>
           }
         />
+        </div>
       }
     >
       <div className="flex flex-col gap-5">
@@ -118,6 +131,8 @@ function ScreenDetails({
               ["Up next", screen.playing ? screen.playing.nextName || "—" : "—"],
               ["Connection", screen.seen],
               ["Resolution", screen.res],
+              ["Browser", browserText(storage.status, storage.loading)],
+              ["Offline storage", storageText(storage.status, storage.loading, !refreshOffline)],
             ].map(([label, value], i, arr) => (
               <div
                 key={label}
@@ -133,6 +148,9 @@ function ScreenDetails({
             <div className="mt-auto pt-4 flex flex-col gap-2">
               <Hint text="Click the preview to watch it — the physical screen isn't affected." />
               <Hint text="Screen stuck or showing old content? ⋯ → Refresh screen." />
+              {storageHints(storage.status).map((text) => (
+                <Hint key={text} text={text} />
+              ))}
             </div>
           </div>
         </div>

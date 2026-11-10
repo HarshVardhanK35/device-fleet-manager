@@ -12,22 +12,31 @@ import appsRegistry from "./appsRegistry.json";
 //    VITE_APP_ENV env var set on that Render service. This needs
 //    `VITE_APP_ENV=staging` added to dfm-stg's env vars on Render — until
 //    that's set, every deployed build falls back to prod's URL.
+// This runs on every render; each distinct line is printed (and logged) once.
+const said = new Set();
+function say(message, detail) {
+  const line = `${message} ${detail ?? ""}`;
+  if (said.has(line)) return;
+  said.add(line);
+  console.log(message, detail ?? "");
+}
+
 export function resolveAppUrl(appId) {
   const app = appsRegistry.find((a) => a.appId === appId);
   if (!app) {
-    console.log("[resolveAppUrl] no app found for id:", appId);
+    say("[resolveAppUrl] no app found for id:", appId);
     return "about:blank";
   }
 
   if (import.meta.env.DEV) {
-    console.log(`[resolveAppUrl] ${app.name}: using DEV url ->`, app.devUrl);
+    say(`[resolveAppUrl] ${app.name}: using DEV url ->`, app.devUrl);
     return app.devUrl ?? "about:blank";
   }
   if (import.meta.env.VITE_APP_ENV === "staging") {
-    console.log(`[resolveAppUrl] ${app.name}: using STAGING url ->`, app.stagingZipUrl);
+    say(`[resolveAppUrl] ${app.name}: using STAGING url ->`, app.stagingZipUrl);
     return app.stagingZipUrl ?? "about:blank";
   }
-  console.log(`[resolveAppUrl] ${app.name}: using PROD url ->`, app.prodZipUrl);
+  say(`[resolveAppUrl] ${app.name}: using PROD url ->`, app.prodZipUrl);
   return app.prodZipUrl ?? "about:blank";
 }
 

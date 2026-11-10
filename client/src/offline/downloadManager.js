@@ -57,20 +57,36 @@ export function subscribeSaved(fn) {
   return () => listeners.delete(fn);
 }
 
+function noRoom(key) {
+  logWarn("offline", `Skipped (will not be saved, no retry): ${short(key)}`);
+  const error = new Error("no room");
+  error.noRetry = true;
+  return error;
+}
+
 async function downloadFile(item, signal) {
-  if (item.size && !(await hasRoom(item.size, short(item.key)))) {
-    logWarn("offline", `Skipped (will not be saved, no retry): ${short(item.key)}`);
-    const error = new Error("no room");
-    error.noRetry = true;
-    throw error;
-  }
   const began = Date.now();
   logEvent("offline", `Downloading ${short(item.key)} (${mb(item.size)} expected)`);
   const res = await fetch(item.url, { mode: "cors", signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  // The space check uses the size of the copy actually being fetched when the server says it
+  // (an image is a small copy of a bigger original), otherwise the size we know.
+  const length = Number(res.headers.get("Content-Length")) || item.size || 0;
+  if (length && !(await hasRoom(length, short(item.key)))) {
+    if (res.body && res.body.cancel) res.body.cancel();
+    throw noRoom(item.key);
+  }
   const blob = await res.blob(); // whole file or an error: never half a file
   if (signal.aborted) throw new Error("aborted");
-  await saveBlob(item.key, blob, res.headers.get("Content-Type"));
+  try {
+    await saveBlob(item.key, blob, res.headers.get("Content-Type"));
+  } catch (error) {
+    if (error.name === "QuotaExceededError") {
+      logWarn("offline", `The browser refused to store ${short(item.key)} (${mb(blob.size)}): its storage is full`);
+      throw noRoom(item.key);
+    }
+    throw error;
+  }
   logEvent("offline", `Downloaded and saved ${short(item.key)}: ${mb(blob.size)} in ${((Date.now() - began) / 1000).toFixed(1)} s`);
 }
 
@@ -158,8 +174,15 @@ export async function syncDownloads(items) {
 
   queue = items.filter((i) => !saved.has(i.key)).sort((a, b) => (a.size || 0) - (b.size || 0));
   logEvent("offline", `${saved.size} file(s) already saved, ${queue.length} to download (smallest first)`);
-  if (queue.length > 0) await keepStorage();
+  if (queue.length > 0) keepStorage(); // not awaited: it must never hold the downloads back
   pump(mine);
+}
+
+// A file saved by someone else (an app's own page saving its bundle when it loads).
+export function markSaved(key) {
+  if (saved.has(key)) return;
+  saved.add(key);
+  emit();
 }
 
 // Back online: try the files that failed again.

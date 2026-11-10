@@ -1,8 +1,7 @@
-import mqtt from "mqtt";
-
 import { logEvent, logError, readLogText, logSummary } from "./screenLog.js";
 import { buildSnapshot } from "./screenSnapshot.js";
 import { buildZip } from "./zip.js";
+import { TOPIC_PREFIX, connectBroker } from "../screens/brokerClient.js";
 
 // "Pull logs": the owner's page asks a screen for its log over MQTT and gets it back in
 // pieces (one MQTT message is limited to about 1 MB), then saves it as a .zip.
@@ -11,7 +10,6 @@ import { buildZip } from "./zip.js";
 //   owner side    pullScreenLogs()   asks, collects the pieces, resolves with the whole log
 //                 downloadLogsZip()  turns it into a .zip download
 
-const TOPIC_PREFIX = import.meta.env.VITE_MQTT_TOPIC_PREFIX || "";
 const CHUNK_CHARS = 150000; // up to ~450 KB per message even with accented text
 const WAIT_MS = 25000; // the screen has this long to answer
 
@@ -50,12 +48,7 @@ export function pullScreenLogs(deviceId) {
     let expected = null;
     let finished = false;
 
-    const client = mqtt.connect(import.meta.env.VITE_MQTT_WS_URL || "ws://localhost:9001", {
-      username: import.meta.env.VITE_MQTT_USERNAME,
-      password: import.meta.env.VITE_MQTT_PASSWORD,
-      reconnectPeriod: 0,
-      connectTimeout: 10000,
-    });
+    const client = connectBroker();
 
     function finish(error, result) {
       if (finished) return;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 
 import { usePlaybackLog } from "../../hooks/usePlaybackLog.js";
+import { useStorageReport } from "../../hooks/useStorageReport.js";
 import { useScreenConnection } from "../../hooks/useScreenConnection.js";
 import { getSaved, stopDownloads, subscribeSaved, syncDownloads } from "../../offline/downloadManager.js";
 import { downloadItems } from "../../offline/playlistItems.js";
@@ -48,7 +49,7 @@ function DevicePlayback(
   }, []);
   // The live link to the server: manifest, connection state, whether it can
   // be reached (`online`), and which playlist may keep playing if it can't.
-  const { manifest, connection, online, offlineLock, bannerOn, backOnline, refreshTick } = useScreenConnection(screenToken, {
+  const { manifest, connection, online, offlineLock, bannerOn, backOnline, refreshTick, publishStatus } = useScreenConnection(screenToken, {
     activeIdRef,
     setNow,
   });
@@ -77,6 +78,8 @@ function DevicePlayback(
   useEffect(() => {
     activeIdRef.current = activeAssignment?.assignmentId ?? null;
   });
+
+  useStorageReport({ publishStatus, online, connection, activeAssignment, savedKeys });
 
   usePlaybackLog({
     screenToken,

@@ -8,10 +8,13 @@ import EmptyState from "../components/ui/EmptyState.jsx";
 import SkeletonPanel from "../components/loading/SkeletonPanel.jsx";
 import { useScreenSlots } from "../hooks/useScreenSlots.js";
 import { usePaneCollapse } from "../hooks/usePaneCollapse.js";
+import { useScreenStorage } from "../hooks/useScreenStorage.js";
 
 function PlayerSlots() {
   const slots = useScreenSlots();
   const { screens, loading, selected, selectedSlot, mobileView, setMobileView } = slots;
+  // What the selected screen last reported about its browser and offline storage.
+  const storage = useScreenStorage(selected && !selected.pending ? selected.id : null, selected?.status);
   // Desktop: the slot list can be folded away to focus on one screen.
   const [listCollapsed, toggleList] = usePaneCollapse("player");
 
@@ -109,6 +112,7 @@ function PlayerSlots() {
               nameRef={slots.nameInputRef}
               refreshLeft={slots.refreshLeft(selected.id)}
               pulling={slots.pullingId === selected.id}
+              storage={storage}
               releaseError={slots.releaseError}
               onBack={() => setMobileView("list")}
               onPreview={() => slots.setModal({ mode: "preview", id: selected.id })}
