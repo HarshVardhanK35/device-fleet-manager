@@ -25,7 +25,7 @@ export function formatDateLabel(date) {
     day: "numeric",
   });
 
-  if (isToday) return `Today · ${weekdayMonthDay}`;
+  if (isToday) return weekdayMonthDay;
   if (isTomorrow) return `Tomorrow · ${weekdayMonthDay}`;
   return weekdayMonthDay;
 }
