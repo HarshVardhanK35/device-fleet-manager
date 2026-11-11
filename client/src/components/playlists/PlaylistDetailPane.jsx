@@ -71,6 +71,8 @@ function PlaylistDetailPane({ pl }) {
             </span>
           }
           meta={selectedPlaylist.description}
+          // phones: no description line (a hidden one would still leave a gap under the title)
+          metaClassName="hidden md:block"
           actionLabel="Add content"
           actionIcon={Plus}
           onAction={() => pl.setAddContentOpen(true)}

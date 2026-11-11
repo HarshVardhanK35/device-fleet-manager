@@ -1,7 +1,7 @@
 function MobileActionBar({ children, className = "" }) {
   return (
     <div
-      className={`md:hidden fixed left-0 right-0 bottom-0 px-4 py-3 bg-bg-primary/95 border-t border-border-muted z-20 ${className}`}
+      className={`cw-action-bar md:hidden fixed left-0 right-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] px-4 py-3 bg-bg-primary/95 border-t border-border-muted z-20 ${className}`}
     >
       {children}
     </div>
@@ -16,5 +16,5 @@ export default MobileActionBar;
 // DetailPane-only. Pass whatever trigger you need as `children` (a plain
 // Button, or an ActionMenu trigger button for a tap-to-open-options case
 // like the Content page's upload button).
-// Used by: components/DetailPane.jsx, components/ContentActionButtons.jsx,
+// Used by: components/DetailPane.jsx,
 // pages/Playlists.jsx (left pane's "Create" action).

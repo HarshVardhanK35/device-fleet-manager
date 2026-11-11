@@ -6,6 +6,8 @@ import SelectCheckbox from "../ui/SelectCheckbox.jsx";
 import { useLongPress } from "../../hooks/useLongPress.js";
 import { useMediaQuery } from "../../hooks/useCompactLayout.js";
 
+const stopEvent = (e) => e.stopPropagation();
+
 function PlaylistSlotTile({
   item,
   index,
@@ -81,7 +83,17 @@ function PlaylistSlotTile({
         {/* this item's own actions, top-right (touch and narrow windows); while items are selected
             the checkbox takes this corner and the toolbar above acts on the selection */}
         {showMenu && !selectionMode && (
-          <div className="absolute right-1.5 top-1.5 z-10">
+          <div
+            className="absolute right-1.5 top-1.5 z-10"
+            // The menu (and its portal, which React still treats as a child of this tile) must not
+            // reach the tile's own handlers: its press would start the long-press select and its
+            // clicks would open the details panel.
+            onPointerDown={stopEvent}
+            onPointerUp={stopEvent}
+            onPointerCancel={stopEvent}
+            onClick={stopEvent}
+            onContextMenu={stopEvent}
+          >
             <ActionMenu
               label="Actions for this item"
               align="end"
@@ -107,15 +119,20 @@ function PlaylistSlotTile({
           </div>
         )}
 
-        <SelectCheckbox
-          checked={checked}
-          alwaysVisible={selectionMode}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelect();
-          }}
-          className="absolute right-1.5 top-1.5 z-10"
-        />
+        {/* With the ⋮ menu in this corner the checkbox is only there while items are selected: it is
+            invisible until hover, but it is still a button, and it sat on top of the menu button, so a
+            tap meant for the ⋮ selected the item instead. */}
+        {(!showMenu || selectionMode) && (
+          <SelectCheckbox
+            checked={checked}
+            alwaysVisible={selectionMode}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect();
+            }}
+            className="absolute right-1.5 top-1.5 z-10"
+          />
+        )}
 
         {skipped && (
           <div className="absolute inset-0 bg-black/55 flex items-center justify-center pointer-events-none">

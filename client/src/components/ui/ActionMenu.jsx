@@ -16,6 +16,7 @@ function ActionMenu({
   open,
   onOpenChange,
   footer,
+  header,
 }) {
   return (
     <DropdownMenu.Root open={open} onOpenChange={onOpenChange}>
@@ -37,6 +38,9 @@ function ActionMenu({
           sideOffset={6}
           className="min-w-[160px] w-max p-1 bg-bg-panel border border-border-muted rounded-[10px] shadow-[0_8px_24px_rgba(1,4,9,0.55),0_1px_3px_rgba(1,4,9,0.4)] z-50"
         >
+          {header && (
+            <p className="m-0 px-2.5 pt-2 pb-1.5 text-sm font-semibold text-text-primary truncate">{header}</p>
+          )}
           {items.map((item, index) =>
             item.type === "separator" ? (
               <DropdownMenu.Separator
@@ -87,6 +91,8 @@ export default ActionMenu;
 // array of { label, icon, onClick, variant, disabled } objects, or
 // { type: "separator" } to insert a divider. `variant` can be
 // "default" | "warning" | "danger" for color-coded actions (e.g. Delete).
+// `header` (optional) is a plain line of text at the top of the menu (no border), for example
+// the signed-in user's name; `footer` is a note below the items, after a border.
 // Defaults to a "⋯" icon-button trigger; pass a custom `trigger` element
 // (e.g. a user avatar) to use something else — it gets Radix's asChild
 // click/keyboard wiring either way. `open`/`onOpenChange` (optional) make

@@ -71,7 +71,8 @@ function TypeChips({ counts, value, disabled, onChange }) {
 // middle (type chips; on desktop a single Filter dropdown), actions
 // (`children`, Upload / Create) on the right. Desktop: one
 // row. Tablet (md): two rows — selection + actions, then the chips + sort.
-// Mobile: one column; the actions live in their own sticky bottom bar.
+// Phone: ONE row — Select all, the trash (only while something is selected), filter and sort
+// dropdowns and a search icon that opens a full-row field; the + button holds the actions.
 // `counts` is { all, image, video, app }. Playlists keeps the shared
 // ContentToolbar — this one is Content-only.
 function ContentPageToolbar({
@@ -105,10 +106,10 @@ function ContentPageToolbar({
       aria-label="Content actions"
       className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] lg:flex lg:flex-wrap lg:items-center gap-x-4 gap-y-3 py-2 pb-4 mb-2 border-b border-bg-hover"
     >
-      <div className="flex items-center gap-2 min-w-0 md:col-start-1 md:row-start-1 lg:mr-auto">
+      <div className="group/row flex items-center gap-2 min-w-0 md:col-start-1 md:row-start-1 lg:mr-auto">
         <div
           title={selectTitle}
-          className={`flex items-center gap-2.5 h-11 md:h-9 pr-2 ${empty ? "opacity-50 pointer-events-none" : ""}`}
+          className={`flex items-center gap-2.5 h-11 md:h-9 pr-2 group-has-[input]/row:hidden ${empty ? "opacity-50 pointer-events-none" : ""}`}
         >
           <SelectCheckbox
             checked={allChecked}
@@ -131,7 +132,7 @@ function ContentPageToolbar({
           disabled={checkedCount === 0}
           title={checkedCount ? `Delete ${checkedCount} selected ${plural(checkedCount)}` : "Select items to delete"}
           aria-label="Delete"
-          className={DELETE_CLASS}
+          className={`${DELETE_CLASS} group-has-[input]/row:hidden ${checkedCount === 0 ? "max-md:hidden" : ""}`}
         >
           <Trash2 size={16} />
           {/* icon-only below md (the tooltip names it); text from md up */}
@@ -139,12 +140,23 @@ function ContentPageToolbar({
             {checkedCount ? `Delete (${checkedCount})` : "Delete"}
           </span>
         </button>
-        {mobileSearch && (
-          <div className="md:hidden flex-1 min-w-0 flex justify-end">{mobileSearch}</div>
-        )}
+        {/* phone: filter and sort (dropdowns) and search close the same row; while the search
+            field is open it takes the whole row */}
+        <div className="md:hidden flex-1 min-w-0 flex items-center justify-end gap-2">
+          <div className="flex items-center gap-2 group-has-[input]/row:hidden">
+            <CompactFilterSort
+              counts={counts}
+              filterValue={filterValue}
+              onFilterChange={onFilterChange}
+              sortValue={sortValue}
+              onSortChange={onSortChange}
+            />
+          </div>
+          {mobileSearch}
+        </div>
       </div>
 
-      <div className={`flex items-center gap-2 min-w-0 md:col-span-2 md:row-start-2 lg:col-auto lg:row-auto ${compact ? "md:hidden" : ""}`}>
+      <div className={`hidden md:flex items-center gap-2 min-w-0 md:col-span-2 md:row-start-2 lg:col-auto lg:row-auto ${compact ? "md:hidden" : ""}`}>
         <TypeChips
           counts={counts}
           value={filterValue}
@@ -209,20 +221,26 @@ export function CompactFilterSort({ counts, filterValue, onFilterChange, sortVal
   const empty = counts.all === 0;
   return (
     <>
-      <StyledSelect
-        value={filterValue}
-        onChange={onFilterChange}
-        options={TYPES}
-        labelFor={(t) => `${t.label} (${counts[t.value] ?? 0})`}
-        icon={Filter}
-        label="Filter content"
-        iconOnly
-        bgClassName="bg-bg-primary"
-        open={openMenu === "filter"}
-        onOpenChange={(o) => setOpenMenu(o ? "filter" : null)}
-        disabled={empty}
-        align="end"
-      />
+      <div className="relative">
+        <StyledSelect
+          value={filterValue}
+          onChange={onFilterChange}
+          options={TYPES}
+          labelFor={(t) => `${t.label} (${counts[t.value] ?? 0})`}
+          icon={Filter}
+          label="Filter content"
+          iconOnly
+          bgClassName="bg-bg-primary"
+          open={openMenu === "filter"}
+          onOpenChange={(o) => setOpenMenu(o ? "filter" : null)}
+          disabled={empty}
+          align="end"
+        />
+        {/* a filter is on: a dot on the button (the chips that showed it are gone on a phone) */}
+        {filterValue !== "all" && (
+          <span aria-hidden="true" className="pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent-blue ring-2 ring-bg-primary" />
+        )}
+      </div>
       <StyledSelect
         value={sortValue}
         onChange={onSortChange}
