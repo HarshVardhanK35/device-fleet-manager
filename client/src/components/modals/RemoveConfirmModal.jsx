@@ -22,8 +22,11 @@ function RemoveConfirmModal({
   elevated = false,
   // Shown on the confirm button while `onConfirm` (if async) is running.
   busyLabel = "Removing…",
+  // "red" (removing) or "amber" (the amber of the Skip button, for the skip confirmation).
+  tone = "red",
 }) {
   const [confirm, busy] = useAsyncAction(onConfirm);
+  const amber = tone === "amber";
 
   return (
     <Dialog.Root open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
@@ -32,7 +35,7 @@ function RemoveConfirmModal({
         <Dialog.Content className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-panel border border-border-muted rounded-xl w-[440px] max-w-[calc(100vw-32px)] max-h-[85vh] flex flex-col ${elevated ? "z-[70]" : "z-40"}`}>
           <div className="flex flex-col gap-4 px-6 pt-6 pb-5 min-h-0 overflow-auto">
             <div className="flex items-start gap-3">
-              <span className="w-9 h-9 flex-none rounded-[10px] bg-accent-red/15 text-accent-red flex items-center justify-center">
+              <span className={`w-9 h-9 flex-none rounded-[10px] ${amber ? "bg-accent-amber/15 text-accent-amber" : "bg-accent-red/15 text-accent-red"} flex items-center justify-center`}>
                 <Icon size={18} />
               </span>
               <div className="flex-1 min-w-0 flex flex-col gap-1 pt-0.5">
@@ -88,7 +91,11 @@ function RemoveConfirmModal({
               type="button"
               onClick={confirm}
               disabled={busy}
-              className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-accent-red hover:brightness-110 text-bg-primary text-sm font-semibold whitespace-nowrap transition-[filter] disabled:opacity-70 disabled:pointer-events-none"
+              className={`inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg ${
+                amber
+                  ? "border border-accent-amber/40 text-accent-amber hover:bg-accent-amber/10 transition-colors"
+                  : "bg-accent-red hover:brightness-110 text-bg-primary transition-[filter]"
+              } text-sm font-semibold whitespace-nowrap disabled:opacity-70 disabled:pointer-events-none`}
             >
               <Icon size={16} className="hidden sm:block" />
               {busy ? busyLabel : confirmLabel}

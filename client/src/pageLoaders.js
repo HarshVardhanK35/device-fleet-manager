@@ -18,6 +18,7 @@ export const pageLoaders = {
   screens: () => import("./pages/Screens.jsx"),
   player: () => import("./pages/Player.jsx"),
   notFound: () => import("./pages/NotFound.jsx"),
+  help: () => import("./pages/Help.jsx"),
   adminUsers: () => import("./pages/AdminUsers.jsx"),
   feedback: () => import("./pages/Feedback.jsx"),
   adminInbox: () => import("./pages/AdminInbox.jsx"),
@@ -37,4 +38,18 @@ const PAGE_BY_PATH = {
 export function prefetchRoute(path) {
   const key = PAGE_BY_PATH[path];
   if (key) pageLoaders[key]();
+}
+
+// Once the app shell is on screen: fetch the main pages one by one while the browser is idle, so
+// the "Loading page" mark rarely shows (a phone has no hover to start a download early).
+export function prefetchMainPages() {
+  const queue = ["/content", "/playlists", "/assignments", "/player", "/"];
+  const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
+  const next = () => {
+    const path = queue.shift();
+    if (!path) return;
+    prefetchRoute(path);
+    idle(next);
+  };
+  idle(next);
 }

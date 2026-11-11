@@ -14,6 +14,7 @@ const TITLES = {
   "/admin/users": "Users",
   "/admin/inbox": "Inbox",
   "/feedback": "Feedback",
+  "/help": "Help",
   "/screens": "Pair this screen",
   "/login": "Sign in",
   "/register": "Create account",

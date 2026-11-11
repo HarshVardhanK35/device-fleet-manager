@@ -178,7 +178,8 @@ function PlaylistDetailPane({ pl }) {
               {/* From md up the Add content action lives here, right of the
                   filter; below md it's DetailPane's bottom bar. */}
               <div className="hidden md:block">
-                <Button icon={Plus} onClick={() => pl.setAddContentOpen(true)} title="Add content">
+                {/* h-9 like the filter beside it and the Skip / Remove buttons (Button's own minimum is 40px) */}
+                <Button icon={Plus} onClick={() => pl.setAddContentOpen(true)} title="Add content" className="!min-h-0 h-9">
                   <span className="hidden @lg:inline">Add content</span>
                   <span className="@lg:hidden">Add</span>
                 </Button>

@@ -104,7 +104,7 @@ function ContentPageToolbar({
     <div
       role="group"
       aria-label="Content actions"
-      className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] lg:flex lg:flex-wrap lg:items-center gap-x-4 gap-y-3 py-2 pb-4 mb-2 border-b border-bg-hover"
+      className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] lg:flex lg:flex-wrap lg:items-center gap-x-4 gap-y-3 pt-0 pb-3 mb-1 md:py-2 md:pb-4 md:mb-2 border-b border-bg-hover"
     >
       <div className="group/row flex items-center gap-2 min-w-0 md:col-start-1 md:row-start-1 lg:mr-auto">
         <div

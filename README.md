@@ -2,7 +2,7 @@
 
 Free digital signage for any screen. Put images, videos, notices and small live "apps" (weather, clock, news, announcements) on any TV, tablet or phone that has a browser, schedule them by screen and time window, and see which screens are online.
 
-Live at **https://castwise.site** · Current version: **1.4.1**
+Live at **https://castwise.site** · Current version: **1.5.0**
 
 > The repository and some internal names still say "Device Fleet Manager" / "DFM" (the original working name). Everything a user sees says CastWise and "screens".
 
@@ -19,6 +19,8 @@ Live at **https://castwise.site** · Current version: **1.4.1**
 - **Admin** — an admin-only Users page (list, a user's screens by name and status, delete user) and an Inbox for feedback: the admin answers each message once, with a status (Noted or Not planned) and one reply. Admins never see anyone's content or playlists.
 - **Landing page** at `/` for signed-out visitors, with a live demo, a section on offline playback and a footer with the project's profiles.
 - **Notifications** — short toast messages at the bottom right confirm actions (for example "Refresh sent to Lobby").
+- **Help** — a public FAQ at `/help` (signed in or out): 20 questions in 6 sections, a keyword search, one answer open at a time, a link to each question, light and dark theme, and the support address. The questions live in one data file (`client/src/pages/help/helpContent.js`), which also feeds the page's FAQ structured data for search engines.
+- **Pull logs** — from the Player page the owner pulls a screen's recent log and browser details (a .zip saved on their device) and can email it to support; nothing is sent without the owner.
 
 ## How it works
 
@@ -30,7 +32,7 @@ Browser (React)  <--REST/HTTPS-->  Server (Express)  <--Mongoose-->  MongoDB
 
 `Content` → `Playlist` → `Assignment` (playlist + screen + schedule) → **manifest composer** (one JSON manifest per screen) → published over MQTT (retained) → the player page subscribes and renders it. Each screen also publishes a heartbeat every 10 seconds; a screen is marked offline after 20 seconds without one.
 
-Auth: a 15-minute access token kept in memory and a refresh token in an `httpOnly` cookie; a warning opens 5 minutes before the session ends, with Stay signed in and Sign out now. Screens are addressed by a long random access token, never by their database id.
+Auth: a 30-minute access token kept in memory and a refresh token in an `httpOnly` cookie; a warning opens 5 minutes before the session ends, with Stay signed in and Sign out now. Screens are addressed by a long random access token, never by their database id.
 
 ## Offline screens
 
@@ -41,6 +43,8 @@ A screen keeps working when its internet drops. It needs one online run first, s
 - **When the connection drops** — the screen keeps playing the playlist it was on until that playlist's end time (never the next one), skips any item whose file is not saved, shows a pulsing OFFLINE strip (it appears a minute after the drop, then for 10 seconds every minute while the screen stays offline), and after the end time shows "Nothing scheduled" with a check-your-connection line. A screen that restarts with no internet does the same from the saved manifest.
 - **When it reconnects** — it takes the live manifest; an updated playlist restarts from the beginning, an unchanged one keeps playing.
 - **App data** — Weather, RSS and the other apps keep showing their last data when the network fails (`@castwise/ignition` 1.4.0).
+- **Little room** — a browser decides how much a site may store (one tested TV allowed 80 MB). Below 300 MB a screen saves apps first, then images, then videos from the smallest up, and uses a 480p copy of each video; the Player page shows the browser and how much is saved. A saved video plays from a copy held in memory, an item that fails is skipped (the next one plays), a playlist edit keeps the screen on the item it shows, and a short wifi drop no longer leaves the screen on the OFFLINE strip.
+- **News pictures** — the RSS app announces the pictures it shows, so the player saves them for offline use (sites that refuse cross-site downloads fall back to the channel logo).
 
 The code is in `client/src/offline/` and `client/src/components/screens/DevicePlayback.jsx`. To try it, use a production build (`npm run build` then `npm run preview`) or staging, let a screen play, then switch the network off in DevTools.
 
@@ -140,6 +144,7 @@ Staging and prod use separate databases. The app repos publish their own zips th
 
 ## Recent releases
 
+- **1.5.0** — **Help page** (`/help`, 20 questions, search, links to each question, light and dark; linked from the landing footer, the phone account menu and the side navbar). **Phone navigation** rebuilt: a bottom tab bar (Dashboard, Media, Playlists, Publish, Player) and an account menu in the header; tapping the tab you are on scrolls to the top or goes back to the list (Playlists, Publish, Player); on Media a round + button opens Upload and Create an app, the toolbar is one row, and the shortcut cards are hidden on phones; Create playlist is a sticky bar; toasts and sticky bars sit above the tab bar. **Older TVs**: the pairing page, playback and the four apps work down to Chromium 79 (the pairing page reaches about 63), checked on a Samsung TV and in Chrome 79, 85 and 94. **Pull logs** (per-screen log and browser details as a .zip). **Offline**: low-storage mode (480p videos, storage status on the Player page), saved video played from memory, failed items skipped, the screen keeps its place when a playlist is edited, downloads refused by a site are not retried, recovery after a short wifi drop, RSS pictures saved, the next item preloaded. **Playlists**: Skip is per position instead of per content (skips set before 1.5.0 are lost and need setting again) with a question before skipping every item, **Fill the screen** per image or video, unique playlist names, the item menu (⋮) in the item's corner with hold-and-drag to reorder on touch, long-press to select, a skipped-aware loop length. **Apps**: Weather portrait layout, new apps default to 30 seconds, apps downloaded and shown on old browsers. **Sessions last 30 minutes** (were 15). The page loader is centred and the main pages are fetched in the background, screen cards on Player and Publish keep a fixed two-column layout with a shrink-to-fit name, dialog buttons sit at the right edge, and the Login page says when CastWise cannot be reached.
 - **1.4.1** — prod moves to EMQX Cloud (one deployment shared with staging, kept apart by a topic prefix; Mosquitto removed), the API is served through each frontend so "Stay signed in" works on the deployed sites, the rate limits count each client's real address (`TRUST_PROXY_HOPS`), **Skip** for playlist items (kept in the playlist, not played; `skippedItems`), the item details panel opens from a playlist, a green ONLINE strip when a screen reconnects, toast notifications for every save, add and delete, the session warning opens only for an idle user (an active one is renewed quietly), a collapsible list on the Playlists, Assignments and Player pages (desktop), a playlist summary on assignment cards, Media RSS explains its duration, items sort by last edit, background audio shown as coming soon, icon-only Refresh buttons, a tidier Player page (refresh in the list, hints with bulb icons, shorter take-over text on small screens), and the Playlists page split into a hook and components.
 - **1.4.0** — Feedback (user page and an admin Inbox where each message gets one answer, Noted or Not planned), a warning before the session ends, the reworked `/screens` pairing page (current name, refresh icon, code-limit counter), offline screens (saved files and manifest, offline rules, OFFLINE strip) with `@castwise/ignition` 1.4.0 for app data, **Refresh screen** and a take-over state that survives leaving the page, toast notifications, a landing page with an Offline section and a four-column footer, and a code reorganisation (`apps/shared` folders; the player, `/screens` and Player pages split into hooks and components).
 - **1.3.1** — favicon PNGs and `favicon.ico` for Google, icon thumbnails for apps (Content, Playlists, Dashboard, pickers, Player), `hello@castwise.site` as the public address, LinkedIn / GitHub / X links in the landing footer.

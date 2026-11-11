@@ -12,6 +12,7 @@ import { useAsyncAction } from "./useAsyncAction.js";
 import { usePaneCollapse } from "./usePaneCollapse.js";
 import { useMediaQuery } from "./useCompactLayout.js";
 import { useToast } from "../context/useToast.js";
+import { useTabBackToList } from "../components/layout/scrollTop.js";
 
 // Skipped slots are positions in the playlist (0, 1, 2 ...), so one copy of an image
 // can be skipped while another copy still plays. These keep them right when the
@@ -47,6 +48,7 @@ export function usePlaylistsPage(pageRef) {
   const [content, setContent] = useState([]);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
   const [mobileView, setMobileView] = useState("list"); // "list" | "detail"
+  useTabBackToList(setMobileView);
   // A desktop (1024 px and up) shows the list and the open playlist side by side; a
   // tablet and a phone show one at a time (mobileView says which).
   const split = useMediaQuery("(min-width: 1024px)");

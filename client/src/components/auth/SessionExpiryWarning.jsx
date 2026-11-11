@@ -175,5 +175,5 @@ function SessionExpiryWarning() {
 
 export default SessionExpiryWarning;
 
-// Opens 5 minutes before the access token expires (15 min sessions), only when idle.
+// Opens 5 minutes before the access token expires (30 min sessions), only when idle.
 // Used by: App.jsx.
