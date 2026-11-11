@@ -3,8 +3,8 @@ import PlaylistSlotTile from "./PlaylistSlotTile.jsx";
 import { CONTENT_GRID } from "../content/contentGrid.js";
 import { useTouchReorder } from "../../hooks/useTouchReorder.js";
 
-// The grid of the open playlist's items: drag to reorder (hold and drag on touch, or the ‹ › buttons
-// and the ⋮ menu's Move to start / end), select, open an item's details, skipped items marked.
+// The grid of the open playlist's items: drag to reorder (hold and drag on touch, or the ⋮ menu's
+// Move to start / end), select, open an item's details, skipped items marked.
 //   pl  what usePlaylistsPage returns
 function PlaylistSlotGrid({ pl }) {
   const { shownItems, visibleSlots, slotFilterType, checkedSlotIds, skippedSlots } = pl;
@@ -48,7 +48,7 @@ function PlaylistSlotGrid({ pl }) {
             onOpen={(tileRect) => pl.openSlot(slotId, tileRect)}
             onToggleSelect={() => pl.selectSlot(slotId)}
             draggable={canDrag}
-            showMoveButtons={pl.moveButtons}
+            showMenu={pl.moveButtons}
             isDragging={(canDrag && pl.dragIndex === index) || reorder.from === index}
             isDragOver={(canDrag && pl.dragOverIndex === index) || reorder.over === index}
             touchProps={reorderOn ? reorder.bind(index) : undefined}
@@ -64,10 +64,6 @@ function PlaylistSlotGrid({ pl }) {
               e.preventDefault();
               pl.setDragOverIndex(index);
             }}
-            onMoveEarlier={canDrag && index > 0 ? () => pl.handleReorder(index, index - 1) : undefined}
-            onMoveLater={
-              canDrag && index < shownItems.length - 1 ? () => pl.handleReorder(index, index + 1) : undefined
-            }
             onDrop={() => canDrag && pl.handleDrop(index)}
             onDragEnd={() => {
               pl.setDragIndex(null);

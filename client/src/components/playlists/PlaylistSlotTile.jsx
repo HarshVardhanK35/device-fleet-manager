@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreVertical, Play, SkipForward, Trash2 } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, MoreVertical, Play, SkipForward, Trash2 } from "lucide-react";
 
 import ContentTile from "../content/ContentTile.jsx";
 import ActionMenu from "../ui/ActionMenu.jsx";
@@ -23,9 +23,7 @@ function PlaylistSlotTile({
   onDragEnd,
   isDragging,
   isDragOver,
-  onMoveEarlier,
-  onMoveLater,
-  showMoveButtons = false,
+  showMenu = false,
   touchProps,
   consumeTouchClick,
   armed = false,
@@ -38,7 +36,8 @@ function PlaylistSlotTile({
   // While anything is selected a click toggles; otherwise it opens the details.
   const { handlers, consumeClick } = useLongPress(onToggleSelect);
   // A draggable element makes a touch screen start a native drag on a long press, which
-  // cancels the press before it can select the tile. Touch uses the ‹ › buttons instead.
+  // cancels the press before it can select the tile. Touch uses hold-and-drag instead
+  // (hooks/useTouchReorder.js).
   const touch = useMediaQuery("(pointer: coarse)");
 
   function handleClick(e) {
@@ -67,64 +66,6 @@ function PlaylistSlotTile({
         slotIndexActive={checked}
         onClick={handleClick}
         rootProps={touchProps ? { ...handlers, ...touchProps } : handlers}
-        // Touch screens can't drag (HTML5 drag-and-drop ignores touch), so where the page
-        // asks for it (`showMoveButtons`) each tile gets a bar with earlier / later buttons.
-        footerBar={
-          showMoveButtons && (
-            <div className="flex border-t border-border-muted">
-              <button
-                type="button"
-                title="Move earlier"
-                aria-label="Move earlier"
-                disabled={!onMoveEarlier}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveEarlier?.();
-                }}
-                className="flex-1 h-9 flex items-center justify-center border-r border-border-muted text-text-primary hover:bg-bg-hover active:bg-bg-hover disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              {/* this item's own actions (the toolbar above acts on the selected items) */}
-              <ActionMenu
-                label="Actions for this item"
-                align="end"
-                items={[
-                  { label: skipped ? "Unskip" : "Skip", icon: skipped ? Play : SkipForward, variant: "warning", onClick: onSkip },
-                  { label: "Move to start", icon: ChevronsLeft, onClick: onMoveToStart, disabled: !onMoveToStart },
-                  { label: "Move to end", icon: ChevronsRight, onClick: onMoveToEnd, disabled: !onMoveToEnd },
-                  { type: "separator" },
-                  { label: "Remove from playlist", icon: Trash2, variant: "danger", onClick: onRemove },
-                ]}
-                trigger={
-                  <button
-                    type="button"
-                    title="More"
-                    aria-label="More actions for this item"
-                    disabled={selectionMode}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-1 h-9 flex items-center justify-center border-r border-border-muted text-text-primary hover:bg-bg-hover active:bg-bg-hover disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-                }
-              />
-              <button
-                type="button"
-                title="Move later"
-                aria-label="Move later"
-                disabled={!onMoveLater}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveLater?.();
-                }}
-                className="flex-1 h-9 flex items-center justify-center text-text-primary hover:bg-bg-hover active:bg-bg-hover disabled:opacity-25 disabled:hover:bg-transparent transition-colors"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          )
-        }
         className={`select-none [-webkit-touch-callout:none] transition-[filter,opacity] duration-200 ${
           dimmed ? "xl:blur-[3px] xl:opacity-60" : ""
         } ${
@@ -137,6 +78,35 @@ function PlaylistSlotTile({
               : ""
         }`}
       >
+        {/* this item's own actions, top-right (touch and narrow windows); while items are selected
+            the checkbox takes this corner and the toolbar above acts on the selection */}
+        {showMenu && !selectionMode && (
+          <div className="absolute right-1.5 top-1.5 z-10">
+            <ActionMenu
+              label="Actions for this item"
+              align="end"
+              items={[
+                { label: skipped ? "Unskip" : "Skip", icon: skipped ? Play : SkipForward, variant: "warning", onClick: onSkip },
+                { label: "Move to start", icon: ChevronsLeft, onClick: onMoveToStart, disabled: !onMoveToStart },
+                { label: "Move to end", icon: ChevronsRight, onClick: onMoveToEnd, disabled: !onMoveToEnd },
+                { type: "separator" },
+                { label: "Remove from playlist", icon: Trash2, variant: "danger", onClick: onRemove },
+              ]}
+              trigger={
+                <button
+                  type="button"
+                  title="More"
+                  aria-label="More actions for this item"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex h-7 w-7 items-center justify-center rounded-md bg-black/55 text-white transition-colors hover:bg-black/75 active:bg-black/75"
+                >
+                  <MoreVertical size={16} />
+                </button>
+              }
+            />
+          </div>
+        )}
+
         <SelectCheckbox
           checked={checked}
           alwaysVisible={selectionMode}
@@ -178,9 +148,8 @@ export default PlaylistSlotTile;
 // `skipped` dims the tile and lays a "Skipped" banner over it (the item stays in
 // the playlist but is not played). The overlay sits below the checkbox (z-10)
 // and ignores clicks, so selecting still works.
-// `onMoveEarlier` / `onMoveLater` (optional) fill the move bar, shown when
-// `showMoveButtons` is true (touch screens and anything narrower than a desktop);
-// pass undefined for the first / last tile so that button is disabled. Between them the ⋮ menu
-// acts on this one item: Skip / Unskip, Move to start, Move to end, Remove from playlist.
+// `showMenu` (touch screens and anything narrower than a desktop) shows a ⋮ menu in the top-right
+// corner that acts on this one item: Skip / Unskip, Move to start, Move to end, Remove from
+// playlist (pass undefined for the first / last tile so its move item is disabled).
 // `touchProps`, `consumeTouchClick` and `armed` come from useTouchReorder (hold and drag).
 // Used by: pages/Playlists.jsx.
