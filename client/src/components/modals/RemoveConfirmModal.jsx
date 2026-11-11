@@ -80,7 +80,7 @@ function RemoveConfirmModal({
             {error && <p className="text-accent-red text-xs m-0">{error}</p>}
           </div>
 
-          <div className="flex items-center justify-center sm:justify-end gap-2 px-6 py-4 border-t border-border-muted">
+          <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border-muted">
             <GhostButton as={Dialog.Close} size="lg" disabled={busy} className="disabled:opacity-40 disabled:pointer-events-none">
               Cancel
             </GhostButton>

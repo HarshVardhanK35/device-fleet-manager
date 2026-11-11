@@ -163,9 +163,26 @@ export function usePlaylistsPage(pageRef) {
     clearCheckedSlots();
     toast(message, "success", shortMessage);
   });
-  const handleSkip = () => applySkip(selectedSlots, unskipMode);
+  // Skipping would leave nothing to play: ask first. Skipping part of a playlist, and playing
+  // items again, never ask.
+  const [pendingSkip, setPendingSkip] = useState(null);
+  function requestSkip(indexes, unskip) {
+    const next = new Set(skippedSlots);
+    indexes.forEach((index) => next.add(index));
+    if (!unskip && shownItems.length > 0 && next.size >= shownItems.length) {
+      setPendingSkip(indexes);
+      return undefined;
+    }
+    return applySkip(indexes, unskip);
+  }
+  const handleSkip = () => requestSkip(selectedSlots, unskipMode);
+  const confirmSkipAll = async () => {
+    const indexes = pendingSkip;
+    setPendingSkip(null);
+    if (indexes) await applySkip(indexes, false);
+  };
   // One item, from its ⋮ menu: skip it, or play it again if it is skipped.
-  const skipOne = (index) => applySkip([index], skippedSlots.has(index));
+  const skipOne = (index) => requestSkip([index], skippedSlots.has(index));
 
   const slotFilterCounts = selectedPlaylist
     ? {
@@ -476,6 +493,9 @@ export function usePlaylistsPage(pageRef) {
     skipping,
     handleSkip,
     skipOne,
+    skipAllOpen: pendingSkip !== null,
+    confirmSkipAll,
+    cancelSkipAll: () => setPendingSkip(null),
     removeOne,
     // its tiles: details panel, selection, drag
     inspectedSlot,

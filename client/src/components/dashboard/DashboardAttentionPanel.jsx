@@ -36,7 +36,7 @@ function AttentionRow({ item }) {
       </span>
 
       <div className="min-w-0 flex flex-col gap-0.5">
-        <div className="font-medium text-text-primary whitespace-nowrap overflow-hidden text-ellipsis">
+        <div className="text-[13px] md:text-sm font-medium text-text-primary whitespace-nowrap overflow-hidden text-ellipsis">
           {item.device.name}
         </div>
         <div className="hidden md:block text-xs text-text-muted whitespace-nowrap overflow-hidden text-ellipsis">

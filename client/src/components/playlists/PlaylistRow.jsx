@@ -72,9 +72,8 @@ function PlaylistRow({
               {playlist.name}
             </span>
             {playlist.contentItems.length > 0 && (
-              <span className="flex-none inline-flex items-center gap-1 text-xs text-text-muted">
-                loop
-                <Repeat size={11} />
+              <span className="flex-none inline-flex items-center text-text-muted" title="Plays in a loop" aria-label="Plays in a loop">
+                <Repeat size={13} />
               </span>
             )}
           </div>

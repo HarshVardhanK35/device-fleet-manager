@@ -194,7 +194,7 @@ function Assignments() {
                       >
                         {device.name}
                       </span>
-                      <span className="flex items-center gap-1.5 whitespace-nowrap leading-5 text-text-muted" style={{ fontSize: `${status}px` }}>
+                      <span className="flex items-center justify-end gap-1.5 whitespace-nowrap leading-5 text-text-muted" style={{ fontSize: `${status}px` }}>
                         <span
                           className={`w-1.5 h-1.5 flex-none self-center rounded-full ${
                             device.status === "online" ? "bg-accent-green" : "bg-text-muted"

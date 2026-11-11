@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SkipForward } from "lucide-react";
 
 import AppEditModals from "./AppEditModals.jsx";
 import EditPlaylistModal from "./EditPlaylistModal.jsx";
@@ -94,6 +95,17 @@ function PlaylistModals({ pl }) {
       />
 
       {/* confirm remove slots modal */}
+      <RemoveConfirmModal
+        open={pl.skipAllOpen}
+        onOpenChange={(open) => !open && pl.cancelSkipAll()}
+        icon={SkipForward}
+        title="Skip every item?"
+        description={`Nothing in "${selectedPlaylist?.name ?? "this playlist"}" will play until you unskip items. They stay in the playlist.`}
+        confirmLabel="Skip all"
+        busyLabel="Skipping…"
+        onConfirm={pl.confirmSkipAll}
+      />
+
       <RemoveConfirmModal
         open={pl.slotDeleteConfirmOpen}
         onOpenChange={pl.setSlotDeleteConfirmOpen}
