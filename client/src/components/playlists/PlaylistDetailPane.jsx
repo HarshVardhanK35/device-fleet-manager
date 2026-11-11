@@ -121,7 +121,7 @@ function PlaylistDetailPane({ pl }) {
                 {pluralizeCount(visibleSlots.length, "item")}
                 {pl.slotFilterType === "all" && (
                   <>
-                    {pl.moveButtons ? " · use ‹ › to reorder" : " · drag to reorder"}
+                    {pl.moveButtons ? " · hold and drag to reorder" : " · drag to reorder"}
                   </>
                 )}
               </span>

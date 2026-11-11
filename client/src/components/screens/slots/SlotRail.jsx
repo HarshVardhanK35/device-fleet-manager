@@ -81,7 +81,7 @@ function SlotRail({ screens, loading, selectedId, used, full, mobileView, collap
                 >
                   {s.name}
                 </span>
-                <span className="flex items-center gap-1.5 leading-5 text-text-muted whitespace-nowrap" style={{ fontSize: `${status}px` }}>
+                <span className="flex items-center justify-end gap-1.5 leading-5 text-text-muted whitespace-nowrap" style={{ fontSize: `${status}px` }}>
                   <span
                     className={`w-1.5 h-1.5 rounded-full flex-none self-center ${
                       s.pending
@@ -101,7 +101,7 @@ function SlotRail({ screens, loading, selectedId, used, full, mobileView, collap
                 >
                   {s.pending || !s.type ? `Slot ${i + 1}` : s.type}
                 </span>
-                <span className="leading-4 text-text-muted whitespace-nowrap" style={{ fontSize: `${status}px` }}>
+                <span className="text-right leading-4 text-text-muted whitespace-nowrap" style={{ fontSize: `${status}px` }}>
                   {!s.pending && s.status !== "taken" ? s.seen : ""}
                 </span>
               </span>
