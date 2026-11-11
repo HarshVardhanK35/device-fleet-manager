@@ -10,7 +10,7 @@ function Playlists() {
   const pl = usePlaylistsPage(pageRef);
 
   return (
-    <div ref={pageRef} className="max-w-7xl mx-auto h-[calc(100dvh-88px)] flex gap-4 ">
+    <div ref={pageRef} className="max-w-7xl mx-auto h-[calc(100dvh-88px-3.5rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-88px)] flex gap-4">
       <PlaylistListPane pl={pl} />
       <PlaylistDetailPane pl={pl} />
       <PlaylistModals pl={pl} />

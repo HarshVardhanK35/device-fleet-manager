@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 
 import PlaylistRow from "./PlaylistRow.jsx";
 import SelectAllBar from "../content/SelectAllBar.jsx";
+import MobileActionBar from "../layout/MobileActionBar.jsx";
 import PaneToggle from "../layout/PaneToggle.jsx";
 import ScrollBox from "../layout/ScrollBox.jsx";
 import SkeletonPlaylistList from "../loading/SkeletonPlaylistList.jsx";
@@ -52,7 +53,8 @@ function PlaylistListPane({ pl }) {
       {/* divider between the header controls and the list */}
       <div className="mb-3 border-b border-bg-hover lg:mr-4 flex-shrink-0" />
 
-      <ScrollBox className="pr-4 pt-1">
+      {/* pb-20 on a phone: the sticky Create playlist bar covers the foot of the list */}
+      <ScrollBox className="pr-4 pt-1 pb-20 md:pb-0">
         {pl.loading ? (
           <SkeletonPlaylistList count={4} />
         ) : (
@@ -103,7 +105,22 @@ function PlaylistListPane({ pl }) {
         )}
       </ScrollBox>
 
-      <div className={`flex-shrink-0 pt-3 lg:pr-4 ${noContent && playlists.length === 0 ? "hidden lg:block" : ""}`}>
+      {/* phones: a sticky bar above the tab bar, like Publish and Add content */}
+      {!(noContent && playlists.length === 0) && (
+        <MobileActionBar>
+          <Button
+            icon={Plus}
+            onClick={() => pl.setCreateOpen(true)}
+            disabled={noContent}
+            title={noContent ? NO_CONTENT_HINT : undefined}
+            className="w-full"
+          >
+            Create playlist
+          </Button>
+        </MobileActionBar>
+      )}
+
+      <div className={`hidden md:block flex-shrink-0 pt-3 lg:pr-4 ${noContent && playlists.length === 0 ? "md:hidden lg:block" : ""}`}>
         <Button
           icon={Plus}
           onClick={() => pl.setCreateOpen(true)}

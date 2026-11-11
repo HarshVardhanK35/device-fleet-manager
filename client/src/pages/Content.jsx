@@ -27,6 +27,7 @@ import SelectableContentTile from "../components/content/SelectableContentTile.j
 import SkeletonGrid from "../components/loading/SkeletonGrid.jsx";
 import ScrollBox from "../components/layout/ScrollBox.jsx";
 import ScrollToTopButton from "../components/layout/ScrollToTopButton.jsx";
+import { SCROLL_TOP_EVENT } from "../components/layout/scrollTop.js";
 import { getVideoDurationMs } from "../utils/content/getVideoDuration.js";
 import { pluralizeCount } from "../utils/format/pluralize.js";
 import { useToggleSet } from "../hooks/useToggleSet.js";
@@ -60,6 +61,12 @@ function Content() {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const gridScrollRef = useRef(null);
+  // Tapping the Media tab on a phone while on this page scrolls the grid back to the top.
+  useEffect(() => {
+    const toTop = () => gridScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    window.addEventListener(SCROLL_TOP_EVENT, toTop);
+    return () => window.removeEventListener(SCROLL_TOP_EVENT, toTop);
+  }, []);
   // A narrow tablet (768px with the side navbar open): search, refresh, filter
   // and sort shrink to icons, each staying in its own place.
   const pageRef = useRef(null);
@@ -427,7 +434,7 @@ function Content() {
     // ScrollArea viewport doesn't stretch its content to 100% height, so a
     // percentage height on this root wouldn't resolve — needed so the nested
     // ScrollBox below can scroll just the grid, not the whole page.
-    <div ref={pageRef} className="max-w-7xl mx-auto h-[calc(100dvh-88px)] flex flex-col">
+    <div ref={pageRef} className="max-w-7xl mx-auto h-[calc(100dvh-88px-3.5rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-88px)] flex flex-col">
       <input
         ref={fileInputRef}
         type="file"
@@ -455,7 +462,7 @@ function Content() {
               </span>
             </div>
             {/* Each part stays whole; on a phone the line breaks between parts. */}
-            <p className="text-text-muted text-xs m-0 flex flex-wrap gap-x-1.5">
+            <p className="hidden md:flex text-text-muted text-xs m-0 flex-wrap gap-x-1.5">
               <span className="whitespace-nowrap">
                 <span className={quotaColorClass(counts.image, MAX_IMAGES)}>
                   {counts.image}
@@ -532,7 +539,7 @@ function Content() {
           <ScrollBox
             ref={gridScrollRef}
             bleed
-            className={`flex-1 pt-2 pb-20 md:pb-0 ${inspectedItem ? "xl:!overflow-hidden" : ""}`}
+            className={`flex-1 pt-2 pb-[68px] md:pb-0 ${inspectedItem ? "xl:!overflow-hidden" : ""}`}
           >
             {loading ? (
               <SkeletonGrid />

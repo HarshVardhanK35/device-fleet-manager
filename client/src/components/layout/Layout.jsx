@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import Logo from "./Logo.jsx";
 import ScrollBox from "./ScrollBox.jsx";
+import { SCROLL_TOP_EVENT } from "./scrollTop.js";
+import ActionMenu from "../ui/ActionMenu.jsx";
 
 import { useAuth } from "../../context/useAuth.js";
 import { getInitials } from "../../utils/format/getInitials.js";
@@ -26,9 +28,9 @@ import {
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: Home },
-  { to: "/content", label: "Content", icon: Image },
+  { to: "/content", label: "Media", icon: Image },
   { to: "/playlists", label: "Playlists", icon: ListVideo },
-  { to: "/assignments", label: "Assignments", icon: MonitorPlay },
+  { to: "/assignments", label: "Publish", icon: MonitorPlay },
   { to: "/player", label: "Player", icon: PlaySquare },
 ];
 
@@ -74,8 +76,10 @@ function NavTip({ children }) {
 
 function Layout({ children }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { user, logout } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // The page's scroll area, for "tap the active tab to go back to the top" on phones.
+  const pageScrollRef = useRef(null);
   // Icon-only side bar, from the button at its foot. Expanded by default; the
   // choice is remembered.
   const [collapsed, setCollapsed] = useState(readCollapsed);
@@ -106,46 +110,48 @@ function Layout({ children }) {
     navigate("/login");
   }
 
+  // Phones: the five main pages are the tabs at the bottom; the rarely used ones and Log out are in
+  // the avatar's menu.
+  const avatarItems = [
+    ...(isAdmin
+      ? [
+          { label: adminItem.label, icon: adminItem.icon, onClick: () => navigate(adminItem.to) },
+          { label: inboxItem.label, icon: inboxItem.icon, onClick: () => navigate(inboxItem.to) },
+        ]
+      : [{ label: feedbackItem.label, icon: feedbackItem.icon, onClick: () => navigate(feedbackItem.to) }]),
+    { label: "Log out", icon: LogOut, variant: "danger", onClick: handleLogout },
+  ];
+
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden">
       <header className="relative bg-bg-panel border-b border-border-muted w-full flex items-center gap-6 pl-5 pr-4 md:pr-5 h-14 flex-shrink-0">
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen((open) => !open)}
-          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={mobileMenuOpen}
-          title={mobileMenuOpen ? "Close" : "Menu"}
-          className={`relative md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-muted border border-transparent transition-colors ${
-            mobileMenuOpen
-              ? "hover:text-accent-red hover:bg-accent-red/10 hover:border-accent-red/40"
-              : "hover:bg-bg-hover hover:text-text-primary"
-          }`}
-        >
-          {bottomDot && !mobileMenuOpen && <RedDot className="absolute right-1 top-1" />}
-          {/* Three bars that morph into an X while the menu is open. */}
-          <span className="relative block w-[18px] h-[14px]">
-            {[
-              mobileMenuOpen ? "top-1/2 -translate-y-1/2 rotate-45" : "top-0",
-              mobileMenuOpen ? "top-1/2 -translate-y-1/2 opacity-0" : "top-1/2 -translate-y-1/2",
-              mobileMenuOpen ? "top-1/2 -translate-y-1/2 -rotate-45" : "top-full -translate-y-full",
-            ].map((pos, i) => (
-              <span
-                key={i}
-                className={`absolute left-0 w-full h-[2px] rounded-full bg-current transition-all duration-300 ease-in-out ${pos}`}
-              />
-            ))}
-          </span>
-        </button>
-
-        <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Logo size={28} />
           <span className="text-text-primary font-bold">CastWise</span>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <div className="relative md:hidden">
+            <ActionMenu
+              label="Account menu"
+              align="end"
+              items={avatarItems}
+              header={userName || undefined}
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Account menu"
+                  className="w-9 h-9 rounded-full bg-bg-hover border border-border-muted flex items-center justify-center text-text-muted"
+                >
+                  {initials ? <span className="text-xs font-bold text-text-primary">{initials}</span> : <User size={16} />}
+                </button>
+              }
+            />
+            {bottomDot && <RedDot className="absolute -right-0.5 -top-0.5 ring-2 ring-bg-panel" />}
+          </div>
           <span
             title={userName}
-            className="w-9 h-9 rounded-full bg-bg-hover border border-border-muted flex items-center justify-center text-text-muted cursor-default"
+            className="hidden md:flex w-9 h-9 rounded-full bg-bg-hover border border-border-muted items-center justify-center text-text-muted cursor-default"
           >
             {initials ? (
               <span className="text-xs font-bold text-text-primary">{initials}</span>
@@ -164,82 +170,6 @@ function Layout({ children }) {
           </button>
         </div>
       </header>
-
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-14 z-50 bg-bg-primary flex flex-col">
-          <nav className="flex flex-col p-4 gap-1">
-            {items.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === "/"}
-                onClick={() => setMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `group flex items-center px-3 py-3 rounded-lg text-base font-medium transition-colors ${
-                    isActive
-                      ? "bg-bg-hover text-accent-blue"
-                      : "text-text-muted hover:text-accent-blue hover:bg-bg-hover"
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <span
-                    className={`flex items-center gap-3 origin-center transition-transform duration-200 group-hover:scale-110 ${
-                      isActive ? "scale-110" : ""
-                    }`}
-                  >
-                    <item.icon size={18} />
-                    {item.label}
-                  </span>
-                )}
-              </NavLink>
-            ))}
-            <NavLink
-              to={bottomItem.to}
-              onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `group flex items-center px-3 py-3 rounded-lg text-base font-medium transition-colors ${
-                  isActive
-                    ? "bg-bg-hover text-accent-blue"
-                    : "text-text-muted hover:text-accent-blue hover:bg-bg-hover"
-                }`
-              }
-            >
-              <span className="flex items-center gap-3">
-                <bottomItem.icon size={18} />
-                {bottomItem.label}
-                {bottomDot && <RedDot />}
-              </span>
-            </NavLink>
-          </nav>
-
-          <div className="mt-auto p-4 border-t border-border-muted flex items-center gap-3">
-            <span className="w-9 h-9 rounded-full bg-bg-hover border border-border-muted flex items-center justify-center text-text-muted flex-shrink-0">
-              {initials ? (
-                <span className="text-xs font-bold text-text-primary">
-                  {initials}
-                </span>
-              ) : (
-                <User size={16} />
-              )}
-            </span>
-            <span className="flex-1 text-text-primary text-sm font-medium truncate">
-              {userName}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleLogout();
-              }}
-              aria-label="Logout"
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-accent-red hover:bg-accent-red/10 transition-colors"
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="flex-1 min-h-0 flex">
         {/* Page links as a left side navbar (md and up): the full 192px bar by
@@ -309,12 +239,42 @@ function Layout({ children }) {
           </button>
         </nav>
 
-        <ScrollBox className="flex-1 min-w-0 p-4">
+        <ScrollBox ref={pageScrollRef} className="flex-1 min-w-0 p-4">
           <div className="bg-bg-primary text-text-primary min-h-full">
             {children}
           </div>
         </ScrollBox>
       </div>
+
+      {/* Phones: the five main pages as tabs at the bottom (the tab bar is 3.5rem tall; the sticky
+          action bars and the toasts sit above it). */}
+      <nav
+        aria-label="Main"
+        className="md:hidden flex flex-shrink-0 bg-bg-panel border-t border-border-muted pb-[env(safe-area-inset-bottom)]"
+      >
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            onClick={() => {
+              // tapping the tab of the page you are on scrolls it back to the top
+              const here = item.to === "/" ? pathname === "/" : pathname === item.to || pathname.startsWith(`${item.to}/`);
+              if (!here) return;
+              pageScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+              window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
+            }}
+            className={({ isActive }) =>
+              `flex-1 min-w-0 h-14 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+                isActive ? "text-accent-blue" : "text-text-muted active:text-text-primary"
+              }`
+            }
+          >
+            <item.icon size={20} className="flex-shrink-0" />
+            <span className="truncate max-w-full px-0.5">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }
@@ -327,7 +287,8 @@ export default Layout;
 // 192px bar by default, and a button at its foot collapses it to a 64px icon
 // rail (remembered in localStorage) where a dark label pops out beside the
 // hovered icon. Hovering a link also pre-loads that page. On phones
-// the links live in the morphing menu button's full-screen menu instead. No
+// the five main pages are tabs in a bar at the bottom, and the avatar opens a menu with the rarely
+// used pages (Feedback, or Users and Inbox for an admin) and Log out. No
 // search bar here — pages that need search (e.g. Content) have their own.
 // Page content scrolls via ScrollBox, not the native browser scrollbar.
 // Used by: App.jsx, wrapping Dashboard, Content, Assignments, Playlists,

@@ -31,7 +31,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="pointer-events-none fixed bottom-[88px] left-4 right-4 z-[100] flex flex-col items-center gap-2 md:items-end md:bottom-4 md:left-auto md:w-[380px]">
+      <div className="pointer-events-none fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom)+12px)] [body:has(.cw-action-bar)_&]:bottom-[calc(3.5rem+4.5rem+env(safe-area-inset-bottom)+12px)] left-4 right-4 z-[100] flex flex-col items-center gap-2 md:items-end md:bottom-4 md:left-auto md:w-[380px]">
         {toasts.map(({ id, message, shortMessage, tone }) => {
           const { Icon, color } = TONES[tone] || TONES.success;
           return (

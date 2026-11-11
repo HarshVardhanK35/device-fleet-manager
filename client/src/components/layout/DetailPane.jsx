@@ -18,6 +18,7 @@ function DetailPane({
   headerDivider = false,
   actionInToolbar = false,
   meta,
+  metaClassName = "",
   actionLabel,
   actionIcon,
   onAction,
@@ -51,7 +52,7 @@ function DetailPane({
               {badge}
               {titleExtra}
             </div>
-            {meta && <p className="text-text-muted text-sm m-0">{meta}</p>}
+            {meta && <p className={`text-text-muted text-sm m-0 ${metaClassName}`}>{meta}</p>}
           </div>
 
           {/* One right-hand group (never three siblings, or justify-between would
@@ -73,7 +74,7 @@ function DetailPane({
         </div>
 
         {headerDivider && !sectionLabel && !sectionMeta && (
-          <div className="mt-4 border-b border-border-muted" />
+          <div className="mt-3 md:mt-4 border-b border-border-muted" />
         )}
 
         {(sectionLabel || sectionMeta) && (

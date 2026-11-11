@@ -26,7 +26,7 @@ function ContentToolbar({
   return (
     <div
       className={`@container flex flex-wrap items-center justify-between gap-x-3 gap-y-2 ${
-        divider ? "py-2 pb-4 mb-2 border-b border-bg-hover" : "py-1"
+        divider ? "py-2 pb-4 mb-2 border-b border-bg-hover" : "-mt-1 pb-3"
       } ${className}`}
     >
       <SelectAllBar
@@ -69,7 +69,8 @@ export default ContentToolbar;
 // `divider` (default true) controls the bottom border/spacing — Playlists'
 // right pane passes `divider={false}` since DetailPane's own section-label
 // row already draws a divider right above this toolbar; keeping both was a
-// redundant double border line. `className` (optional) extends the outer
+// redundant double border line (it then has equal space above and below: the pane's 16px gap above less 4px,
+// 12px below). `className` (optional) extends the outer
 // row — Playlists passes `pr-4` there to match the grid's own `pr-4`
 // scrollbar-clearance inset, so the filter button lines up with the tiles
 // below it instead of sitting further right (past the scrollbar gutter).
