@@ -19,7 +19,10 @@ const FULL_SCREEN = {
   display: "grid",
   placeItems: "center",
 };
-const INLINE = { minHeight: "50vh", display: "grid", placeItems: "center" };
+// Inside the app shell (Tailwind is there): centred in the room left under the header, and above the
+// phone tab bar.
+const INLINE_CLASS =
+  "grid place-items-center min-h-[calc(100dvh-88px-3.5rem-env(safe-area-inset-bottom))] md:min-h-[calc(100dvh-88px)]";
 
 function RouteFallback({ fullScreen = false }) {
   const [show, setShow] = useState(false);
@@ -32,7 +35,7 @@ function RouteFallback({ fullScreen = false }) {
   if (!show) return null;
 
   return (
-    <div style={fullScreen ? FULL_SCREEN : INLINE}>
+    <div style={fullScreen ? FULL_SCREEN : undefined} className={fullScreen ? undefined : INLINE_CLASS}>
       <BrandLoader size={fullScreen ? 72 : 48} label="Loading page" />
     </div>
   );

@@ -43,7 +43,7 @@ function DetailPane({
       )}
 
       <div className={headerClassName}>
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between">
           <div className="min-w-0 flex-1 md:flex-none flex flex-col gap-1.5">
             <div className="flex items-center gap-x-2.5 gap-y-1 flex-wrap">
               <h2 className="min-w-0 [overflow-wrap:anywhere] text-text-primary text-sm md:text-lg font-bold m-0">
@@ -59,7 +59,9 @@ function DetailPane({
               push the action button into the middle). h-7 = the title's own line
               height, so the buttons centre on the title row. */}
           {((actionLabel && !actionInToolbar) || refresh || headerExtra) && (
-            <div className="flex-shrink-0 self-start h-7 flex items-center gap-2">
+            // the 16px gap to the title only when something in the group shows (on a phone the group is
+            // often all hidden, and a gap there kept the Save button off the right edge)
+            <div className="flex-shrink-0 self-start h-7 flex items-center gap-2 md:ml-4 has-[>:not(.hidden)]:ml-4">
               {actionLabel && !actionInToolbar && (
                 <div className="hidden md:block">
                   <Button icon={actionIcon} onClick={onAction} disabled={actionDisabled}>

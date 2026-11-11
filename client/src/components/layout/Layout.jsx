@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import Logo from "./Logo.jsx";
@@ -8,7 +8,7 @@ import ActionMenu from "../ui/ActionMenu.jsx";
 
 import { useAuth } from "../../context/useAuth.js";
 import { getInitials } from "../../utils/format/getInitials.js";
-import { prefetchRoute } from "../../pageLoaders.js";
+import { prefetchMainPages, prefetchRoute } from "../../pageLoaders.js";
 import { useFeedbackIndicator } from "../../hooks/useFeedbackIndicator.js";
 
 import {
@@ -24,6 +24,7 @@ import {
   Users,
   Inbox,
   MessageSquareText,
+  CircleHelp,
 } from "lucide-react";
 
 const navItems = [
@@ -40,6 +41,9 @@ const adminItem = { to: "/admin/users", label: "Users", icon: Users };
 // The link just above Collapse: a user sends feedback, the admin reads it.
 const feedbackItem = { to: "/feedback", label: "Feedback", icon: MessageSquareText };
 const inboxItem = { to: "/admin/inbox", label: "Inbox", icon: Inbox };
+
+// The FAQ: a public page of its own (no app shell), linked under Feedback / Inbox.
+const helpItem = { to: "/help", label: "Help", icon: CircleHelp };
 
 // A red dot on a link: something new is waiting there.
 function RedDot({ className = "" }) {
@@ -80,6 +84,9 @@ function Layout({ children }) {
   const { user, logout } = useAuth();
   // The page's scroll area, for "tap the active tab to go back to the top" on phones.
   const pageScrollRef = useRef(null);
+  useEffect(() => {
+    prefetchMainPages();
+  }, []);
   // Icon-only side bar, from the button at its foot. Expanded by default; the
   // choice is remembered.
   const [collapsed, setCollapsed] = useState(readCollapsed);
@@ -119,6 +126,7 @@ function Layout({ children }) {
           { label: inboxItem.label, icon: inboxItem.icon, onClick: () => navigate(inboxItem.to) },
         ]
       : [{ label: feedbackItem.label, icon: feedbackItem.icon, onClick: () => navigate(feedbackItem.to) }]),
+    { label: helpItem.label, icon: helpItem.icon, onClick: () => navigate(helpItem.to) },
     { label: "Log out", icon: LogOut, variant: "danger", onClick: handleLogout },
   ];
 
@@ -223,6 +231,18 @@ function Layout({ children }) {
               <RedDot className={collapsed ? "absolute right-2 top-1.5 ring-2 ring-bg-panel" : "ml-1"} />
             )}
             {collapsed && <NavTip>{bottomItem.label}</NavTip>}
+          </NavLink>
+
+          <NavLink
+            to={helpItem.to}
+            aria-label={helpItem.label}
+            className={`group relative flex items-center justify-center gap-3 h-10 rounded-lg text-sm font-medium text-text-muted hover:bg-bg-hover hover:text-text-primary transition-colors ${
+              collapsed ? "" : "!justify-start px-3"
+            }`}
+          >
+            <helpItem.icon size={18} className="flex-shrink-0" />
+            {!collapsed && <span>{helpItem.label}</span>}
+            {collapsed && <NavTip>{helpItem.label}</NavTip>}
           </NavLink>
 
           <button

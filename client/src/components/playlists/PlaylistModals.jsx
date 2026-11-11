@@ -99,6 +99,7 @@ function PlaylistModals({ pl }) {
         open={pl.skipAllOpen}
         onOpenChange={(open) => !open && pl.cancelSkipAll()}
         icon={SkipForward}
+        tone="amber"
         title="Skip every item?"
         description={`Nothing in "${selectedPlaylist?.name ?? "this playlist"}" will play until you unskip items. They stay in the playlist.`}
         confirmLabel="Skip all"

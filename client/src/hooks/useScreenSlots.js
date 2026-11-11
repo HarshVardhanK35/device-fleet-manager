@@ -11,6 +11,7 @@ import {
 } from "../api/devices.js";
 import { getAssignments } from "../api/assignments.js";
 import { useToast } from "../context/useToast.js";
+import { useTabBackToList } from "../components/layout/scrollTop.js";
 import { MAX_SCREENS } from "../utils/validation/limits.js";
 import { downloadLogsZip, pullScreenLogs } from "../utils/screenLog/screenLogPull.js";
 import { PAIRING_CODE_LENGTH, computePlaying, mapDevice } from "../utils/screens/screenSlots.js";
@@ -24,6 +25,7 @@ export function useScreenSlots() {
   const [screens, setScreens] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [mobileView, setMobileView] = useState("list");
+  useTabBackToList(setMobileView);
   const [editingId, setEditingId] = useState(null);
   const nameInputRef = useRef(null);
   const [draft, setDraft] = useState({ name: "", type: "" });

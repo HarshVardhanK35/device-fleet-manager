@@ -31,6 +31,7 @@ const PlayerSlots = lazyRetry(pageLoaders.playerSlots);
 const Screens = lazyRetry(pageLoaders.screens);
 const Landing = lazyRetry(pageLoaders.landing);
 const NotFound = lazyRetry(pageLoaders.notFound);
+const Help = lazyRetry(pageLoaders.help);
 const AdminUsers = lazyRetry(pageLoaders.adminUsers);
 const Feedback = lazyRetry(pageLoaders.feedback);
 const AdminInbox = lazyRetry(pageLoaders.adminInbox);
@@ -101,6 +102,7 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/player/:token" element={<RouteErrorBoundary device><Player /></RouteErrorBoundary>} />
             <Route path="/screens" element={<RouteErrorBoundary device><Screens /></RouteErrorBoundary>} />
+            <Route path="/help" element={<Help />} />
 
             <Route path="/" element={<HomeRoute />} />
             <Route path="/content" element={<AppPage><Content /></AppPage>} />

@@ -18,6 +18,7 @@ import {
 } from "../utils/assignments/assignmentStatus.js";
 import { pluralizeCount } from "../utils/format/pluralize.js";
 import { useToast } from "../context/useToast.js";
+import { useTabBackToList } from "../components/layout/scrollTop.js";
 import PaneToggle from "../components/layout/PaneToggle.jsx";
 import { COLLAPSED_PANE_CLASS, usePaneCollapse } from "../hooks/usePaneCollapse.js";
 import AssignmentCard from "../components/assignments/AssignmentCard.jsx";
@@ -40,6 +41,7 @@ function Assignments() {
   const [playlists, setPlaylists] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [mobileView, setMobileView] = useState("list");
+  useTabBackToList(setMobileView);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [publishOpen, setPublishOpen] = useState(false);
@@ -206,7 +208,7 @@ function Assignments() {
                         <span className={`w-1.5 h-1.5 flex-none rounded-full ${summary.color}`} />
                         <span className="truncate">{summary.text}</span>
                       </span>
-                      <span className="whitespace-nowrap leading-4 text-text-muted" style={{ fontSize: `${status}px` }}>
+                      <span className="whitespace-nowrap text-right leading-4 text-text-muted" style={{ fontSize: `${status}px` }}>
                         {timeAgo(device.lastSeenAt)}
                       </span>
                     </div>
