@@ -4,6 +4,7 @@ import Assignment from "../models/Assignment.js";
 import buildManifestForDevice from "../services/manifestService.js";
 import { validationMessage } from "../utils/fieldLimits.js";
 import { publishManifestToDevice } from "../services/mqttService.js";
+import { deleteFileOfContent } from "../utils/cloudinaryFiles.js";
 
 // Sends a screen its fresh manifest. A problem with one screen must never fail
 // the edit that triggered it: an assignment whose screen was deleted is cleaned
@@ -137,6 +138,8 @@ export const deleteContent = async (req, res) => {
     }
 
     await content.deleteOne();
+    // the uploaded file itself goes too (otherwise it stays in Cloudinary, still reachable by its link)
+    await deleteFileOfContent(content);
     res.status(200).json({ message: "Content deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });

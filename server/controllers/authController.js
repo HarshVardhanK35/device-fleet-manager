@@ -5,6 +5,9 @@ import User from "../models/User.js";
 import Device from "../models/Device.js";
 import Assignment from "../models/Assignment.js";
 import Feedback from "../models/Feedback.js";
+import Content from "../models/Content.js";
+import Playlist from "../models/Playlist.js";
+import { deleteFileOfContent } from "../utils/cloudinaryFiles.js";
 
 import { sendEmail } from "../utils/sendEmail.js";
 import { generateUsername } from "../utils/username.js";
@@ -408,11 +411,21 @@ export const deleteUser = async (req, res) => {
     await Assignment.deleteMany({ deviceId: { $in: deviceIds } });
     await Device.deleteMany({ userId: user._id });
     await Feedback.deleteMany({ userId: user._id });
+
+    // their library and playlists go too, and the uploaded files with them (they would otherwise stay
+    // in Cloudinary, reachable by their links, with nobody to own them)
+    const contents = await Content.find({ userId: user._id });
+    await Playlist.deleteMany({ userId: user._id });
+    await Content.deleteMany({ userId: user._id });
+    for (const content of contents) {
+      await deleteFileOfContent(content);
+    }
+
     await user.deleteOne();
 
-    res
-      .status(200)
-      .json({ message: "User, their screens, assignments and feedback deleted" });
+    res.status(200).json({
+      message: "User, their screens, assignments, feedback, content and playlists deleted",
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
