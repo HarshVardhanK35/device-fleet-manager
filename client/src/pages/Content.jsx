@@ -19,6 +19,7 @@ import AnnouncementsSettingsScreen from "../apps/appModals/announcements-modal.j
 import ContentPageToolbar from "../components/content/ContentPageToolbar.jsx";
 import ContentDetailsPanel from "../components/content/ContentDetailsPanel.jsx";
 import UploadProgressModal from "../components/modals/UploadProgressModal.jsx";
+import { checkFile, warmUpContentCheck } from "../utils/content/contentCheck.js";
 import ContentSearchInput from "../components/content/ContentSearchInput.jsx";
 import ContentActionButtons from "../components/content/ContentActionButtons.jsx";
 import RefreshButton from "../components/ui/RefreshButton.jsx";
@@ -264,17 +265,38 @@ function Content() {
         return;
       }
 
+      // First the free check in the browser (a quick model that looks for inappropriate content); Cancel works
+      // during it too. A file that fails the check never leaves the user's device.
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
       setUploadState({
         fileName: selectedFile.name,
         isVideo,
         progress: 0,
         done: false,
+        checking: true,
         queueIndex: i + 1,
         queueTotal: validFiles.length,
       });
-
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
+      try {
+        const check = await checkFile(selectedFile, { signal: controller.signal });
+        if (check.blocked) {
+          setUploadState((s) =>
+            s
+              ? {
+                  ...s,
+                  checking: false,
+                  error: `"${selectedFile.name}": This file doesn't meet our content rules and can't be uploaded.`,
+                }
+              : s,
+          );
+          return;
+        }
+      } catch {
+        setUploadState(null); // cancelled while it was being checked
+        return;
+      }
+      setUploadState((s) => (s ? { ...s, checking: false } : s));
 
       try {
         const uploadResult = await uploadFile(selectedFile, {
@@ -388,6 +410,7 @@ function Content() {
   }
 
   function openFilePicker() {
+    warmUpContentCheck(); // start loading the content check while the user picks a file
     fileInputRef.current.click();
   }
 
@@ -625,6 +648,7 @@ function Content() {
         progress={uploadState?.progress ?? 0}
         done={uploadState?.done ?? false}
         error={uploadState?.error}
+        checking={uploadState?.checking ?? false}
         queueIndex={uploadState?.queueIndex}
         queueTotal={uploadState?.queueTotal}
         onCancel={handleCancelUpload}

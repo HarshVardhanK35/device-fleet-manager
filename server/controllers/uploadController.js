@@ -14,6 +14,8 @@ function uploadToCloudinary(buffer) {
   });
 }
 
+// Note: images and videos are checked for inappropriate content in the user's browser before they are
+// uploaded (client/src/utils/content/contentCheck.js); nothing is checked on the server.
 export const uploadMedia = async (req, res) => {
   try {
     // 1. req.file.buffer - contains uploaded file in memory (cause of multer.memoryStorage())
