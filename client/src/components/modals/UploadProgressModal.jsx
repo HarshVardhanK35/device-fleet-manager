@@ -11,6 +11,7 @@ function UploadProgressModal({
   progress,
   done,
   error,
+  checking,
   queueIndex,
   queueTotal,
   onCancel,
@@ -51,7 +52,7 @@ function UploadProgressModal({
                 </>
               ) : (
                 <span>
-                  Uploading
+                  {checking ? "Checking file" : "Uploading"}
                   <span aria-hidden="true">
                     <span className={dot >= 1 ? "opacity-100" : "opacity-0"}>
                       .
@@ -96,12 +97,12 @@ function UploadProgressModal({
         </div>
 
         {error ? (
-          <div className="flex items-center gap-3">
-            <div className="flex-1 min-w-0 flex items-start gap-2 bg-accent-red/10 border border-accent-red/30 text-accent-red text-sm rounded px-3 py-2">
+          <div className="flex flex-col gap-4">
+            <div className="w-full min-w-0 flex items-start gap-2 bg-accent-red/10 border border-accent-red/30 text-accent-red text-sm rounded px-3 py-2">
               <AlertTriangle size={14} className="shrink-0 mt-0.5" />
               {error}
             </div>
-            <Button onClick={onClose} className="flex-none">Okay</Button>
+            <Button onClick={onClose} className="self-end">Okay</Button>
           </div>
         ) : (
           <div className="flex items-center gap-4">
@@ -123,13 +124,15 @@ function UploadProgressModal({
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-text-muted">
-                {done ? "Upload complete" : "Uploading file"}
+                {done ? "Upload complete" : checking ? "Checking the file before it uploads" : "Uploading file"}
               </span>
-              <span
-                className={`font-semibold ${done ? "text-accent-green" : "text-text-primary"}`}
-              >
-                {progress}%
-              </span>
+              {!checking && (
+                <span
+                  className={`font-semibold ${done ? "text-accent-green" : "text-text-primary"}`}
+                >
+                  {progress}%
+                </span>
+              )}
             </div>
           </div>
           {done && <Button onClick={onClose} className="flex-none">Okay</Button>}

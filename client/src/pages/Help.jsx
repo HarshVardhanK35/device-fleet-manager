@@ -227,10 +227,6 @@ function Help() {
                 <p className="hp-stuck__line">
                   Email <RichText text={HELP_EMAIL} />. We are here every day, 8 AM to 6 PM IST.
                 </p>
-                <p className="hp-stuck__note">
-                  Signed in? You can also send <span className="hp-kbd">Feedback</span> from inside the app (it uses
-                  one of your 5 messages).
-                </p>
               </div>
             </div>
           </div>

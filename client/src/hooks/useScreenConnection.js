@@ -131,7 +131,7 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
         );
         if (res.status === 409 || res.status === 404) {
           logWarn("connect", `Connect refused by the server (HTTP ${res.status}): ${res.status === 409 ? "another screen holds this connection" : "this screen no longer exists"}`);
-          return { rejected: true };
+          return { rejected: true, conflict: res.status === 409 };
         }
         if (!res.ok) {
           logWarn("connect", `Connect failed: the server answered HTTP ${res.status}`);
@@ -146,12 +146,14 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
       }
     }
 
-    // After a release, claim the slot again. If the server still counts the old
-    // connection (a heartbeat in flight when the screen was taken over), wait a
-    // few seconds and try again instead of giving up with "connected elsewhere".
-    async function reclaimAfterRelease() {
-      let result = await claimConnection();
+    // The server still counts an old connection (a heartbeat in flight when the screen was taken
+    // over, or a page that was reloaded a moment ago and is not yet past the 20 s "still online"
+    // window): wait a few seconds and try again instead of giving up with "connected elsewhere".
+    // A truly second page is still refused once the tries run out.
+    async function retryWhileHeld(first) {
+      let result = first;
       for (let i = 0; i < RELEASE_RETRIES && result.conflict && !cancelled; i += 1) {
+        logWarn("connect", `The server still counts an earlier connection; trying again in ${RELEASE_RETRY_MS / 1000} s (${i + 1} of ${RELEASE_RETRIES})`);
         await new Promise((resolve) => {
           retryTimer = setTimeout(resolve, RELEASE_RETRY_MS);
         });
@@ -159,6 +161,11 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
         result = await claimConnection();
       }
       return result;
+    }
+
+    // After a release, claim the slot again.
+    async function reclaimAfterRelease() {
+      return retryWhileHeld(await claimConnection());
     }
 
     const onBrowserOffline = () => markOffline("the browser reported no network");
@@ -197,6 +204,10 @@ export function useScreenConnection(screenToken, { activeIdRef, setNow }) {
         });
         if (cancelled) return;
       }
+
+      // A reload leaves the old page counted for a few seconds: wait it out before giving up.
+      if (result.conflict) result = await retryWhileHeld(result);
+      if (cancelled) return;
 
       if (result.rejected) {
         setConnection("rejected");

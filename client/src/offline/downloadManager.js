@@ -73,7 +73,10 @@ function noRoom(key) {
 async function downloadFile(item, signal) {
   const began = Date.now();
   logEvent("offline", `Downloading ${short(item.key)} (${mb(item.size)} expected)`);
-  const res = await fetch(item.url, { mode: "cors", signal });
+  // A plain http:// address cannot be fetched from this https page (the browser blocks it), so ask for
+  // the same address over https; the copy is kept under both spellings, whichever the player asks for.
+  const secureUrl = location.protocol === "https:" && item.url.startsWith("http://") ? `https://${item.url.slice(7)}` : null;
+  const res = await fetch(secureUrl || item.url, { mode: "cors", signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   // The space check uses the size of the copy actually being fetched when the server says it
   // (an image is a small copy of a bigger original), otherwise the size we know.
@@ -86,6 +89,7 @@ async function downloadFile(item, signal) {
   if (signal.aborted) throw new Error("aborted");
   try {
     await saveBlob(item.key, blob, res.headers.get("Content-Type"));
+    if (secureUrl && secureUrl !== item.key) await saveBlob(secureUrl, blob, res.headers.get("Content-Type"));
   } catch (error) {
     if (error.name === "QuotaExceededError") {
       logWarn("offline", `The browser refused to store ${short(item.key)} (${mb(blob.size)}): its storage is full`);
@@ -116,7 +120,7 @@ async function start(item, large, mine) {
       if (refused.get(item.key) >= REFUSED_AFTER) {
         if (!refusedLogged.has(item.key)) {
           refusedLogged.add(item.key);
-          logWarn("offline", `Not saving ${short(item.key)}: its server refused the download ${REFUSED_AFTER} times while online (no permission for downloads from this page), so it is not tried again`);
+          logWarn("offline", `Not saving ${short(item.key)}: its server refused the download ${REFUSED_AFTER} times while online (no permission for downloads from this page${item.url.startsWith("http://") ? ", or it does not answer over https" : ""}), so it is not tried again`);
         }
       } else if (count < MAX_TRIES) {
         failed.push(item);

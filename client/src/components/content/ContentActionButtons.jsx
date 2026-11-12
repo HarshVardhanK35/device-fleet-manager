@@ -34,14 +34,16 @@ function AddButton({ onUploadClick, onCreateAppClick }) {
       <div
         aria-hidden="true"
         onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition-opacity duration-200 ${
+        className={`fixed inset-0 z-[24] bg-black/55 backdrop-blur-sm transition-opacity duration-200 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
 
       {/* The wrapper itself never catches a tap or a scroll (it is much bigger than the + while the
           options are hidden); only the + and the open options do. */}
-      <div className="pointer-events-none fixed right-4 z-50 flex flex-col items-end gap-3 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)]">
+      {/* z-[24] / z-[25]: above the page and its sticky bars (z-20), below every dialog and the details
+          modal (scrim z-30), so a modal dims the + button too */}
+      <div className="pointer-events-none fixed right-4 z-[25] flex flex-col items-end gap-3 bottom-[calc(3.5rem+env(safe-area-inset-bottom)+1rem)]">
         {options.map(({ label, Icon, onClick, tone, delay }) => (
           <button
             key={label}
