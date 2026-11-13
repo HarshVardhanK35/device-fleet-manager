@@ -62,7 +62,7 @@ function AuthLayout({ children }) {
         </span>
       </aside>
 
-      <main className="relative z-10 flex-1 min-w-0 flex flex-col px-5 py-8 md:px-14 md:py-12 bg-[rgba(13,15,22,0.55)] backdrop-blur-[26px] [backdrop-filter:blur(26px)_saturate(1.3)]">
+      <main className="relative z-10 flex-1 min-w-0 flex flex-col px-5 py-8 md:px-14 md:py-6 bg-[rgba(13,15,22,0.55)] backdrop-blur-[26px] [backdrop-filter:blur(26px)_saturate(1.3)]">
         <div className="md:hidden flex items-center gap-2.5 mb-9">
           <Logo size={32} />
           <span className="font-semibold text-sm text-text-primary">
@@ -73,7 +73,7 @@ function AuthLayout({ children }) {
           <div className="w-full max-w-[380px]">
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 mb-6 text-sm font-medium text-accent-blue hover:underline"
+              className="inline-flex items-center gap-1.5 mb-4 text-sm font-medium text-accent-blue hover:underline"
             >
               <ArrowLeft size={16} />
               Back to home

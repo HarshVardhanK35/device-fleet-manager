@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, CircleAlert } from "lucide-react";
 
 import { register } from "../api/auth.js";
@@ -23,6 +23,7 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -42,6 +43,11 @@ function Register() {
       return;
     }
 
+    if (!agreed) {
+      setError("Please accept the Terms of Use, the Acceptable Use rules and the Privacy Policy to create an account");
+      return;
+    }
+
     setLoading(true);
     const response = await register({ firstName, lastName, email, password });
     setLoading(false);
@@ -56,7 +62,7 @@ function Register() {
 
   return (
     <AuthLayout>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <AuthHeading
           title="Create your account"
           subtitle="Start managing your screens in a few minutes."
@@ -123,6 +129,30 @@ function Register() {
             <PasswordMatchHint matches={matches} mismatches={mismatches} />
           </div>
         </div>
+
+        <label className="flex items-start gap-2.5 text-[13px] text-text-muted leading-snug cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 h-4 w-4 flex-none accent-[#1f6feb] cursor-pointer"
+          />
+          <span>
+            I agree to the{" "}
+            <Link to="/terms" target="_blank" className="font-medium text-accent-blue hover:underline">
+              Terms of Use
+            </Link>
+            , the{" "}
+            <Link to="/acceptable-use" target="_blank" className="font-medium text-accent-blue hover:underline">
+              Acceptable Use rules
+            </Link>{" "}
+            and the{" "}
+            <Link to="/privacy" target="_blank" className="font-medium text-accent-blue hover:underline">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
 
         <Button type="submit" className="w-full" disabled={loading}>
           Create account
