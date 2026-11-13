@@ -19,6 +19,7 @@ export const pageLoaders = {
   player: () => import("./pages/Player.jsx"),
   notFound: () => import("./pages/NotFound.jsx"),
   help: () => import("./pages/Help.jsx"),
+  legal: () => import("./pages/Legal.jsx"),
   adminUsers: () => import("./pages/AdminUsers.jsx"),
   feedback: () => import("./pages/Feedback.jsx"),
   adminInbox: () => import("./pages/AdminInbox.jsx"),

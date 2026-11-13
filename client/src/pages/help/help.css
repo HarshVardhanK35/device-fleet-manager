@@ -524,3 +524,41 @@
 }
 .hp-footer__brand { display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 500; }
 .hp-footer__links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }.hp-footer__links a { text-decoration: none; }
+
+
+/* --------------------------------------------------------------------------
+   15. Legal pages (Terms, Acceptable Use, Privacy): pages/Legal.jsx
+   -------------------------------------------------------------------------- */
+.hp-legal__updated { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
+.hp-legal__tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.hp-legal__tab {
+  display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--muted); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: background .2s, border-color .2s, color .2s;
+}
+.hp-legal__tab:hover { color: var(--text); }
+.hp-legal__tab.is-active { background: var(--blue-soft); border-color: var(--blue-line); color: var(--text); }
+
+.hp-legal { display: flex; flex-direction: column; gap: 36px; }
+.hp-legal__intro { max-width: none; }   /* the text under the title fills the width, unlike the Help intro */
+.hp-legal .hp-p, .hp-legal .hp-bullets, .hp-legal .hp-steps { max-width: none; }   /* answers in Help are 680 px wide; the legal text fills its column */
+.hp-legal__heading { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.hp-legal__number { color: var(--muted); font-weight: 500; margin-right: 8px; font-variant-numeric: tabular-nums; }
+.hp-legal__body { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+
+
+/* --------------------------------------------------------------------------
+   16. Narrow phones (320 to 420 px): the header must fit on one line
+   -------------------------------------------------------------------------- */
+.hp-signin, .hp-back { white-space: nowrap; }
+
+@media (max-width: 420px) {
+  .hp-header__inner { gap: 8px; }
+  .hp-header__nav { gap: 4px; }
+  .hp-back { display: none; }   /* the logo already goes home */
+}
+@media (max-width: 350px) {
+  .hp-brand__suffix { display: none; }   /* "Help" / "Privacy" next to the logo */
+}

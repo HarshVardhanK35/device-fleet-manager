@@ -32,6 +32,7 @@ const Screens = lazyRetry(pageLoaders.screens);
 const Landing = lazyRetry(pageLoaders.landing);
 const NotFound = lazyRetry(pageLoaders.notFound);
 const Help = lazyRetry(pageLoaders.help);
+const Legal = lazyRetry(pageLoaders.legal);
 const AdminUsers = lazyRetry(pageLoaders.adminUsers);
 const Feedback = lazyRetry(pageLoaders.feedback);
 const AdminInbox = lazyRetry(pageLoaders.adminInbox);
@@ -103,6 +104,9 @@ function App() {
             <Route path="/player/:token" element={<RouteErrorBoundary device><Player /></RouteErrorBoundary>} />
             <Route path="/screens" element={<RouteErrorBoundary device><Screens /></RouteErrorBoundary>} />
             <Route path="/help" element={<Help />} />
+            <Route path="/terms" element={<Legal doc="terms" />} />
+            <Route path="/acceptable-use" element={<Legal doc="acceptable-use" />} />
+            <Route path="/privacy" element={<Legal doc="privacy" />} />
 
             <Route path="/" element={<HomeRoute />} />
             <Route path="/content" element={<AppPage><Content /></AppPage>} />

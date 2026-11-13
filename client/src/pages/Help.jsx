@@ -1,22 +1,18 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Mail, Moon, Search, Sun, X } from "lucide-react";
+import { Mail, Search, X } from "lucide-react";
 
 // Inter is self-hosted (only the weights the page uses) and loads with this page.
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
 import "./help/help.css";
-import Logo from "../components/layout/Logo.jsx";
-import { useAuth } from "../context/useAuth.js";
 import HelpQuestion from "./help/HelpQuestion.jsx";
-import { CopyEmail, RichText } from "./help/HelpAnswer.jsx";
+import { RichText } from "./help/HelpAnswer.jsx";
 import { HELP_CONTENT, HELP_EMAIL, answerText } from "./help/helpContent.js";
 import { HELP_ICONS } from "./help/helpIcons.js";
 import { useHelpPage } from "./help/useHelpPage.js";
-import { useLandingTheme } from "./landing/useLandingTheme.js";
-
-const BODY_BG = { dark: "#0d1117", light: "#ffffff" };
+import { PageFooter, PageHeader } from "./help/PageChrome.jsx";
+import { usePageTheme } from "./help/usePageTheme.js";
 
 // The questions and answers as FAQPage data, so a search engine can show them.
 const FAQ_JSON_LD = JSON.stringify({
@@ -39,20 +35,9 @@ function SectionIcon({ name, size }) {
 // the landing page's saved choice, with its own switch in the header.
 // Used by: App.jsx.
 function Help() {
-  const { token } = useAuth();
   const help = useHelpPage();
-  // The same saved choice as the landing page's switch (else the system's), so the two match.
-  const [theme, toggleTheme] = useLandingTheme();
+  const [theme, toggleTheme] = usePageTheme();
   const searching = help.words.length > 0;
-
-  // The page background under the overscroll follows the theme; undone on leave.
-  useEffect(() => {
-    const prev = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = BODY_BG[theme];
-    return () => {
-      document.body.style.backgroundColor = prev;
-    };
-  }, [theme]);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -64,36 +49,7 @@ function Help() {
 
   return (
     <div className="hp-root" data-theme={theme}>
-      <header className="hp-header">
-        <div className="hp-container hp-header__inner">
-          <Link className="hp-brand" to="/">
-            <Logo size={28} />
-            <span>CastWise</span>
-            <span className="hp-brand__suffix">Help</span>
-          </Link>
-          <nav className="hp-header__nav" aria-label="Account">
-            <button
-              type="button"
-              className="hp-icon-btn"
-              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-              onClick={toggleTheme}
-            >
-              {theme === "dark" ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
-            </button>
-            <Link className="hp-back" to="/">
-              <ArrowLeft size={15} aria-hidden="true" />
-              <span className="hp-back__long">Back to CastWise</span>
-              <span className="hp-back__short">Back</span>
-            </Link>
-            {!token && (
-              <Link className="hp-signin" to="/login">
-                Sign in
-              </Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <PageHeader suffix="Help" theme={theme} onToggleTheme={toggleTheme} />
 
       <div className="hp-container hp-hero">
         <h1 className="hp-hero__title">How can we help?</h1>
@@ -233,18 +189,7 @@ function Help() {
         </main>
       </div>
 
-      <footer className="hp-footer">
-        <div className="hp-container hp-footer__inner">
-          <span className="hp-footer__brand">
-            <Logo size={18} />
-            &copy; {new Date().getFullYear()} CastWise
-          </span>
-          <nav className="hp-footer__links" aria-label="Footer">
-            <Link to="/">Home</Link>
-            <CopyEmail />
-          </nav>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }

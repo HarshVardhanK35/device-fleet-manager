@@ -59,6 +59,9 @@ function LandingFooter() {
         <nav className="footer-col footer-col--support" aria-label="Support">
           <h3>Support</h3>
           <Link to="/help">Help and FAQ</Link>
+          <Link to="/terms">Terms of Use</Link>
+          <Link to="/acceptable-use">Acceptable use</Link>
+          <Link to="/privacy">Privacy Policy</Link>
           <button
             type="button"
             className="footer-link-btn"
